@@ -56,6 +56,8 @@ def preflight(variant, official_root, assets):
     gate("official_evaluator", (root / "scripts/evaluation.py").is_file())
     gate("official_pi05_runner", (root / "src/evaluation/demo_pi05_runner.py").is_file())
     gate("official_environment", (root / "roboreel_env/src/envs").is_dir())
+    gate("official_siglip_preprocessor", (root / "scripts/compute_vision_features_for_demo.py").is_file())
+    gate("official_keyframe_extractor", (root / "scripts/extract_keyframes.py").is_file())
     gate("official_environment_bank",
          (root / "roboreel_env/init_states/without_distraction/push_cube.pkl").is_file())
     config = read(original) if original.is_file() else {}
@@ -64,7 +66,7 @@ def preflight(variant, official_root, assets):
          and config.get("max_rollout_steps") == 800
          and "chunk_size" not in config,
          "Keep upstream action_horizon=20, not Vid2Robot chunk_size=1")
-    gate("checkpoint_params_directory", (ckpt / "params").is_dir())
+    gate("checkpoint_params_directory", (ckpt / "params").is_dir() and any((ckpt / "params").iterdir()))
     train_path = next((p for p in (ckpt / "train_config.json",
                         ckpt.parent / "train_config.json") if p.is_file()), None)
     gate("checkpoint_train_config", train_path is not None)
@@ -85,7 +87,8 @@ def preflight(variant, official_root, assets):
         vid = data / f"human_demos/eval/no_distraction/push_cube/{i:04d}/front.mp4"
         feat = data / f"video_demonstration_features/{BUCKET}/push_cube/{i:04d}/front.npy"
         gate(f"human_video_{i:04d}", vid.is_file() and vid.stat().st_size > 0)
-        gate(f"siglip_feature_{i:04d}", feat.is_file() and feat.stat().st_size > 0)
+        gate(f"siglip_feature_{i:04d}", feat.is_file() and feat.stat().st_size > 0,
+             "official front.npy SigLIP bundled tokens; no fabricated cache")
         if variant == "keyframes":
             annot = data / f"bpp_keyframe_annotations/{BUCKET}/push_cube/{i:04d}.json"
             valid = False
