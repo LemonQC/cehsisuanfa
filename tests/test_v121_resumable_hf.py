@@ -63,7 +63,8 @@ def test_resume_range_download_with_mock_http(tmp_path,monkeypatch):
 def test_ignored_http_range_restarts_without_concatenation(tmp_path,monkeypatch):
     target=tmp_path/"foo.bin"
     part=tmp_path/"foo.bin.part"
-    part.write_bytes(b"obsolete")
+    # A server that ignores Range must RESTART from zero, not append.
+    part.write_bytes(b"old")
     class Response:
         status_code=200
         headers={}
