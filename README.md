@@ -1,10 +1,10 @@
-> **Headless v0.1.1**: Start with [README_HEADLESS_FIX.md](README_HEADLESS_FIX.md) if your SSH session reports GLX errors; execute `bash scripts/run_headless_smoke.sh`, and omit `--video`.
+> **GitHub v0.2.0 / RTX 4090 headless**: All commands, including `collect --video` and `gate-a --video`, use `render_backend='none'`. `--video` saves a **2D animated trace of physically recorded cube positions**, not RGB camera video; therefore SSH GLX/Vulkan is never required. Read [HEADLESS_GUIDE.md](HEADLESS_GUIDE.md) and start with `python -m agcofl.cli doctor`.
 
 # AG-COFL / Partial Object-Flow Supervision — ManiSkill 3 pilot
 
 **Purpose:** verify the essential Gate A before investing in full/anchor/end high-level training. This is a real `env.step()` robotic experiment with a Panda in a custom two-route tabletop task, **not a precomputed success illustration**.
 
-**Version:** v0.1 (2026-11-09). **Simulation runtime status:** API cross-checked against ManiSkill 3.0.1 documentation and official source; Python syntax and framework-independent unit tests checked in authoring environment; **NOT physically run with ManiSkill/SAPIEN in this container**. Your RTX 4090 Linux machine must run the included smoke test. Do not cite this code as a verified success-rate baseline until you obtain rollouts.
+**Version:** v0.2.0 (2026-11-09). **Simulation runtime status:** API cross-checked against ManiSkill 3.0.1 documentation and official source; Python syntax and framework-independent unit tests checked in authoring environment; **NOT physically run with ManiSkill/SAPIEN in this container**. Your RTX 4090 Linux machine must run the included smoke test. Do not cite this code as a verified success-rate baseline until you obtain rollouts.
 
 ## What is delivered
 
@@ -13,7 +13,7 @@
 * `representation.py`: four 32×32 future binary square masks encoding upper vs lower desired object route. They are **synthetic geometric mask references**, not measured human video segmentation and not dense optical flow.
 * `learning.py`: actual trainable CNN + proprioceptive behavioral-cloning controller that consumes future masks and outputs `pd_joint_pos` actions; held-out physical evaluation on both routes from the same starting state.
 * `partial_supervision.py`: torch `full`, `anchor`, `end` losses including selected-frame mask union and central-window anchor matching. Not yet wired into a trained high-level predictor—**Gate B intentionally gated on Gate A**.
-* Reproducible command-line scripts, JSON episode results, optional MP4 capture, tests.
+* Reproducible command-line scripts, JSON episode results, optional 2D trajectory MP4, tests.
 
 ## Hardware / software
 
@@ -41,10 +41,10 @@ If the specified ManiSkill release or its dependencies conflict with your system
 
 ```bash
 python -m agcofl.cli test-loss
-python -m agcofl.cli smoke
+python -m agcofl.cli doctor
 ```
 
-Expected: two lines with side ±1, matching detected flow side, end with `SMOKE_OK`. `smoke` only verifies physics stepping, registration, masks and action shape; **not expert success**.
+Expected: `STOCK_PHYSICS_OK`, then two lines with side ±1, and `SMOKE_OK`. `doctor` first verifies stock ManiSkill physics, then the custom `smoke` verifies physics stepping, registration, masks and action shape; **not expert success**.
 
 ### 3. Collect real Panda pushing trajectories
 
@@ -117,5 +117,5 @@ All tensors above are `[T,H,W]`, logit inputs, target binary masks. The anchor i
 * `ImportError: mplib`: install official `mplib` compatible with your Python/ManiSkill, record exact version.
 * `motion planning failed`: inspect per-seed JSON. Check Panda work envelope, barrier size, target pose, RRT cloud and contact height; don't change all parameters simultaneously.
 * No physical expert episodes: Gate A cannot proceed. Report a NO-GO for this **implementation**, not a NO-GO for the scientific hypothesis.
-* Renderer problems on headless server: omit `--video`; numerical physics and `npz` logging still run.
+* Rendering: `--video` is headless 2D trajectory animation only. RGB camera video is **not** enabled in v0.2.0; no need to unset the flag to avoid GLX.
 * GPU running but collection is slow: `physx_cpu` and mplib are CPU workloads; GPU is used for neural network training. This is intentional for minimal deterministic verification.
