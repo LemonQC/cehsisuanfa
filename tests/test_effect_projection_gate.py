@@ -77,3 +77,16 @@ def test_training_discovery_does_not_leak_official_eval_videos():
     assert classify("robot_demos/train/push_cube/0001.npz")=="train_trajectory_or_annotation"
     assert classify("human_demos/no_distraction/push_cube/0001/front.mp4") is None
     assert classify("human_demos/val/push_cube/0002/front.mp4") is None
+
+
+def test_sparse_3d_source_edges_cannot_jump_through_an_obstacle():
+    x=_source_pick()
+    x["source_mode"]="push"
+    x["source_object_xyz"]=[
+      [-.15,0,.02],[.15,0,.02],[.16,0,.02]
+    ]
+    x["required_via_xy"]=[]
+    report=analyze_effect(x)
+    assert report["push_projected_xy_collision_frames"]==0
+    assert report["push_projected_xy_segment_collisions"]>=1
+    assert not report["source_directly_compatible_by_geometry"]
