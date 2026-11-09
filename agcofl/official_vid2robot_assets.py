@@ -111,10 +111,11 @@ def acquire(repo,files,root,endpoint=ENDPOINT):
             errors.append(dict(path=x["path"],
                 error=f"{type(ex).__name__}: {str(ex)[:550]}"))
             print("OFFICIAL_ASSET_NOT_READY",json.dumps(errors[-1]),flush=True)
-            # A large released checkpoint is the primary priority. Don't
-            # continue attempting thousands of model files on a broken link.
-            if repo==MODELS:
-                break
+            # One failed network route is a connectivity blocker. Stop here;
+            # keep all prior verified files and try the SAME file next run.
+            # This avoids retrying twenty independent videos through a
+            # potentially broken route for hours.
+            break
     return output,errors
 
 def run(output,endpoint,max_checkpoint_gb=8.0,max_eval_mb=250,download=False):
