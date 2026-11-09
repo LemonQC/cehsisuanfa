@@ -42,9 +42,9 @@ python -u -m agcofl.train_video_audit \
 # 5. Automatically push ONLY small derived JSON/CSV research records to the
 # user's GitHub. Never push MP4/ZIP/PT or human source footage.
 if bash scripts/publish_v100_report.sh; then
-  echo "SMALL_REPORT_PUBLISH_ATTEMPT_FINISHED"
+  echo "SMALL_REPORT_PUBLISH_SUCCEEDED_OR_UNCHANGED"
 else
-  echo "SMALL_REPORT_PUBLISH_FAILED: local files retained in $OUT"
+  echo "SMALL_REPORT_PUBLISH_NOT_COMPLETE: local files retained in $OUT; inspect AUTOPUBLISH status above"
 fi
 
 echo "======================================"
