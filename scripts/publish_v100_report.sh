@@ -51,17 +51,39 @@ fi
 if ! git diff --cached --quiet; then
   echo "AUTOPUBLISH_SKIPPED: other staged files";exit 2
 fi
-git add -- "$DIR"
+# Force-add ONLY the explicitly sanctioned small report files. This
+# handles host-level global gitignore policies without staging outputs or media.
+REPORT_FILES=(
+  "$DIR/README.md"
+  "$DIR/learnability_gate.json"
+  "$DIR/effect_gate.json"
+  "$DIR/learning_vs_motion_baselines.csv"
+  "$DIR/train_video_audit.json"
+  "$DIR/train_discovery.json"
+)
+STAGED=0
+for report in "${REPORT_FILES[@]}"; do
+  if [ -f "$report" ]; then
+    echo "PUBLISH_FILE: $report"
+    git add -f -- "$report"
+    STAGED=$((STAGED + 1))
+  fi
+done
+if [ "$STAGED" -lt 3 ]; then
+  echo "AUTOPUBLISH_SKIPPED: too few report files ($STAGED), expected README and two JSON gates";exit 2
+fi
+echo "PUBLISH_STAGED_FILES:"
+git diff --cached --name-only -- "$DIR"
 if git diff --cached --quiet; then
-  # A previous attempt may have COMMITTED locally but failed to PUSH.
-  if ! git ls-tree -r --name-only HEAD -- "$DIR" | grep -q "learnability_gate.json"; then
-    echo "AUTOPUBLISH_SKIPPED: no new files and no experiment result in local HEAD";exit 2
+  # Distinguish a fully committed prior report from a broken publisher.
+  if ! git ls-tree -r --name-only HEAD -- "$DIR" | grep -q "$DIR/learnability_gate.json"; then
+    echo "AUTOPUBLISH_ERROR: report files absent in HEAD and no files staged";exit 2
   fi
   if git push origin HEAD:main; then
     echo "AUTOPUBLISH_OK_EXISTING_COMMIT: $(git rev-parse HEAD)"
     exit 0
   fi
-  echo "AUTOPUBLISH_PUSH_BLOCKED: retry push existing local commit after remote sync";exit 2
+  echo "AUTOPUBLISH_PUSH_BLOCKED: local report exists but remote push failed";exit 2
 fi
 if ! git -c user.name="LemonQC Research Bot" -c user.email="30914380+LemonQC@users.noreply.github.com" \
     commit -m "Archive v1.0 measured video and geometry research gates"; then
