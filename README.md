@@ -4,16 +4,15 @@
 
 此前前两组已真实完成：seed=0 1/20、seed=100000 2/20，第三组已启动；这不是最终3-seed结果。原先每20个 demo 才有完整输出，现在已增加逐demo控制台消息和原子更新的 progress.json（**仅在下一次启动的 Python 评测进程中生效**，无法给运行中的旧进程补日志）。
 
-第二终端（不影响GPU任务）查看：
+**当前旧进程还在运行时**，第二终端只能看已有日志和GPU，不要为了获得新脚本而提前 git pull：
 
 ~~~bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
-bash scripts/show_v130_progress.sh
-# 若新启动的评测进程支持逐demo telemetry：
-# watch -n 3 bash scripts/show_v130_progress.sh
+tail -n 15 outputs/v130_official_vid2robot/seed_offset_200000/run.log
+nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv
 ~~~
 
-原有运行尚未结束时请勿 git pull、不要 Ctrl+C。完整说明与GPU显存占用/GPU-Util区分：[v1.3 实时进度与GPU记录](docs/2026-11-09_V130_LIVE_PROGRESS_GPU_DIAGNOSTIC.md)。
+**本轮评测进程结束后**才同步新代码，之后新启动的评测进程将逐demo写 progress.json，运行 bash scripts/show_v130_progress.sh 或 watch -n 3 bash scripts/show_v130_progress.sh 可查看。原有运行尚未结束时请勿 git pull、不要 Ctrl+C。完整说明与GPU显存占用/GPU-Util区分：[v1.3 实时进度与GPU记录](docs/2026-11-09_V130_LIVE_PROGRESS_GPU_DIAGNOSTIC.md)。
 
 ---
 
