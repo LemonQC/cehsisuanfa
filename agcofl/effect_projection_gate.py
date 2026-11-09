@@ -139,6 +139,10 @@ def analyze_effect(data):
     res=float(data.get("grid_resolution",.012))
     support_violations=int((abs(xyz[:,2]-table_z)>ztol).sum())
     flat_collision_count=sum(_point_collision(x,boxes,radius) for x in xyz)
+    # An annotated source may be sparse: a straight edge can cross a barrier
+    # despite neither sampled endpoint lying inside it.
+    flat_segment_collisions=sum(
+        not line_free(a,b,boxes,radius) for a,b in zip(xyz[:-1,:2],xyz[1:,:2]))
     source_mode=str(data["source_mode"]).lower()
     allowed_modes=("push","pick","unknown")
     if source_mode not in allowed_modes:
@@ -148,7 +152,8 @@ def analyze_effect(data):
     mode_matches=(source_mode=="push")
     mode_known=(source_mode in ("push","pick"))
     directly_compatible=(support_violations==0 and
-                          flat_collision_count==0 and mode_matches and
+                          flat_collision_count==0 and flat_segment_collisions==0
+                          and mode_matches and
                           all(_close_to_path(xyz[:,:2],p) for p in via))
     goal_only=ordered_path(start,goal,[],boxes,bounds,res,radius)
     oracle=ordered_path(start,goal,via,boxes,bounds,res,radius)
@@ -176,13 +181,14 @@ def analyze_effect(data):
         source_points=len(xyz),max_source_height_m=float(np.max(xyz[:,2]-table_z)),
         support_violation_frames=support_violations,
         push_projected_xy_collision_frames=int(flat_collision_count),
+        push_projected_xy_segment_collisions=int(flat_segment_collisions),
         requested_waypoints=via,goal_xy=goal,
         source_directly_compatible_by_geometry=bool(directly_compatible),
         candidate_status=candidate_status,
         baselines=dict(source_raw=dict(
              support_valid=support_violations==0,
              push_mode_valid=mode_matches,
-             projected_xy_collision_free=flat_collision_count==0,
+             projected_xy_collision_free=(flat_collision_count==0 and flat_segment_collisions==0),
              specified_waypoints=all(_close_to_path(xyz[:,:2],p) for p in via)),
             goal_only=desc(goal_only),
             goal_waypoint_oracle=desc(oracle)),
