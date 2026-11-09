@@ -35,9 +35,38 @@ def route_via(start, side=1):
             [x + 0.125, y + side * 0.17]]
 
 
+
+def scene_geometry(start):
+    """Physical static wall dimensions relative to the initial cube."""
+    s = np.asarray(start, dtype=float)
+    return dict(wall_center_x=float(s[0] + WALL_OFFSET_X),
+                slab_x_min=float(s[0] + WALL_OFFSET_X - WALL_HALF),
+                slab_x_max=float(s[0] + WALL_OFFSET_X + WALL_HALF),
+                wall_y_min=float(s[1] - 2 * WALL_STEP_Y - WALL_HALF),
+                wall_y_max=float(s[1] + 2 * WALL_STEP_Y + WALL_HALF),
+                wall_top_z=float(2 * WALL_HALF),
+                cube_half_size=0.02)
+
+
+def crossing_evidence(trace, start):
+    """Observed cube state in PhysX, not a predicted or intended route."""
+    g = scene_geometry(start)
+    samples = [np.asarray(r["cube"][:3], dtype=float) for r in trace]
+    slab = [p for p in samples if g["slab_x_min"] - .02 <= p[0]
+            <= g["slab_x_max"] + .02]
+    over = [p for p in slab if p[2] > g["wall_top_z"] + g["cube_half_size"] + .005]
+    around = [p for p in slab if p[1] < g["wall_y_min"] - .02
+              or p[1] > g["wall_y_max"] + .02]
+    return dict(slab_samples=len(slab), overflight_observed=bool(over),
+                around_wall_observed=bool(around),
+                max_cube_z_m=float(max((p[2] for p in samples), default=start[2])),
+                geometry=g)
+
+
 def source_valid(summary):
     """Hard gate on actually observed contact, lift, AND same-task success."""
     return (summary["env_success"] and summary["ever_grasped"]
+            and summary.get("wall_overflight_observed", False)
             and summary["peak_lift_m"] >= 0.055
             and summary["released_on_table"]
             and summary["final_goal_error_m"] < 0.05)
@@ -228,6 +257,8 @@ def run_source(official, seed, out, max_steps):
                        final_goal_error_m=goal_dist, env_success=actual_success,
                        end_phase=source.phase, final_cube=obj.tolist(),
                        is_human_source_video=False)
+        summary["crossing_evidence"] = crossing_evidence(source.trace, start)
+        summary["wall_overflight_observed"] = summary["crossing_evidence"]["overflight_observed"]
         summary["valid_pick_source"] = bool(source_valid(summary))
         out.mkdir(parents=True, exist_ok=True)
         (out / "source_trace.json").write_text(json.dumps(source.trace, indent=2))
@@ -271,9 +302,15 @@ def run_target(official, seed, method, via, start_ref, goal_ref,
             if actual or bool(np1(terminated)[0]) or bool(np1(truncated)[0]):
                 break
         final = np1(env.unwrapped.obj.pose.p)[:3]
+        evidence = crossing_evidence(controller.trace, start)
+        # Goal success alone is insufficient if the open-gripper target lifts.
+        grounded = evidence["max_cube_z_m"] <= float(start[2]) + .012
+        constrained_success = bool(actual and grounded)
         result = dict(type="CUSTOM_ADDITIONAL_REAL_MANISKILL_PHYSICS",
                       is_learned_policy=False,
-                      baseline=method, seed=seed, success=actual,
+                      baseline=method, seed=seed, success=constrained_success,
+                      simulator_goal_success=actual, grounded_push_only=grounded,
+                      observed_crossing=evidence,
                       steps=len(controller.trace),
                       intermediate_reached=len(controller.visited),
                       requested_intermediate=len(via),
