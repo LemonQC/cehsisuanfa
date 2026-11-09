@@ -84,4 +84,4 @@ def test_no_implicit_random_vit_checkpoint_fallback():
     assert "AutoModel.from_pretrained" in source
     assert "requires_grad_(False)" in source
     assert "AutoModel.from_config" not in source
-    assert 'device="cuda"' in inspect.signature(p.run).__str__()
+    assert inspect.signature(p.run).parameters["device"].default=="cuda"
