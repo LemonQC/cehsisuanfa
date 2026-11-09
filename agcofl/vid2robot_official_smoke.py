@@ -12,6 +12,30 @@ import sys
 from pathlib import Path
 
 
+def extract_official_single_trial(summary, task, demo_id):
+    """Parse upstream run_eval_protocol's dict-of-cells per_trial layout.
+
+    Never manufacture a boolean if the official runner emitted no trial,
+    multiple trials, or a mismatched task/demo ID.
+    """
+    if not isinstance(summary,dict):
+        return None
+    grouped=summary.get("per_trial")
+    if isinstance(grouped,dict):
+        trials=[r for group in grouped.values() if isinstance(group,list)
+                for r in group if isinstance(r,dict)]
+    elif isinstance(grouped,list):
+        trials=[r for r in grouped if isinstance(r,dict)]
+    else:
+        trials=[]
+    if len(trials)!=1:return None
+    row=trials[0]
+    if (row.get("task")!=task or int(row.get("demo_id",-1))!=int(demo_id)
+        or not isinstance(row.get("success"),bool)):
+        return None
+    return row
+
+
 def run(official_root,assets_root,out,gpu="0",smoke_id=80):
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     official=Path(official_root).resolve()
@@ -73,14 +97,17 @@ def run(official_root,assets_root,out,gpu="0",smoke_id=80):
         runner=build_runner(cfgobj)
         result["checkpoint_loaded"]=True
         summary=utils.run_eval_protocol(cfgobj,runner)
-        result["rollout_executed"]=True
-        result["status"]="OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED"
         result["official_summary_path"]=str(Path(cfgobj.output_dir)/"summary.json")
-        if isinstance(summary,dict):
-            per_trial=summary.get("per_trial")
-            if isinstance(per_trial,list) and len(per_trial)==1:
-                result["official_success"]=bool(per_trial[0].get("success"))
-                result["official_step_record"]=per_trial[0]
+        trial=extract_official_single_trial(summary,"push_cube",smoke_id)
+        if trial is None:
+            result["status"]="OFFICIAL_VID2ROBOT_SUMMARY_MISSING_SINGLE_TRIAL"
+            result["rollout_executed"]=False
+            result["error"]="Official runner returned no unique matching physical rollout record"
+        else:
+            result["rollout_executed"]=True
+            result["status"]="OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED"
+            result["official_success"]=trial["success"]
+            result["official_step_record"]=trial
     except Exception as e:
         result.update(status="OFFICIAL_VID2ROBOT_RUNTIME_BLOCKED",
             error=f"{type(e).__name__}: {str(e)[:900]}")
