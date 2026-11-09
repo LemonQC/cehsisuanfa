@@ -37,25 +37,25 @@ cat > "$DIR/README.md" <<'EOF'
 EOF
 
 if find "$DIR" -type f -size +1M | grep -q .; then
-  echo "AUTOPUBLISH_SKIPPED: report over 1 MB";exit 0
+  echo "AUTOPUBLISH_SKIPPED: report over 1 MB";exit 2
 fi
 if find "$DIR" -type f ! -name '*.md' ! -name '*.json' ! -name '*.csv' | grep -q .; then
-  echo "AUTOPUBLISH_SKIPPED: unexpected file type";exit 0
+  echo "AUTOPUBLISH_SKIPPED: unexpected file type";exit 2
 fi
 if ! git remote get-url origin 2>/dev/null | grep -Eq 'LemonQC/cehsisuanfa(\.git)?$'; then
-  echo "AUTOPUBLISH_SKIPPED: origin mismatch";exit 0
+  echo "AUTOPUBLISH_SKIPPED: origin mismatch";exit 2
 fi
 if ! git diff --cached --quiet; then
-  echo "AUTOPUBLISH_SKIPPED: other staged files";exit 0
+  echo "AUTOPUBLISH_SKIPPED: other staged files";exit 2
 fi
 git add -- "$DIR"
 if git diff --cached --quiet; then echo "AUTOPUBLISH_NO_CHANGES";exit 0;fi
 if ! git -c user.name="LemonQC Research Bot" -c user.email="30914380+LemonQC@users.noreply.github.com" \
     commit -m "Archive v1.0 measured video and geometry research gates"; then
-  echo "AUTOPUBLISH_COMMIT_FAILED";exit 0
+  echo "AUTOPUBLISH_COMMIT_FAILED";exit 2
 fi
 if git push origin HEAD:main; then
-  echo "AUTOPUBLISH_OK: https://github.com/LemonQC/cehsisuanfa/tree/main/$DIR"
+  echo "AUTOPUBLISH_OK: $(git rev-parse HEAD) https://github.com/LemonQC/cehsisuanfa/tree/main/$DIR"
 else
-  echo "AUTOPUBLISH_PUSH_BLOCKED: local commit retained; offline Github access may be unavailable"
+  echo "AUTOPUBLISH_PUSH_BLOCKED: local commit retained; offline Github access may be unavailable"; exit 2
 fi
