@@ -55,6 +55,14 @@ if command -v timeout >/dev/null 2>&1; then
     || echo "ROBOT_TRAIN_DOWNLOAD_BLOCKED: see robot_data_manifest or original log"
 fi
 
+# Verify whether genuine 3D hand/object pose annotations are actually
+# exposed at TRAIN-source path; no guessing XYZ from 2D blue pixels.
+if command -v timeout >/dev/null 2>&1; then
+  timeout 65s python -u -m agcofl.human_pose_source_audit \
+    --out "$OUT/human_pose_annotation_audit.json" \
+    || echo "POSE_METADATA_BLOCKED: do not assume 3D data are available"
+fi
+
 # Keep the working ManiSkill/PyTorch stack; install ONLY a missing ViT
 # loader and its metadata libraries, never replace torch/CUDA.
 if ! python -c 'import transformers;from transformers import AutoModel,AutoImageProcessor' >/dev/null 2>&1; then
@@ -90,6 +98,7 @@ echo "=============================================="
 echo "V110_COMPLETE. Results: outputs/v110_baselines/"
 echo "Official baselines: $OUT/official_baseline_audit.json"
 echo "Robot train source: $OUT/robot_data_manifest.json"
+echo "Human 3D pose source audit: $OUT/human_pose_annotation_audit.json"
 echo "ViT GPU report: $OUT/vit_pilot/report.json"
 echo "GitHub: research_reports/2026-11-09_v110/"
 echo "=============================================="
