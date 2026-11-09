@@ -48,6 +48,8 @@ def run_smoke(args):
 def run_collect(args):
     from .teacher import scripted_rollout,save_episode
     out=Path(args.out);out.mkdir(parents=True,exist_ok=True)
+    if args.max_retries < 0 or args.max_retries > 5:
+        raise ValueError('--max-retries must be between 0 and 5')
     status=[]
     for side in (-1,1):
         env=make_env(side,video=args.video)
@@ -55,11 +57,12 @@ def run_collect(args):
             print('EXPERT_CONTROLLER pd_ee_delta_pos, no MPLib',flush=True)
             for i in range(args.episodes):
                 seed=args.seed+i
-                result=scripted_rollout(env,side=side,seed=seed,save_video=False)
+                result=scripted_rollout(env,side=side,seed=seed,save_video=False,max_retries=args.max_retries)
                 save_episode(result,out/f'route_{"upper" if side==1 else "lower"}_{seed:06d}.npz', trajectory_video=args.video)
                 rec={'side':side,'seed':seed,'success':result['success'],
                      'steps':len(result['trajectory'].get('state',[])),
-                     'error':result['error'],'visited':result['check_visited']}
+                     'error':result['error'],'visited':result['check_visited'],
+                     'push_attempts':len(result.get('push_attempts',[]))}
                 print(json.dumps(rec)); status.append(rec)
         finally:env.close()
     summary={'attempted':len(status),'success':sum(r['success'] for r in status),
@@ -163,7 +166,8 @@ def main():
     dr=sub.add_parser('doctor');dr.add_argument('--seed',type=int,default=42);dr.set_defaults(func=run_doctor)
     sm=sub.add_parser('smoke');sm.add_argument('--seed',type=int,default=42);sm.set_defaults(func=run_smoke)
     co=sub.add_parser('collect');co.add_argument('--episodes',type=int,default=10);co.add_argument('--seed',type=int,default=100);
-    co.add_argument('--out',default='outputs/ee_v030_episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');co.set_defaults(func=run_collect)
+    co.add_argument('--out',default='outputs/ee_v040_episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');
+    co.add_argument('--max-retries',type=int,default=2,help='Additional measured re-contact attempts for each missed intermediate waypoint (default 2)');co.set_defaults(func=run_collect)
     tr=sub.add_parser('train-bc');tr.add_argument('--data',default='outputs/ee_v030_episodes');tr.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');
     tr.add_argument('--epochs',type=int,default=80);tr.add_argument('--batch',type=int,default=256);tr.set_defaults(func=run_train)
     ev=sub.add_parser('gate-a');ev.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');ev.add_argument('--out',default='outputs/gate_a');
