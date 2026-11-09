@@ -18,7 +18,7 @@ import numpy as np
 import torch
 from torch import nn
 from .partial_supervision import torch_segment_loss
-from .real_video_flow import blue_candidate, select_video_frames
+from .real_video_flow import blue_candidate, select_video_frames, extract_video_flow
 
 FRAMES = 64
 PAST = 2
@@ -157,6 +157,10 @@ def train_real_videos(video_root,out,epochs=20,seed=42,
     for video in video_paths:
         sid=video.parent.name
         masks,meta=video_masks(video,frames)
+        # Always save a human RGB + mask overlay BEFORE accepting any labels.
+        # The human must inspect the pictured blue object, not just coverage.
+        extract_video_flow(video,out/f"video_{sid}",frames=24)
+        meta["visual_audit_overlay"]=str(out/f"video_{sid}"/"human_mask_overlay.png")
         (out/f"observed_masks_{sid}.npy").parent.mkdir(exist_ok=True,parents=True)
         np.save(out/f"observed_masks_{sid}.npy",masks)
         windows=make_windows(masks,sid)
@@ -190,6 +194,9 @@ def train_real_videos(video_root,out,epochs=20,seed=42,
     for mode in MODES:
         torch.manual_seed(seed)
         if torch.cuda.is_available():torch.cuda.manual_seed_all(seed)
+        if torch.backends.cudnn.is_available():
+            torch.backends.cudnn.deterministic=True
+            torch.backends.cudnn.benchmark=False
         net=HumanMaskPredictor().to(device)
         opt=torch.optim.Adam(net.parameters(),lr=3e-4)
         xtrain,ytrain=arrays(by_group["train"])
@@ -247,10 +254,13 @@ def train_real_videos(video_root,out,epochs=20,seed=42,
     _write_csv(out/"training_history.csv",history)
     _write_csv(out/"all_windows.csv",detailed)
     _write_csv(out/"mode_summary.csv",metrics)
+    eval_sources=any(m["source_is_roboreel_eval"] for m in sources)
+    evaluation_warning=("At least one source video is from RoboReel's official EVALUATION split; "
+                        "do not use its video IDs in any official benchmark score. "
+                        if eval_sources else "")
     report=dict(type="REAL_HUMAN_VIDEO_MASK_PREDICTION_ONLY_NOT_ROBOT_TRANSFER",
          validity=status,warning=(
-             "All source videos are RoboReel official EVALUATION demonstrations; "
-             "use only for pipeline development, not official benchmark training/results. "
+             evaluation_warning +
              "The mask detector is HSV, not verified instance segmentation. "
              "No robot actions or policy rollouts use the predicted masks. "
              "For one video, reported training-fit IoUs are NOT generalization."),
