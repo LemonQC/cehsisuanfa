@@ -1,3 +1,36 @@
+# AG-COFL v0.8.0 — REAL human-video + RoboReel physics bridge
+
+**Priority: stop synthetic proxy studies and test an actual human MP4 / robot
+physics integration on an RTX4090.** This new bridge is a DIAGNOSTIC oracle
+state controller, not a trained human-to-robot or Full/Anchor/End algorithm.
+
+## Run on existing server
+
+    cd /mnt/4Tdata/LemonData/cehsisuanfa
+    git pull origin main
+    conda activate agcofl4090
+    python -m pip install huggingface_hub opencv-python-headless
+    set -o pipefail
+    bash scripts/run_roboreel_bridge.sh 2>&1 | tee roboreel_v080.log
+
+This selectively downloads only official RoboReel PushCube front human video
+evaluation clips and tries paired real physical PushCube-v2 runs in headless
+ManiSkill CPU PhysX, recording video candidate masks, actual actions, cube
+position and task success.
+
+**Compatibility caveat:** official RoboReel pins ManiSkill 3.0.0b22; your
+environment uses 3.0.1. If the repo import or saved initial states fail, send
+the traceback; don't reinstall CUDA or silently modify the benchmark.
+
+Read [docs/ROBOREEL_REAL_BRIDGE_V080.md](docs/ROBOREEL_REAL_BRIDGE_V080.md)
+for the precise run, file outputs, validation gates and scientific limits.
+
+What matters: human mask overlay quality, benchmark physical step success,
+paired fixed/video-timing action/pose changes. This is NOT YET a learned
+Full/Anchor/End closed-loop comparison or a T-RO result.
+
+---
+
 # AG-COFL: Partial Object-Flow Supervision — v0.7.0
 
 **Research-first update (2026-11-09).** The priority is now paired Full / Anchor / End supervision experiments, not further tuning the manual push expert.
