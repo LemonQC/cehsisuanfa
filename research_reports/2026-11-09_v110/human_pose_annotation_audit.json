@@ -1,0 +1,35 @@
+{
+  "type": "REAL_TRAIN_ANNOTATION_AVAILABILITY",
+  "status": "NO_VERIFIED_3D_FILE_AT_INSPECTED_LEVEL",
+  "source": "OFFICIAL_ROBOREEL_HF_DATASET",
+  "tasks": [
+    "pick_cube",
+    "push_cube"
+  ],
+  "endpoint": "https://hf-mirror.com",
+  "warning": "A file name is not proof of calibrated SE(3) object trajectories. Do not treat front-camera HSV centers as 3D pose. Different PickCube and PushCube tasks have different official goals.",
+  "error": null,
+  "candidate_paths": [],
+  "folder_status": [
+    {
+      "folder": "human_demos/train/no_distraction/push_cube/0000",
+      "status": "LISTED",
+      "files": 5
+    },
+    {
+      "folder": "human_demos/train/no_distraction/pick_cube/0000",
+      "status": "LISTED",
+      "files": 5
+    },
+    {
+      "folder": "human_demos/train/no_distraction/pick_cube",
+      "status": "LISTED",
+      "files": 80
+    },
+    {
+      "folder": "human_demos/train/no_distraction/push_cube",
+      "status": "LISTED",
+      "files": 80
+    }
+  ]
+}

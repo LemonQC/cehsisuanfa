@@ -1,0 +1,136 @@
+{
+  "type": "PRETRAINED_VIT_REAL_HUMAN_VIDEO_DIAGNOSTIC_NOT_ROBOT_POLICY",
+  "backbone": "facebook/dinov2-small",
+  "vit_pretrained": true,
+  "backbone_frozen": true,
+  "raw_rgb_input": true,
+  "rgb_resolution": [
+    224,
+    224
+  ],
+  "source_cameras": "original front RGB, native-resolution HSV center labels",
+  "source_split": "OFFICIAL_ROBOREEL_TRAIN_ONLY",
+  "data_sha256": "08c74fc6be5dbf07a1c398060846a0c600e016cb143d339d17d90f7f402dab54",
+  "seed": 42,
+  "epochs": 15,
+  "cuda_device": "NVIDIA GeForce RTX 4090",
+  "split": {
+    "train": [
+      "human_demos/train/no_distraction/push_cube/0005/front.mp4",
+      "human_demos/train/no_distraction/push_cube/0004/front.mp4",
+      "human_demos/train/no_distraction/push_cube/0001/front.mp4",
+      "human_demos/train/no_distraction/push_cube/0000/front.mp4"
+    ],
+    "val": [
+      "human_demos/train/no_distraction/push_cube/0003/front.mp4"
+    ],
+    "test": [
+      "human_demos/train/no_distraction/push_cube/0002/front.mp4"
+    ]
+  },
+  "independent_test_videos": 1,
+  "summary": [
+    {
+      "mode": "persistence",
+      "split": "val",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 3.9201598457992075,
+      "end_error_px": 6.897013519704342,
+      "moving_windows": 3,
+      "moving_mean_error_px": 11.95178747177124
+    },
+    {
+      "mode": "persistence",
+      "split": "test",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 9.893937516957521,
+      "end_error_px": 17.565173824131488,
+      "moving_windows": 3,
+      "moving_mean_error_px": 32.271933237711586
+    },
+    {
+      "mode": "constant_velocity",
+      "split": "val",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 3.7762778639793395,
+      "end_error_px": 7.774610407650471,
+      "moving_windows": 3,
+      "moving_mean_error_px": 6.83731746673584
+    },
+    {
+      "mode": "constant_velocity",
+      "split": "test",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 7.577857669442892,
+      "end_error_px": 17.689035987854005,
+      "moving_windows": 3,
+      "moving_mean_error_px": 23.34282938639323
+    },
+    {
+      "mode": "full",
+      "split": "val",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 5.66881411075592,
+      "end_error_px": 8.175348004698753,
+      "moving_windows": 3,
+      "moving_mean_error_px": 14.443048159281412
+    },
+    {
+      "mode": "full",
+      "split": "test",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 9.727482867240905,
+      "end_error_px": 16.203764843940736,
+      "moving_windows": 3,
+      "moving_mean_error_px": 26.97108523050944
+    },
+    {
+      "mode": "anchor",
+      "split": "val",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 6.619179892539978,
+      "end_error_px": 8.320246696472168,
+      "moving_windows": 3,
+      "moving_mean_error_px": 10.12779951095581
+    },
+    {
+      "mode": "anchor",
+      "split": "test",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 14.503504371643066,
+      "end_error_px": 19.54962773323059,
+      "moving_windows": 3,
+      "moving_mean_error_px": 30.66115951538086
+    },
+    {
+      "mode": "end",
+      "split": "val",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 6.091815114021301,
+      "end_error_px": 10.68995863199234,
+      "moving_windows": 3,
+      "moving_mean_error_px": 9.724295775095621
+    },
+    {
+      "mode": "end",
+      "split": "test",
+      "windows": 10,
+      "independent_videos": 1,
+      "mean_error_px": 11.849902868270874,
+      "end_error_px": 21.492391681671144,
+      "moving_windows": 3,
+      "moving_mean_error_px": 30.3550386428833
+    }
+  ],
+  "learned_full_under_persistence": false,
+  "hard_note": "HSV still needs manual ID validation. Six videos / one heldout source is a pipeline sanity test, not a paper result or an argument to abandon the research. The model predicts camera-plane 2D candidate centroids, NOT 3D effect, not object flow masks, not robot action, and no simulator success was measured. Do not use official RoboReel EVAL videos for checkpoint selection."
+}

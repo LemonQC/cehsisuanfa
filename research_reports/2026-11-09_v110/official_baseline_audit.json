@@ -1,0 +1,100 @@
+{
+  "type": "ROBOREEL_OFFICIAL_BASELINE_AVAILABILITY_AUDIT",
+  "repository": "https://github.com/weiweigu1998/roboreel_models.git",
+  "expected_source_commit": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "checkout": "/mnt/4Tdata/LemonData/cehsisuanfa/third_party/roboreel_models",
+  "observed_source_commit": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "pinned": true,
+  "status": "OFFICIAL_PINNED_CODE_PRESENT",
+  "real_train_front_videos": 6,
+  "real_train_video_ids": [
+    "human_demos/train/no_distraction/push_cube/0000/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0001/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0002/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0003/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0004/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0005/front.mp4"
+  ],
+  "robot_action_trajectory_local_count": 0,
+  "robot_action_data_not_yet_verified": true,
+  "checkpoint_downloaded": false,
+  "inference_performed": false,
+  "methods": [
+    {
+      "id": "B03_vid_cond_pi05_uniform",
+      "source": "OFFICIAL_ROBOREEL_MODELS",
+      "official_commit_expected": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "pinned_commit_matches": true,
+      "training_entrypoint": "scripts/train_vid_cond_pi05.py",
+      "evaluation_entrypoint": "scripts/evaluation.py",
+      "entrypoints_present": {
+        "train": true,
+        "evaluate": true
+      },
+      "status": "OFFICIAL_CODE_PINNED_NOT_RUNTIME_VERIFIED",
+      "checkpoint_loaded": false,
+      "official_rollout_executed": false
+    },
+    {
+      "id": "B04_vid_cond_pi05_keyframes",
+      "source": "OFFICIAL_ROBOREEL_MODELS",
+      "official_commit_expected": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "pinned_commit_matches": true,
+      "training_entrypoint": "scripts/train_vid_cond_pi05.py",
+      "evaluation_entrypoint": "scripts/evaluation.py",
+      "entrypoints_present": {
+        "train": true,
+        "evaluate": true
+      },
+      "status": "OFFICIAL_CODE_PINNED_NOT_RUNTIME_VERIFIED",
+      "checkpoint_loaded": false,
+      "official_rollout_executed": false
+    },
+    {
+      "id": "B05_vid2robot",
+      "source": "OFFICIAL_ROBOREEL_MODELS",
+      "official_commit_expected": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "pinned_commit_matches": true,
+      "training_entrypoint": "scripts/train_vid2robot.py",
+      "evaluation_entrypoint": "scripts/evaluation.py",
+      "entrypoints_present": {
+        "train": true,
+        "evaluate": true
+      },
+      "status": "OFFICIAL_CODE_PINNED_NOT_RUNTIME_VERIFIED",
+      "checkpoint_loaded": false,
+      "official_rollout_executed": false
+    },
+    {
+      "id": "B06_uniskill_policy",
+      "source": "OFFICIAL_ROBOREEL_MODELS",
+      "official_commit_expected": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "pinned_commit_matches": true,
+      "training_entrypoint": "scripts/train_uniskill_policy.py",
+      "evaluation_entrypoint": "scripts/evaluation.py",
+      "entrypoints_present": {
+        "train": true,
+        "evaluate": true
+      },
+      "status": "OFFICIAL_CODE_PINNED_NOT_RUNTIME_VERIFIED",
+      "checkpoint_loaded": false,
+      "official_rollout_executed": false
+    },
+    {
+      "id": "B07_vlm_pi05",
+      "source": "OFFICIAL_ROBOREEL_MODELS",
+      "official_commit_expected": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "pinned_commit_matches": true,
+      "training_entrypoint": "scripts/train_vlm_pi05.py",
+      "evaluation_entrypoint": "scripts/evaluation.py",
+      "entrypoints_present": {
+        "train": true,
+        "evaluate": true
+      },
+      "status": "OFFICIAL_CODE_PINNED_NOT_RUNTIME_VERIFIED",
+      "checkpoint_loaded": false,
+      "official_rollout_executed": false
+    }
+  ],
+  "caveat": "Official implementation presence != executable pretraining. Official pi0.5 and UniSkill have heavyweight external base weights and/or dependencies and may require separate isolated Conda envs. Do not pool performance with privileged-state diagnostic results."
+}

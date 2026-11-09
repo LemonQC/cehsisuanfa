@@ -1,0 +1,14 @@
+{
+  "train": [
+    "human_demos/train/no_distraction/push_cube/0005/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0004/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0001/front.mp4",
+    "human_demos/train/no_distraction/push_cube/0000/front.mp4"
+  ],
+  "val": [
+    "human_demos/train/no_distraction/push_cube/0003/front.mp4"
+  ],
+  "test": [
+    "human_demos/train/no_distraction/push_cube/0002/front.mp4"
+  ]
+}
