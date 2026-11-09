@@ -19,6 +19,39 @@ def route_points(side):
     return np.array([START,[-.105,side*CHECK_Y],[0.,side*CHECK_Y],[.105,side*CHECK_Y],GOAL], np.float32)
 
 
+def contact_waypoints(side, *, angle_tolerance_degrees=3.0):
+    """Physical teacher contact-change waypoints, preserving source mask route.
+
+    Consecutive collinear forward segments are merged: there is no reason to
+    lift and re-descend the Panda TCP at an intermediate point on a straight
+    line. The underlying route_points(), future masks, intermediate physical
+    checkpoint and task success evaluation are completely unchanged.
+
+    Returns an array [K,2] of *endpoints* for physical push strokes (excluding
+    the start). The center checkpoint is still crossed and evaluated during
+    continuous physical stepping.
+    """
+    pts = route_points(side)
+    if len(pts) <= 2:
+        return pts[1:].copy()
+    threshold = float(np.sin(np.deg2rad(angle_tolerance_degrees)))
+    keep = [pts[0]]
+    for i in range(1, len(pts) - 1):
+        prev_step = pts[i] - pts[i - 1]
+        next_step = pts[i + 1] - pts[i]
+        lengths = float(np.linalg.norm(prev_step) * np.linalg.norm(next_step))
+        if lengths <= 1e-9:
+            continue
+        cross = abs(float(prev_step[0] * next_step[1] -
+                          prev_step[1] * next_step[0])) / lengths
+        is_forward = float(np.dot(prev_step, next_step)) > 0.
+        if cross <= threshold and is_forward:
+            continue
+        keep.append(pts[i])
+    keep.append(pts[-1])
+    return np.asarray(keep[1:], dtype=np.float32)
+
+
 def advance_on_path(polyline, current, distances=(.045,.09,.14,.20)):
     polyline=np.asarray(polyline,dtype=np.float32)
     current=np.asarray(current,dtype=np.float32)
