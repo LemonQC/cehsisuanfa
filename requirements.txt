@@ -1,0 +1,12 @@
+# Install PyTorch separately using CUDA-compatible wheels (see README).
+mani_skill==3.0.1
+mplib
+numpy>=1.26,<2.1
+scipy
+h5py
+imageio
+imageio-ffmpeg
+transforms3d
+gymnasium
+pytest
+matplotlib

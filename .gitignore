@@ -1,0 +1,17 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.log
+*.mp4
+*.pt
+*.pth
+*.npz
+*.h5
+outputs/
+checkpoints/
+datasets/
+wandb/
+*.core
+core
+core.*
+.env

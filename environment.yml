@@ -1,0 +1,20 @@
+name: agcofl4090
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - torch==2.5.1
+      - torchvision==0.20.1
+      - mani_skill==3.0.1
+      - mplib
+      - numpy>=1.26,<2.1
+      - scipy
+      - gymnasium
+      - h5py
+      - imageio
+      - imageio-ffmpeg
+      - transforms3d
+      - pytest
+      - matplotlib
