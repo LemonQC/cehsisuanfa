@@ -1,3 +1,26 @@
+# AG-COFL: Partial Object-Flow Supervision — v0.7.0
+
+**Research-first update (2026-11-09).** The priority is now paired Full / Anchor / End supervision experiments, not further tuning the manual push expert.
+
+## Run now on the RTX 4090
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull origin main
+conda activate agcofl4090
+bash scripts/run_partial_study_pilot.sh
+```
+
+This command actually trains **three fixed-architecture high-level models**, produces validation/test mask-IoU metrics and layout-paired CSVs, and creates PNG figures. **The first run uses explicitly synthetic proxy masks and is ONLY a pipeline smoke test.** It is not a human-robot imitation experiment and must NOT be reported as T-RO evidence.
+
+Complete protocol, real data schema, the importer for recorded robot/human paths, and all expected outputs: [docs/PARTIAL_FLOW_EXPERIMENT_V070.md](docs/PARTIAL_FLOW_EXPERIMENT_V070.md).
+
+The physical ManoSkill push teacher remains in the repo as an engineering utility; current real status is v0.5 seed100 upper succeeded, lower failed. Do not train flow BC on unsuccessful teacher episodes. Real human videos and several distinct scene layouts are still required for credible scientific results.
+
+---
+
+## Previous physical teacher notes (v0.6 and earlier)
+
 # AG-COFL / Partial Object-Flow Supervision — 4090 ManiSkill pilot
 
 **Current version: v0.6.0 (2026-11-09).** This repo implements a *physical* Panda push-teacher for the Gate A oracle-flow experiment, with separate Full / Anchor / End partial-supervision loss tests. Gate A is NOT yet passed.
