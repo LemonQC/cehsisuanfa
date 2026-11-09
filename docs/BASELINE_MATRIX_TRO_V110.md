@@ -40,8 +40,8 @@ Dataset: https://huggingface.co/datasets/LogosRoboticsLab/roboreel
 | B08 | SeeDo | RoboReel paper | P2 | OFFICIAL_MODEL_REPO_NOT_YET_AVAILABLE; no fake reproduction |
 | B09 | PointPolicy | RoboReel pose suite | P1 PD | OFFICIAL_MODEL_REPO_NOT_YET_AVAILABLE; use REAL calibrated 3D data |
 | B10 | Cross-Behavior Object-Flow, Chen et al., T-RO 2026 | Research-specific | P0 | Need authors' original code/license/dataset before faithful port |
-| B11 | Im2Flow2Act, CoRL/PMLR 2025 | Object-flow cross-domain | P1 | Verify official model and environment compatibility |
-| B12 | EC-Flow, ICCV 2025 | Embodiment-centric flow | P1 | Verify official release and whether task supports its assumptions |
+| B11 | Im2Flow2Act, CoRL/PMLR 2025 | Object-flow cross-domain | P1 | OFFICIAL_CODE_AVAILABLE in real-stanford/im2Flow2Act; pin f44b368, faithful conversion to RoboReel NOT VERIFIED |
+| B12 | EC-Flow, ICCV 2025 | Embodiment-centric flow | P1 | OFFICIAL_CODE_AVAILABLE in YixiangChen515/EC-Flow; pin 7d0a624, originally Meta-World; conversion to RoboReel NOT VERIFIED |
 | B13 | ViT-DINOv2 + temporal decoder, human source only | Modern feature diagnostic | P0 | **OUR REIMPLEMENTED DIAGNOSTIC**, no robot policy yet; NEVER label official baseline |
 | B14 | Goal-only / Goal+Waypoint Oracle / persistence | Non-learning controls | P0 | Separate physical privileged / geometric / visual tables |
 
@@ -84,3 +84,20 @@ Stop an implementation when there is a concrete technical blocker; keep the rese
 - Model checkpoint must be real pretrained ViT, verified loaded; NEVER silently fallback to random.
 - Large training data/weights/video stay local. Machine-readable small CSV/JSON and MD summaries should be pushed to GitHub.
 - All official-vs-port-vs-reimplementation labels in this matrix are **provisional until a code + runtime audit**.
+
+## Verified external reproducibility sources (not yet run in this project)
+
+- **Official RoboReel baseline source**: https://github.com/weiweigu1998/roboreel_models at commit 79a0fb0099e73c5560114753a8706276f93aefc2. Five source entrypoints are available; SeeDo and PointPolicy are still documented as "will be added later". Official model documentation reports 104 GB for RGB/robot data excluding depth, released checkpoints approximately 50 GB total; selective downloads only.
+- **Im2Flow2Act**: https://github.com/real-stanford/im2Flow2Act at commit f44b368b76195c30bf38074f6419fc8b9f8feb5f, paper available in PMLR 2025. Its original simulated play data and checkpoints use different tasks; a port requires explicit discrepancy documentation.
+- **EC-Flow**: https://github.com/YixiangChen515/EC-Flow at commit 7d0a6243fd8b92500b5f864d70b3b60d6b6c853a, ICCV 2025. Authors' script is Meta-World-focused; SAM2/CoTracker/GroundingDINO dependency makes single-card exact reproduction costly. Do not promise an official RoboReel score from it without a faithful action/observation port.
+- **Cross-Behavior Object-Flow TRO 2026**: DOI 10.1109/TRO.2026.3701576; https://eprints.whiterose.ac.uk/id/eprint/242108/. Official public implementation has not been verified, so no "OFFICIAL REPRODUCTION" label yet.
+
+## Actual real-data checks in v1.1 code
+
+- One command: scripts/run_v110_official_baselines_and_vit.sh.
+- Official 5-method code audit: agcofl/official_baseline_audit.py, outputs/v110_baselines/official_baseline_audit.json.
+- Real TRAIN robot H5+RGB selection: agcofl/official_robot_data.py, outputs/v110_baselines/robot_data_manifest.json.
+- Official human Pose/Calibration metadata: agcofl/human_pose_source_audit.py, outputs/v110_baselines/human_pose_annotation_audit.json.
+- Frozen pretrained DINOv2 ViT-S/14 + 2-layer temporal Transformer, 224 RGB, six TRAIN videos, full-video split: agcofl/vit_flow_pilot.py.
+- Real Video PERSISTENCE and CONSTANT_VELOCITY baselines assessed in native-camera **pixel** errors, not degenerate 32x32-mask IoU.
+- This ViT pilot is not a policy / not a Baseline success rate. The real OFFICIAL B03–B05 rollout numbers only enter the main results table after actual released checkpoint loading and official evaluation.
