@@ -65,6 +65,10 @@ def test_future_labels_are_strictly_after_past_frames():
     np.testing.assert_array_equal(ex["z"][:,0],np.array([0,1]))
     np.testing.assert_allclose(ex["target"][0],xy[2])
     np.testing.assert_allclose(ex["target"][-1],xy[9])
+    # Unit-level extraction is allowed without a fake held-out video;
+    # the production GPU experiment must refuse this split.
+    with pytest.raises(RuntimeError,match="Strict training"):
+        build_windows([record],split,strict=True)
 
 
 def test_persistence_velocity_are_equal_information_baselines():
