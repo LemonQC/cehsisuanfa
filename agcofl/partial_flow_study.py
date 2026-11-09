@@ -149,14 +149,14 @@ def write_csv(path,rows):
 
 
 def run_training(manifest,out,epochs=20,seed=42,human_weight=.5,
-                 device="auto",allow_proxy=False):
+                 device="auto",allow_proxy=False,split_seed=42):
     manifest=Path(manifest);out=Path(out);out.mkdir(parents=True,exist_ok=True)
     rows=read_manifest(manifest)
     proxy=any(r["source"]=="human_proxy" for r in rows)
     if proxy and not allow_proxy:
         raise RuntimeError("Synthetic proxy requires explicit --allow-proxy; NEVER use as paper evidence")
     if device=="auto": device="cuda" if torch.cuda.is_available() else "cpu"
-    groups=split_groups(rows,seed)
+    groups=split_groups(rows,split_seed)
     (out/"split.json").write_text(json.dumps(groups,indent=2))
     digest=hashlib.sha256(manifest.read_bytes()).hexdigest()
     data=[(r,np.asarray(r["context"],np.float32),
@@ -236,7 +236,7 @@ def run_training(manifest,out,epochs=20,seed=42,human_weight=.5,
             end_minus_full_endpoint=v["end"]["end_iou"]-v["full"]["end_iou"]))
     write_csv(out/"paired_differences.csv",diffs)
     report=dict(type="SYNTHETIC_PROXY_DEBUG_NOT_PAPER" if proxy else "OFFLINE_MASK_PREDICTION_ONLY",
-        device=device,seed=seed,epochs=epochs,human_weight=human_weight,
+        device=device,seed=seed,split_seed=split_seed,epochs=epochs,human_weight=human_weight,
         manifest_sha256=digest,layouts={k:len(v) for k,v in groups.items()},
         samples=len(data),trained_modes=list(MODES),summary=summary,
         warning="No robot actions executed. Offline IoU is NOT closed-loop task success. "
@@ -261,10 +261,11 @@ def main(argv=None):
     tr.add_argument("--human-weight",type=float,default=.5)
     tr.add_argument("--device",choices=["auto","cpu","cuda"],default="auto")
     tr.add_argument("--allow-proxy",action="store_true")
+    tr.add_argument("--split-seed",type=int,default=42,help="Held-out layout split stays fixed across model training seeds")
     args=p.parse_args(argv)
     if args.cmd=="make-proxy":make_proxy(args.out,args.layouts,args.seed)
     else:run_training(args.manifest,args.out,args.epochs,args.seed,
-                      args.human_weight,args.device,args.allow_proxy)
+                      args.human_weight,args.device,args.allow_proxy,args.split_seed)
 
 
 if __name__=="__main__":main()
