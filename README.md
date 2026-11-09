@@ -1,3 +1,12 @@
+# v1.4.1 — 官方 Vid2Robot 复现对齐；π0.5 与同目标 Pick→Push 物理关卡已提交（尚未执行新trial）
+
+**真实已完成：** Vid2Robot PushCube ND 20×3 = 3/60（5.0%），与 RoboReel 作者公开的 5.0% 数值相符，严禁重复运行。
+**新代码已提交、尚未在服务器运行：** π0.5 Uniform/Keyframes 官方 checkpoint/SigLIP/关键帧资产准备及原版物理评测入口，以及 CUSTOM-ADDITIONAL Pick-source→Push-only-target 刚性障碍 PhysX 验证。未有新增实验成绩，不能将 NOT_RUN 写成成功。
+
+阅读 [v1.4.1 研究审计及执行顺序](docs/2026-11-09_V141_OFFICIAL_AUDIT_PI05_CUSTOM_GATES.md)、[未执行状态](research_reports/2026-11-09_v141/status.json)、[新增执行脚本](scripts/run_v141_next_gate.sh)。先用 `bash scripts/run_v141_next_gate.sh gate` 做纯预检查；独立 pi05 环境、按需选定权重和特征，才运行新的物理实验。后文关于“旧 v1.3 进程仍在运行”的内容仅是历史记录，当前不再适用。
+
+---
+
 # 换新聊天窗口先看这里：研究聊天与实验完整交接
 
 ## 最新研究状态：v1.3 已完成并成功归档（2026-11-09）
