@@ -51,6 +51,16 @@ else
      || echo "V121_TRANSFER_BLOCKED: partial files remain for next resume"
 fi
 
+# The published Vid2Robot runner needs timm (ViT-B) and decord (MP4
+# decoder). Add ONLY missing small model dependencies; never replace the
+# validated torch, torchvision, CUDA or ManiSkill stack.
+if ! python -c 'import timm, decord, einops' >/dev/null 2>&1; then
+  echo "VID2ROBOT_DEPENDENCIES_MISSING: attempting small official Python imports"
+  python -m pip install --no-deps --no-cache-dir \
+      "timm==1.0.11" "decord==0.6.0" "einops==0.8.2" \
+      || echo "VID2ROBOT_DEPENDENCY_SETUP_BLOCKED: log original Python error"
+fi
+
 # The original official policy inference code and its original ManiSkill
 # physics remain unchanged. The single preselected heldout video (0080)
 # is strictly a smoke/integration check, never model selection/paper score.
