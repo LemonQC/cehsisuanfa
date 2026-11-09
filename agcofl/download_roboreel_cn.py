@@ -29,8 +29,24 @@ def valid_video(path):
         return False
     with path.open("rb") as handle:
         header = handle.read(64)
-    # Quick container signature; later stage uses cv2 to validate full decoding.
-    return b"ftyp" in header[:24]
+    if b"ftyp" not in header[:24]:
+        return False
+    # A partial timed-out download can have a valid MP4 header. Require
+    # actual decodable frames before treating it as ready for experiments.
+    import cv2
+    cap = cv2.VideoCapture(str(path))
+    try:
+        if not cap.isOpened():
+            return False
+        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if count < 2:
+            return False
+        ok_first, _ = cap.read()
+        cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, count - 1))
+        ok_last, _ = cap.read()
+        return bool(ok_first and ok_last)
+    finally:
+        cap.release()
 
 
 def ensure_video(root, episode_id=80, camera="front", endpoint="https://hf-mirror.com"):
