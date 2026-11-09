@@ -13,7 +13,7 @@ echo "======== v1.3 FULL OFFICIAL VID2ROBOT 20 x 3 ========"
 echo "GIT_SHA $(git rev-parse --short HEAD)"
 echo "RTX4090 $(python -c 'import torch;print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NO_CUDA")')"
 echo "NO_REDOWNLOAD_OF_2_37GB_CHECKPOINT_AND_20_EVAL_MP4S"
-if ! python -m pytest -q tests/test_v130_official_protocol.py tests/test_v121_official_summary_parser.py; then
+if ! python -m pytest -q tests/test_v130_official_protocol.py tests/test_v121_official_summary_parser.py tests/test_v130_live_progress.py; then
   echo "V130_UNIT_TESTS_FAILED: no official evaluation executed"
   exit 3
 fi
