@@ -5,7 +5,7 @@ from agcofl.official_baseline_audit import METHODS,OFFICIAL_COMMIT,audit
 
 
 def _file(demo,name,size=1024):
-    return dict(path=f"robot_trajectories/without_distraction/push_cube/{demo}/{name}",bytes=size)
+    return dict(path=f"robot_trajectories/no_distraction/push_cube/{demo}/{name}",bytes=size)
 
 
 def test_robot_data_plan_selects_only_complete_real_demo_triplets():
