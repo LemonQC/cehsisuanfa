@@ -9,7 +9,21 @@ for f in learnability_gate.json learning_vs_motion_baselines.csv effect_gate.jso
   if [ -f "$SOURCE/$f" ]; then cp "$SOURCE/$f" "$DIR/$f"; fi
 done
 if [ -f "$SOURCE/train_data/train_discovery.json" ]; then
-  cp "$SOURCE/train_data/train_discovery.json" "$DIR/train_discovery.json"
+  # Training dataset metadata can contain thousands of file names.
+  # Publish a concise sanitized summary; keep full listing LOCAL only.
+  python - "$SOURCE/train_data/train_discovery.json" "$DIR/train_discovery.json" <<'PY'
+import json,sys
+from pathlib import Path
+data=json.loads(Path(sys.argv[1]).read_text())
+subset={k:data.get(k) for k in (
+    "dataset","endpoint","status","error","human_training_front_videos",
+    "limit_hit","warning")}
+subset["candidate_examples"]=(data.get("candidates") or [])[:20]
+subset["remote_roots"]=(data.get("roots") or [])[:20]
+downloads=data.get("downloads") or {}
+subset["train_videos_downloaded"]=len(downloads.get("downloaded") or [])
+Path(sys.argv[2]).write_text(json.dumps(subset,indent=2))
+PY
 fi
 cat > "$DIR/README.md" <<'EOF'
 # v1.0 experiment gates | 2026-11-09
