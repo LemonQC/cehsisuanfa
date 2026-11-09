@@ -104,7 +104,11 @@ class DiagnosticPushTeacher:
         return action
 
 
-def evaluate(root,episodes,out,method='fixed',max_steps=250,min_coverage=.5):
+def evaluate(root,episodes,out,method='fixed',max_steps=250,min_coverage=.5,no_video=False):
+    # This switch affects only whether official *human MP4* is required.
+    # The physics scene and controller are still actual ManiSkill execution.
+    if no_video and method!='fixed':
+        raise ValueError('--no-video requires --mode fixed; no human video statistics exist')
     benchmark=import_benchmark(root)
     import gymnasium as gym
     import mani_skill.envs
@@ -112,16 +116,31 @@ def evaluate(root,episodes,out,method='fixed',max_steps=250,min_coverage=.5):
     choices=benchmark.load_episodes('PushCube-v2',episode_ids=list(episodes))
     rows=[]
     for ep in choices:
-        demo_id,vids=benchmark.human_demo_for_episode('PushCube-v2',ep.episode_id)
-        if 'front' not in vids:
-            raise RuntimeError('No human front MP4. Use official downloader with --tasks push_cube --cameras front.')
         epout=out/f'episode_{ep.episode_id:04d}'
-        _,video_meta=extract_video_flow(vids['front'],epout,min_coverage=min_coverage)
-        if method=='video_motion' and not video_meta['accepted']:
-            raise RuntimeError(f'Human blue-object candidate coverage {video_meta["coverage"]:.2%} inadequate. Inspect {epout}/mask_contact_sheet.png')
+        epout.mkdir(parents=True,exist_ok=True)
+        if no_video:
+            demo_id=int(benchmark.HUMAN_DEMO_IDS[
+                ep.episode_id % benchmark.EPISODES_PER_RUN])
+            video_meta=dict(
+                accepted=False,coverage=0.,timing_gain=1.,
+                missing_video=True,reason='explicit --no-video physics-only diagnostic')
+            print('OFFICIAL_PHYSICS_ONLY_NO_HUMAN_VIDEO',
+                json.dumps(dict(episode=ep.episode_id,expected_demo_id=demo_id)),
+                flush=True)
+        else:
+            demo_id,vids=benchmark.human_demo_for_episode('PushCube-v2',ep.episode_id)
+            if 'front' not in vids:
+                raise RuntimeError('Missing authentic front human MP4; use single-file mirror downloader or --no-video.')
+            _,video_meta=extract_video_flow(vids['front'],epout,min_coverage=min_coverage)
+            if method=='video_motion' and not video_meta['accepted']:
+                raise RuntimeError(
+                    f'Blue-object candidate coverage {video_meta["coverage"]:.2%} inadequate. '
+                    f'Inspect {epout}/human_mask_overlay.png')
+            print('REAL_DEMO_LOADED',
+                json.dumps(dict(episode=ep.episode_id,demo_id=demo_id,
+                    mode=method,coverage=video_meta['coverage'])),
+                flush=True)
         gain=video_meta['timing_gain'] if method=='video_motion' else 1.
-        print('REAL_DEMO_LOADED',json.dumps(dict(episode=ep.episode_id,
-            demo_id=demo_id,mode=method,gain=gain,coverage=video_meta['coverage'])),flush=True)
         env=None
         try:
             env=gym.make('PushCube-v2',obs_mode='state',num_envs=1,
@@ -153,10 +172,15 @@ def evaluate(root,episodes,out,method='fixed',max_steps=250,min_coverage=.5):
                 failure=policy.failure)),flush=True)
         finally:
             if env is not None:env.close()
-    report=dict(type='REAL_VIDEO_REAL_SIM_DIAGNOSTIC_NOT_PAPER',task='PushCube-v2',
+    report=dict(
+        type='OFFICIAL_ROBOREEL_PHYSICS_ONLY_NO_HUMAN_VIDEO'
+        if no_video else 'REAL_VIDEO_REAL_SIM_DIAGNOSTIC_NOT_PAPER',
+        task='PushCube-v2',
         mode=method,episodes=len(rows),successes=sum(r['success'] for r in rows),
         success_rate=float(np.mean([r['success'] for r in rows])) if rows else None,
-        results=rows,warning='Privileged-state scripted controller; no learned cross-behavior policy. Human video changes only scalar timing in video_motion. Full/Anchor/End is NOT evaluated here.')
+        results=rows,warning='Privileged-state scripted controller; no learned cross-behavior policy. '
+        'In physics-only mode NO HUMAN VIDEO is used. Otherwise human video changes only scalar timing '
+        'in video_motion. Full/Anchor/End is NOT evaluated here.')
     (out/'report.json').write_text(json.dumps(report,indent=2))
     print('REAL_PHYSICS_DIAGNOSTIC_COMPLETE',
         json.dumps({k:v for k,v in report.items() if k!='results'}),flush=True)
@@ -175,11 +199,14 @@ def main(argv=None):
     ev.add_argument('--out',default='outputs/roboreel_diagnostic')
     ev.add_argument('--mode',choices=['fixed','video_motion'],default='fixed')
     ev.add_argument('--max-steps',type=int,default=250)
+    ev.add_argument('--no-video',action='store_true',
+                    help='Verify saved RoboReel physical scene WITHOUT requiring human MP4; not LfO evidence')
     args=p.parse_args(argv)
     if args.cmd=='inspect-video':
         _,metadata=extract_video_flow(args.video,args.out)
         print('VIDEO_FLOW_DIAGNOSTIC',json.dumps(metadata),flush=True)
-    else:evaluate(args.roboreel_root,args.episodes,args.out,args.mode,args.max_steps)
+    else:evaluate(args.roboreel_root,args.episodes,args.out,args.mode,
+                  args.max_steps,no_video=args.no_video)
 
 
 if __name__=='__main__':main()
