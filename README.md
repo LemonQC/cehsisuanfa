@@ -1,39 +1,27 @@
-# AG-COFL Partial Object Flow — ManiSkill 3 Gate A Pilot
+# AG-COFL / Partial Object-Flow Supervision — 4090 ManiSkill pilot
 
-**Version v0.5.0 (2026-11-09): preserve physical contact across collinear push segments.**
+**Current version: v0.6.0 (2026-11-09).** This repo implements a *physical* Panda push-teacher for the Gate A oracle-flow experiment, with separate Full / Anchor / End partial-supervision loss tests. Gate A is NOT yet passed.
 
-## Verified server observations (v0.4.0)
+## Experimental record (actual RTX 4090 output)
 
-The user's RTX 4090 reported the following **real physics**, not theoretical trajectories:
+**v0.5.0 seed 100: 1/2 full teacher successes.**
 
-- Lower path: cube progressed through first corner (-0.103,-0.157) and center checkpoint (~0.0005,-0.152); `check_visited=True`.
-- Upper path: cube progressed through first corner (-0.117,0.162) and center checkpoint (~-0.0027,0.162); `check_visited=True`.
-- Both then failed with `Failed TCP descend` around TCP z=0.065 m while requesting z=0.028 m for the **next, redundant, same-direction contact**. Both episodes ended with `success=False`.
+- Upper: `success=true`, `steps=174`, `check_visited=true`. First corner 2 pushes, long straight segment 1 push, final target 3 pushes.
+- Lower: `success=false`, `check_visited=true`. First corner reached in 2 pushes. Long straight stroke was stopped at cube `[0.06755,-0.12523]` because the old contact policy accepted a **0.04784 m** corner error; nominal far corner is `[0.105,-0.155]`. The next goal push moved the cube less than a millimeter and failed after 95 steps with `Failed contact push`.
+- The lower-side cause is not proven to be an IK singularity or collision; v0.5.0 never logged actual TCP location at the failure. v0.6.0 adds TCP telemetry.
 
-## Root cause addressed in v0.5.0
+## Changes in v0.6.0
 
-The original five-point route is:
+1. **Consistent waypoint arrival tolerance:** 0.030 m for the two turn endpoints during the physical teacher, 0.045 m for the final physical push. The simulator's original task success limits (check zone, final goal and cube on table) remain unchanged. The long straight push should no longer stop at 0.04784 m error; it continues while contact exists.
+2. **Do not throw immediately on a failed final TCP push:** retract if safe, check *measured* cube position, then make bounded new contact attempts with final-turn gaps **0.060 → 0.045 → 0.075 m**. Retries are still bounded by `--max-retries`; no teleportation or hidden robot interventions.
+3. **Early stall detection:** after at least 24 contact-push steps, if the most recent 12 cube positions vary less than 1.5 mm, stop the unproductive push instead of always consuming 85 steps. This is a conservative engineering heuristic, not an academic contribution.
+4. **Diagnostic logs:** `PUSH_SERVO_INCOMPLETE` records TCP contact/target/end, target error and cube push displacement. Each `PUSH_ATTEMPT` now includes TCP before/after and push telemetry; errors preserve these details.
+5. The original source flow waypoint sequence, side-specific checkpoint, barrier geometry and task success calculation are **unchanged**. The teacher still merges collinear physical pushes through the checkpoint.
+6. All episodes are saved separately under `outputs/ee_v060_episodes` by default. Existing successful v0.5 examples should not be mixed blindly with later training until controller compatibility and the final collection protocol are frozen.
 
-```
-START → corner A (-0.105, ±0.155)
-      → middle (0, ±0.155)
-      → corner B (+0.105, ±0.155)
-      → GOAL
-```
+**v0.6.0 is a candidate fix, not a verified physical success.** The unit tests are logic tests with mocked physics, not proof of successful 4090 rollouts.
 
-The two physical pushes from corner A to middle and middle to corner B are collinear and point in the **same +x direction**. v0.4.0 made the Panda retract and re-descend at the middle waypoint — exactly where it failed for both sides.
-
-**v0.5.0 merges them into one uninterrupted physical stroke**:
-
-```
-START → corner A → corner B → GOAL
-```
-
-Crucially, `route_points()`, the **future binary-mask references**, the middle **check zone**, obstacle geometry, and the simulator's **success definition** are unchanged. The cube must still physically pass through the checkpoint on the way to corner B, which the simulator evaluates at every physics step. This is NOT a teleport, hidden waypoint bypass, success relabeling, nor easier task.
-
-Additional v0.4.0 measured re-contact retries remain for genuinely missed *corner/goal* waypoints. New unit tests check straight-line merging and that the original middle waypoint lies on the merged line. Real success of the new long push **has not yet been tested on the user's server**.
-
-## Single paired validation run (4090, no reinstall)
+## Next steps on RTX 4090 (no reinstall)
 
 ```bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
@@ -47,42 +35,30 @@ python -m agcofl.cli test-loss
 
 python -u -X faulthandler -m agcofl.cli collect \
   --episodes 1 --seed 100 --max-retries 2 \
-  --out outputs/ee_v050_episodes \
-  2>&1 | tee collect_v050.log
+  --out outputs/ee_v060_episodes \
+  2>&1 | tee collect_v060.log
 
-cat outputs/ee_v050_episodes/collection_summary.json
-cat outputs/ee_v050_episodes/route_lower_000100.json
-cat outputs/ee_v050_episodes/route_upper_000100.json
+cat outputs/ee_v060_episodes/collection_summary.json
 ```
 
-Expected marker `EXPERT_CONTACT_STROKES` should show **3** contact endpoints per route (first corner, second corner, goal). `PUSH_ATTEMPT` reports the measured cube displacement, progress, number of simulator steps and error for each actual physical stroke.
+For exact failure diagnosis inspect `outputs/ee_v060_episodes/route_lower_000100.json`, particularly `push_attempts[].push_telemetry` with `tcp_target_error_m`, `cube_push_displacement_m`, `tcp_after_push`, `contact_gap_m` and `waypoint_tolerance_m`.
 
-When reviewing progress, check that `check_visited` remains true and the cube reaches both the far corner and the final goal. If the new *long* middle stroke fails because the TCP cannot reach or contact is lost, the full failed episode and its diagnostic JSON are still recorded. We must use that data to diagnose the next geometric/workspace limit; **do not increase retry limits blindly**.
+**Only after both routes have repeatedly successful physical demonstrations**, collect a balanced demonstration set and train the Flow-conditioned BC. Do not train on failed trajectories. The initial masks are controlled synthetic geometric occupancy references, NOT human RGB videos or learned object flow. The `--video` flag creates an offline 2D measured cube trajectory, not RGB robot footage.
 
-## Next stages (only after **both** teacher routes succeed repeatedly)
+## Later commands (not until physical teacher is validated)
 
 ```bash
-python -m agcofl.cli collect --episodes 15 --seed 200 \
-  --out outputs/ee_v050_episodes
-
-python -m agcofl.cli train-bc \
-  --data outputs/ee_v050_episodes --epochs 100 \
-  --ckpt outputs/models/flow_bc_ee_v050.pt
-
-python -m agcofl.cli gate-a \
-  --ckpt outputs/models/flow_bc_ee_v050.pt \
-  --seed 9000 --episodes 5 --max-steps 500
+python -m agcofl.cli collect --episodes 15 --seed 200 --out outputs/ee_v060_episodes
+python -m agcofl.cli train-bc --data outputs/ee_v060_episodes --epochs 100 \
+   --ckpt outputs/models/flow_bc_ee_v060.pt
+python -m agcofl.cli gate-a --ckpt outputs/models/flow_bc_ee_v060.pt \
+   --episodes 5 --seed 9000 --max-steps 500
 ```
 
-Gate A: test whether a learned `pd_ee_delta_pos` Panda policy selects the upper/lower route only in response to a geometric future binary-mask reference, with identical initial robot and cube state. **Not yet passed.** Until then, high-level Full / Anchor / End supervision training remains gated.
+## Limits
 
-## Experiment integrity
+- Physics simulation: ManiSkill3 CPU PhysX with `pd_ee_delta_pos`; no MPLib, `render_backend=none`.
+- The current authoring container cannot reproduce ManiSkill physics, so **do not interpret a passing unit test as a success rate**.
+- No cross-behavior transfer, human demonstration benefit, high-level Full/Anchor/End training comparison, or T-RO-ready method has been established by this pilot.
 
-- ManiSkill 3, CPU PhysX, Panda Push-only, `pd_ee_delta_pos` (4D), render backend `none`.
-- No native MPLib planner and no GPU camera renderer. `--video` generates **offline 2D cube XY plot movies**, not RGB.
-- The mask references are synthetic geometric future occupancies, NOT human demonstrations and NOT dense optical flow.
-- Training loader rejects incompatible legacy 9D joint-control demonstrations and ignores failed episodes.
-- The step cap remains in place (530 recorded control steps); the episode success constraints have not been loosened.
-- Model/performance claims require real server rollouts. The authoring container cannot execute ManiSkill/SAPIEN.
-
-See [HEADLESS_GUIDE.md](HEADLESS_GUIDE.md) for previous crash diagnostics.
+See [diagnosis and rationale](docs/2026-11-09_v050_failure_and_v060_fix.md).
