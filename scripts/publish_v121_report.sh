@@ -34,7 +34,9 @@ if smoke:
     save("official_vid2robot_smoke.json",{
        k:smoke.get(k) for k in ("type","status","checkpoint_is_official",
        "task","human_demo_id","gpu","privileged_state_in_policy",
-       "checkpoint_loaded","rollout_executed","official_success",
+       "checkpoint_loaded","official_state_dict_strict_loaded",
+       "timm_pretrained_initialization_skipped","initializer_only_adaptation",
+       "rollout_executed","official_success",
        "official_step_record","max_rollout_steps","error",
        "is_formal_paper_score","missing")})
 orig=load(src/"official_vid2robot_smoke/official_runner_output/summary.json")
