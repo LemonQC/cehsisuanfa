@@ -1,0 +1,375 @@
+{
+  "type": "ROBOREEL_OFFICIAL_VID2ROBOT_ND_PUSHCUBE_FULL20",
+  "protocol": "author_original_pinned_clean_clean_only",
+  "original_model_and_environment": true,
+  "original_source_commit": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "checkpoint": "LogosRoboticsLab/roboreel_models:nd/vid2robot/ckpt.pt",
+  "evaluation_video_ids": [
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99
+  ],
+  "task": "push_cube",
+  "robot_control": "pd_joint_pos",
+  "scope": "last20",
+  "observation": "official human FRONT video + robot base_camera RGB history",
+  "max_rollout_steps": 800,
+  "chunk_size": 1,
+  "seed_offsets": [
+    0,
+    100000,
+    200000
+  ],
+  "evaluated_seed_passes": 3,
+  "requested_seed_passes": 3,
+  "per_pass": [
+    {
+      "seed_offset_base": 0,
+      "success": 1,
+      "total": 20,
+      "success_rate": 0.05,
+      "per_trial": [
+        {
+          "task": "push_cube",
+          "demo_id": 80,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 81,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 82,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 83,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 84,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 85,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 86,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 87,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 88,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 89,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 90,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 91,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 92,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 93,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 94,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 95,
+          "success": true
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 96,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 97,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 98,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 99,
+          "success": false
+        }
+      ]
+    },
+    {
+      "seed_offset_base": 100000,
+      "success": 2,
+      "total": 20,
+      "success_rate": 0.1,
+      "per_trial": [
+        {
+          "task": "push_cube",
+          "demo_id": 80,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 81,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 82,
+          "success": true
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 83,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 84,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 85,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 86,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 87,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 88,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 89,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 90,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 91,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 92,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 93,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 94,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 95,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 96,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 97,
+          "success": true
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 98,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 99,
+          "success": false
+        }
+      ]
+    },
+    {
+      "seed_offset_base": 200000,
+      "success": 0,
+      "total": 20,
+      "success_rate": 0.0,
+      "per_trial": [
+        {
+          "task": "push_cube",
+          "demo_id": 80,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 81,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 82,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 83,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 84,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 85,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 86,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 87,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 88,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 89,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 90,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 91,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 92,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 93,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 94,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 95,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 96,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 97,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 98,
+          "success": false
+        },
+        {
+          "task": "push_cube",
+          "demo_id": 99,
+          "success": false
+        }
+      ]
+    }
+  ],
+  "mean_success_rate": 0.05000000000000001,
+  "sem_across_seed_passes": 0.02886751345948129,
+  "pooled_successes": 3,
+  "pooled_trials": 60,
+  "full_3pass_complete": true,
+  "paper_scope": "Only the PushCube no-distraction clean human/clean env cell; NOT the all-task RoboReel benchmark and NOT a comparison of source human Pick to target Push.",
+  "no_eval_training_or_tuning": true
+}

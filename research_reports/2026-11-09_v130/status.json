@@ -1,0 +1,19 @@
+{
+  "type": "OFFICIAL_FULL20_3PASS_RUN_STATUS",
+  "status": "OFFICIAL_VID2ROBOT_ND_3PASS_EVALUATED",
+  "official_model": "Vid2Robot",
+  "task": "push_cube",
+  "original_source_commit": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "seed_offsets_requested": [
+    0,
+    100000,
+    200000
+  ],
+  "no_eval_training_or_tuning": true,
+  "passes_completed": [
+    0,
+    100000,
+    200000
+  ],
+  "errors": []
+}
