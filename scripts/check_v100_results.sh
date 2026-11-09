@@ -53,7 +53,16 @@ echo "============== GITHUB UPLOAD STATUS =============="
 echo "LOCAL_HEAD: $(git rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"
 echo "LATEST_LOCAL_COMMIT: $(git log -1 --format='%h %s' 2>/dev/null || echo UNKNOWN)"
 echo "REPORT_FILES_TRACKED_IN_HEAD:"
-git ls-tree -r --name-only HEAD -- research_reports/2026-11-09_v100 2>/dev/null || true
+TRACKED_REPORTS=$(git ls-tree -r --name-only HEAD -- research_reports/2026-11-09_v100 2>/dev/null) || TRACKED_REPORTS=""
+if [ -n "$TRACKED_REPORTS" ]; then
+  printf '%s\n' "$TRACKED_REPORTS"
+fi
+if printf '%s\n' "$TRACKED_REPORTS" | grep -q 'research_reports/2026-11-09_v100/learnability_gate.json' &&
+   printf '%s\n' "$TRACKED_REPORTS" | grep -q 'research_reports/2026-11-09_v100/effect_gate.json'; then
+  echo "REPORTS_COMMITTED_IN_LOCAL_HEAD"
+else
+  echo "REPORTS_NOT_COMMITTED: remote branch can match HEAD while research reports are missing!"
+fi
 echo "PUBLISH_LOG_MARKERS:"
 if [ -f next_gate_v100.log ]; then
   grep -E 'AUTOPUBLISH_|SMALL_REPORT_|V100_GATE_COMPLETE|TRAIN_DATA_GATE|TRAIN_DISCOVERY_TIMEOUT' next_gate_v100.log | tail -25 || true
