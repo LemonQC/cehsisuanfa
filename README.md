@@ -6,13 +6,13 @@
 
 运行：
 
-\`\`\`bash
+```bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
 git pull --rebase --autostash origin main
 conda activate agcofl4090
 set -o pipefail
 bash scripts/run_v130_official_vid2robot_3pass.sh 2>&1 | tee baseline_v130.log
-\`\`\`
+```
 
 **只核对三个标志：** OFFICIAL_V130_PASS_VERIFIED（本seed完整20条物理记录）、OFFICIAL_V130_EVALUATION_GATE（三seed结果）、V130_AUTOPUBLISH_OK（小型数据报告已提交）。若某seed中断，下一次运行会验证并复用之前已完成的整个seed。不重下2.37GB权重、20段视频和真实机器人训练H5，也不重训ViT。
 
@@ -28,17 +28,17 @@ bash scripts/run_v130_official_vid2robot_3pass.sh 2>&1 | tee baseline_v130.log
 
 **下一步只需运行这一条（避免重复ViT和H5数据）：**
 
-\`\`\`bash
+```bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
 git pull --rebase --autostash origin main
 conda activate agcofl4090
 set -o pipefail
 bash scripts/run_v121_official_baseline_resume.sh 2>&1 | tee baseline_v121.log
-\`\`\`
+```
 
-v1.2.1：重用已有机器人 TRAIN H5、核对/复用原来可能已下载完整的2.37GB官方 Vid2Robot checkpoint；文件缺失时通过显式 Hugging Face 镜像、官方地址与HTTP Range断点续传；下载20段约97MB固定评测视频；在**作者官方模型与官方ManiSkill**执行单段预先固定的集成测试；报告自动提交 \`research_reports/2026-11-09_v121/\`。**不上传权重、视频或H5**，不以一次调试成功冒充论文正式成绩，也不使用测试视频调参。
+v1.2.1：重用已有机器人 TRAIN H5、核对/复用原来可能已下载完整的2.37GB官方 Vid2Robot checkpoint；文件缺失时通过显式 Hugging Face 镜像、官方地址与HTTP Range断点续传；下载20段约97MB固定评测视频；在**作者官方模型与官方ManiSkill**执行单段预先固定的集成测试；报告自动提交 `research_reports/2026-11-09_v121/`。**不上传权重、视频或H5**，不以一次调试成功冒充论文正式成绩，也不使用测试视频调参。
 
-**只以下述状态判成功：** \`OFFICIAL_ASSET_READY\`（具体文件）；\`VID2ROBOT_OFFICIAL_RELEASE_GATE.status=OFFICIAL_VID2ROBOT_RELEASE_AND_EVAL_DATA_READY\`（资源就绪）；\`VID2ROBOT_ROLLOUT_GATE.rollout_executed=true\`（真正执行物理运行）。最终 \`V121_AUTOPUBLISH_OK\` 仅说明归档完成。
+**只以下述状态判成功：** `OFFICIAL_ASSET_READY`（具体文件）；`VID2ROBOT_OFFICIAL_RELEASE_GATE.status=OFFICIAL_VID2ROBOT_RELEASE_AND_EVAL_DATA_READY`（资源就绪）；`VID2ROBOT_ROLLOUT_GATE.rollout_executed=true`（真正执行物理运行）。最终 `V121_AUTOPUBLISH_OK` 仅说明归档完成。
 
 详见 [v1.2实验诊断与v1.2.1研究计划](docs/2026-11-09_V120_FINDINGS_V121_RECOVERY.md)。
 
@@ -50,19 +50,19 @@ v1.2.1：重用已有机器人 TRAIN H5、核对/复用原来可能已下载完�
 
 **现在优先跑官方 Baseline，不再重复旧ViT训练：**
 
-\`\`\`bash
+```bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
 git pull --rebase --autostash origin main
 conda activate agcofl4090
 set -o pipefail
 bash scripts/run_v120_real_robot_and_official_baseline.sh 2>&1 | tee baseline_v120.log
-\`\`\`
+```
 
-**v1.2 工作内容：** 修正官方发布目录 \`robot_trajectories/no_distraction/push_cube/\`（此前使用内部别名 \`without_distraction\` 导致404）；限量获取并审计真实机器人 H5+base/hand 视频；下载作者发布的 Vid2Robot 权重（上限8GiB）和固定20段 PushCube EVAL 视频（≤250MB）；尝试一段 0080 **DEV ONLY** 的真正学得策略→物理模拟器闭环，明确记载阻碍、真实成功及其证据；实验 JSON/MD 自动提交 GitHub \`research_reports/2026-11-09_v120/\`。源视频、权重和H5不上传。
+**v1.2 工作内容：** 修正官方发布目录 `robot_trajectories/no_distraction/push_cube/`（此前使用内部别名 `without_distraction` 导致404）；限量获取并审计真实机器人 H5+base/hand 视频；下载作者发布的 Vid2Robot 权重（上限8GiB）和固定20段 PushCube EVAL 视频（≤250MB）；尝试一段 0080 **DEV ONLY** 的真正学得策略→物理模拟器闭环，明确记载阻碍、真实成功及其证据；实验 JSON/MD 自动提交 GitHub `research_reports/2026-11-09_v120/`。源视频、权重和H5不上传。
 
 详细数值与决策：[v1.1 结果及 v1.2 任务](docs/2026-11-09_V110_RESULTS_V120_DECISIONS.md)。
 
-**准确理解状态：** \`V120_COMPLETE_IS_NOT_A_SUCCESS_FLAG\` 只表示流程结束；只有 \`OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED\` + \`rollout_executed:true\` 才说明真正执行过学习型机器人闭环，\`official_success\` 才表示该次物理成功与否。一次 DEV 结果不能替代完整官方 Baseline 比较。
+**准确理解状态：** `V120_COMPLETE_IS_NOT_A_SUCCESS_FLAG` 只表示流程结束；只有 `OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED` + `rollout_executed:true` 才说明真正执行过学习型机器人闭环，`official_success` 才表示该次物理成功与否。一次 DEV 结果不能替代完整官方 Baseline 比较。
 
 ---
 
@@ -72,22 +72,22 @@ bash scripts/run_v120_real_robot_and_official_baseline.sh 2>&1 | tee baseline_v1
 
 ## RTX 4090 一键执行 v1.1
 
-\`\`\`bash
+```bash
 cd /mnt/4Tdata/LemonData/cehsisuanfa
 git pull --rebase --autostash origin main
 conda activate agcofl4090
 set -o pipefail
 bash scripts/run_v110_official_baselines_and_vit.sh 2>&1 | tee baseline_v110.log
-\`\`\`
+```
 
 这次脚本会：
 
 1. 检查已有真实训练视频6段，以及 **RoboReel 官方 Baseline 仓库** [weiweigu1998/roboreel_models](https://github.com/weiweigu1998/roboreel_models)，固定源码提交 79a0fb0099e73c5560114753a8706276f93aefc2（无需下载全部大模型）。
 2. 从官方数据集抽取最多2段 **真实机器人训练轨迹**，每段必须有 H5 动作及 base/hand MP4，硬上限300MB；缺任何文件都标记 BLOCKED。
-3. **在 CUDA/4090 上**加载 \`facebook/dinov2-small\` 的真实预训练权重（不可用则报 BLOCKED，禁止随机初始化替代），以224×224真实RGB提取视觉特征，训练相同结构的 Full/Anchor/End 时序 Transformer 预测头，并对完整视频级 held-out 数据进行评估。仅供数据/表征 sanity check，不是完整机器人策略。
-4. 将少量结果 JSON/CSV 自动归档到 \`research_reports/2026-11-09_v110/\`。不推送视频、H5或权重。
+3. **在 CUDA/4090 上**加载 `facebook/dinov2-small` 的真实预训练权重（不可用则报 BLOCKED，禁止随机初始化替代），以224×224真实RGB提取视觉特征，训练相同结构的 Full/Anchor/End 时序 Transformer 预测头，并对完整视频级 held-out 数据进行评估。仅供数据/表征 sanity check，不是完整机器人策略。
+4. 将少量结果 JSON/CSV 自动归档到 `research_reports/2026-11-09_v110/`。不推送视频、H5或权重。
 
-**输出路径** \`outputs/v110_baselines/\`：\`official_baseline_audit.json\`, \`robot_data_manifest.json\`, \`vit_pilot/report.json\`, \`vit_pilot/summary.csv\`, \`vit_pilot/split.json\`。跑完若看到 \`VIT_GPU_TRAINING_COMPLETED\` 和 \`AUTOPUBLISH_OK\`，只回复“v1.1 完成”即可，我会直接读 GitHub 结果。
+**输出路径** `outputs/v110_baselines/`：`official_baseline_audit.json`, `robot_data_manifest.json`, `vit_pilot/report.json`, `vit_pilot/summary.csv`, `vit_pilot/split.json`。跑完若看到 `VIT_GPU_TRAINING_COMPLETED` 和 `AUTOPUBLISH_OK`，只回复“v1.1 完成”即可，我会直接读 GitHub 结果。
 
 **注意**：只有6段训练视频，1段测试视频的 ViT 结果只能验证学习和技术流程。不能用它作为论文统计证据，也不能以某个回归数值判定整项 T-RO 研究无效。现在还需要原始机器人动作示范、源/目标同目标跨行为任务、真实接触/支撑的物理评测。
 
