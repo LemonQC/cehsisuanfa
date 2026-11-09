@@ -6,6 +6,34 @@
 >
 > **安全：** GitHub PAT、密码、HF token 等不得放到 GitHub；模型权重、H5和原始 MP4 仅留服务器。
 
+## ★ 2026-11-09 v1.4.1 新窗口增量（后于 v1.3 正式结果）
+
+**已向 main 提交 v1.4.1 代码与研究记录，但未运行新的物理 trial。**
+阅读 [v1.4.1 审计/下一步](2026-11-09_V141_OFFICIAL_AUDIT_PI05_CUSTOM_GATES.md) 和
+[新状态 JSON](../research_reports/2026-11-09_v141/status.json)。
+官方 RoboReel 站点披露的 Vid2Robot ND PushCube 成绩为 5.0±2.9%，
+本仓库真实 3/60=5.0%，数值一致；作者页面标为 std，本项目计算 SEM，
+不能把聚合数值一致等同于逐动作完全一致。
+
+已新增官方 video-conditioned π0.5 Uniform/Keyframes 的**有限20段**
+checkpoint/SigLIP/Keyframe准备入口（后者使用作者VLM API，需显式授权并可能计费），
+保留上游 action_horizon=20，禁止误用 Vid2Robot chunk=1；
+已有评测脚本均带严格协议验证。新脚本：
+`scripts/run_v141_next_gate.sh`，命令 `gate` 默认只做预检查，
+`prepare-uniform`、`evaluate-uniform`、`prepare-keyframes`、
+`evaluate-keyframes` 均需要服务器对应模型环境及资产；
+**Uniform和Keyframes目前均未执行物理评测**，不能引用作者报告为本地结果。
+
+同目标 CUSTOM-ADDITIONAL Pick越障→Push-only 绕障场景进一步增加
+物体真实墙体越过观测证据、仅推行桌面支撑约束与对应 CPU测试。
+`custom-physics-dev` 是一次新的真实 ManiSkill/PhysX scripted
+privileged-state 开发试验入口，**尚未运行，非学习型创新结果**。
+下一科学门槛是验证真正成功的同目标源/目标物理配对，再提供
+同信息预算的 Goal-only、Raw Flow、Waypoint Oracle 与学习型控制
+以及必要事件/无关绕路/不可达的独立对照。绝不能只凭几何绕路宣称T-RO创新。
+
+---
+
 ## ★ 最新补充：v1.3 正式结果已经完成并上传 GitHub
 
 **本节替换下面历史部分“v1.3 尚未运行”的旧状态。此前那段话记录的是旧时点，不能用于判断当前研究进展。**
