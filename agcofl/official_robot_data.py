@@ -13,7 +13,9 @@ from collections import defaultdict
 from pathlib import Path
 
 DATASET="LogosRoboticsLab/roboreel"
-BASE="robot_trajectories/without_distraction"
+# Published Hugging Face dataset uses no_distraction; official model code
+# translates the internal alias without_distraction at the raw-data boundary.
+BASE="robot_trajectories/no_distraction"
 ENDPOINT="https://hf-mirror.com"
 
 
