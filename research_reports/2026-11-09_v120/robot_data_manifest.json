@@ -1,0 +1,18 @@
+{
+  "task": "push_cube",
+  "status": "REAL_ROBOT_TRAIN_DATA_ACQUIRED",
+  "bytes": 1220362,
+  "budget_mb": 300,
+  "candidate_file_count": 800,
+  "error": null,
+  "endpoint": "https://hf-mirror.com",
+  "next_step": null,
+  "selected_demo_ids": [
+    "0000",
+    "0001"
+  ],
+  "downloaded_demo_ids": [
+    "0000",
+    "0001"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "status": "REAL_ACTION_DATA_VALIDATED",
+  "valid_demos": 2,
+  "contains_train_only": true,
+  "rows": [
+    {
+      "demo": "0000",
+      "status": "REAL_ROBOREEL_ACTION_LABELS_VALIDATED",
+      "action_shape": [
+        138,
+        8
+      ],
+      "articulation_name": "panda_wristcam_hd",
+      "articulation_shape": [
+        139,
+        31
+      ],
+      "qpos_9d_is_finite": true,
+      "action_min_preview": -2.3595964908599854,
+      "action_max_preview": 2.3824565410614014,
+      "real_robot_actions": true,
+      "camera_videos": {
+        "base_camera.mp4": {
+          "opened": true,
+          "read_frame": true,
+          "frame_count": 138,
+          "width": 512,
+          "height": 512
+        },
+        "hand_camera.mp4": {
+          "opened": true,
+          "read_frame": true,
+          "frame_count": 138,
+          "width": 512,
+          "height": 512
+        }
+      },
+      "error": null
+    },
+    {
+      "demo": "0001",
+      "status": "REAL_ROBOREEL_ACTION_LABELS_VALIDATED",
+      "action_shape": [
+        136,
+        8
+      ],
+      "articulation_name": "panda_wristcam_hd",
+      "articulation_shape": [
+        137,
+        31
+      ],
+      "qpos_9d_is_finite": true,
+      "action_min_preview": -2.359896421432495,
+      "action_max_preview": 2.437485694885254,
+      "real_robot_actions": true,
+      "camera_videos": {
+        "base_camera.mp4": {
+          "opened": true,
+          "read_frame": true,
+          "frame_count": 136,
+          "width": 512,
+          "height": 512
+        },
+        "hand_camera.mp4": {
+          "opened": true,
+          "read_frame": true,
+          "frame_count": 136,
+          "width": 512,
+          "height": 512
+        }
+      },
+      "error": null
+    }
+  ]
+}

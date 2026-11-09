@@ -1,0 +1,20 @@
+{
+  "type": "RELEASED_VID2ROBOT_ACTUAL_MANISKILL_SMOKE",
+  "status": "PREFLIGHT_BLOCKED_ASSETS_OR_ROBOREEL_ENV",
+  "checkpoint_is_official": true,
+  "task": "push_cube",
+  "human_demo_id": 80,
+  "gpu": "0",
+  "privileged_state_in_policy": false,
+  "checkpoint_loaded": null,
+  "rollout_executed": false,
+  "official_success": null,
+  "official_step_record": null,
+  "max_rollout_steps": 200,
+  "error": null,
+  "is_formal_paper_score": false,
+  "missing": [
+    "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v120_baselines/released_checkpoints/nd/vid2robot/train_config.json",
+    "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v120_baselines/official_eval_data/human_demos/eval/no_distraction/push_cube/0080/front.mp4"
+  ]
+}
