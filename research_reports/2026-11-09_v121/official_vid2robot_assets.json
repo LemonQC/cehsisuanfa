@@ -24,7 +24,7 @@
         "path": "nd/vid2robot/train_config.json",
         "bytes": 911,
         "sha256": "9817aa5250839d1256aae91f65f4fcd6fbf55f8f944c903749ef9ff8049b97de",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       }
     ],
     "failed_files": []
@@ -46,115 +46,115 @@
         "path": "human_demos/eval/no_distraction/push_cube/0081/front.mp4",
         "bytes": 4946271,
         "sha256": "a904d860d9e8dbf34d980055d1ccbd2730d2fe0a230f9432a43ffae2b4b3038a",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0082/front.mp4",
         "bytes": 4196101,
         "sha256": "05805d23bc669f56d531c1fcec324365bac6fd84ea2a7e2c6e48b4090b4944a0",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0083/front.mp4",
         "bytes": 4408777,
         "sha256": "068fc5a49859e2167ff573f99939b7042216457fb74a3cbe622093bb42b75542",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0084/front.mp4",
         "bytes": 4797654,
         "sha256": "d9ae32f1168de3aedb58cdbd35613450d800dc8b646afaedac53ce3e076b369f",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0085/front.mp4",
         "bytes": 4861205,
         "sha256": "ab291799fca98c689efac252f327a7e8ec249277f3bcd367ae6b5fc72bfa0fc2",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0086/front.mp4",
         "bytes": 4440688,
         "sha256": "e41d4bae1120f11585e00f0665328caffe7a9e60d0116656ac07ba722ca4402b",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0087/front.mp4",
         "bytes": 4569661,
         "sha256": "644b761291694410abd74178f4b3ae2d75d14650e9cef06a07bc03cf8357c174",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0088/front.mp4",
         "bytes": 4947142,
         "sha256": "4685b8f0474cd99fde5f615e2f4946ee017eb4b1420631a20141da1cee933e59",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0089/front.mp4",
         "bytes": 4131671,
         "sha256": "78b4c5f2886654df4e46da04cf3f0ea74b98d8181cb4ad79df79c86c389eb7ec",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0090/front.mp4",
         "bytes": 4440622,
         "sha256": "a174633e322effd2e2e91b76e01ef348bd78c0bfac84cde0a47f16e050b9b4ec",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0091/front.mp4",
         "bytes": 3915658,
         "sha256": "b645cb2d21018424230f58e2b428086a6d9f8305ad0c0d0a523619a2a74aa518",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0092/front.mp4",
         "bytes": 5738015,
         "sha256": "2e5eff5b49f11b68e15ee6e5c4cfe9896a1b40deacfcd5e0d777aa532418ecab",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0093/front.mp4",
         "bytes": 5073848,
         "sha256": "47c0a442711b0f17110295782dda73678871b195b2691248d98e872065848d11",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0094/front.mp4",
         "bytes": 5216371,
         "sha256": "d123876494a67ac63677a2df8204653e5d33f980d1b157f9a5c75ff154269ee2",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0095/front.mp4",
         "bytes": 6031951,
         "sha256": "417d2e9f5bc33b9ad7965166a3287cb8b4c98f27bc62e47766b73f72739f88be",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0096/front.mp4",
         "bytes": 5163239,
         "sha256": "31da63dcd42d7b89c066123025abcf3c2c771ea601c0b1feb9d179709dc84d04",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0097/front.mp4",
         "bytes": 5283752,
         "sha256": "e7fd5d8e8af1b3dc7da9785b4d676434615f4763db94f63fc14e8fe4a43143ff",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0098/front.mp4",
         "bytes": 5064669,
         "sha256": "ef8af55386ecdb323f42869d9c55f7c38514fc4b3baa518b4ae19b6960b017e8",
-        "transport": "hf_hub_download"
+        "transport": "existing_verified_size_sha256"
       },
       {
         "path": "human_demos/eval/no_distraction/push_cube/0099/front.mp4",
         "bytes": 5147709,
         "sha256": "97eca383de33a981d20e42e96ba3d8a3787d3483c989822c30a2b688e79eaa2e",
-        "transport": "resumable_https:https://hf-mirror.com"
+        "transport": "existing_verified_size_sha256"
       }
     ],
     "failed_files": []
