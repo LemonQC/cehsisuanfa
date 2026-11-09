@@ -15,3 +15,7 @@ wandb/
 core
 core.*
 .env
+
+# External benchmark checkout and local RoboReel data
+third_party/
+roboreel_*.log
