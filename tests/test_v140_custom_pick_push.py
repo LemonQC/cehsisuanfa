@@ -11,11 +11,13 @@ def test_waypoints_are_manual_oracle_not_claimed_learned():
 
 def test_actual_pick_contact_support_and_goal_are_all_required():
     valid = dict(env_success=True, ever_grasped=True, peak_lift_m=0.09,
-                 released_on_table=True, final_goal_error_m=0.02)
+                 released_on_table=True, final_goal_error_m=0.02,
+                 wall_overflight_observed=True)
     assert source_valid(valid)
     for key, invalid in [("env_success", False), ("ever_grasped", False),
                          ("peak_lift_m", .02), ("released_on_table", False),
-                         ("final_goal_error_m", .08)]:
+                         ("final_goal_error_m", .08),
+                         ("wall_overflight_observed", False)]:
         d = dict(valid)
         d[key] = invalid
         assert not source_valid(d)
