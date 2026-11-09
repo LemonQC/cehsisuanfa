@@ -1,0 +1,80 @@
+{
+  "type": "GEOMETRIC_EFFECT_CANDIDATE_NOT_PHYSICS_PROOF",
+  "source_provenance": {
+    "type": "REAL_SIMULATOR_OBJECT_STATE_NOT_SOURCE_PICK",
+    "path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/roboreel_cn/fixed/episode_0000/physical_trace.json",
+    "warning": "Object XYZ is real PhysX. Contact mode was NOT measured, never infer push contact from position alone."
+  },
+  "source_mode": "unknown",
+  "source_points": 32,
+  "max_source_height_m": 5.280151963233531e-06,
+  "support_violation_frames": 0,
+  "push_projected_xy_collision_frames": 0,
+  "push_projected_xy_segment_collisions": 0,
+  "requested_waypoints": [],
+  "goal_xy": [
+    0.20152631402015686,
+    -0.044137824326753616
+  ],
+  "source_directly_compatible_by_geometry": false,
+  "candidate_status": "SOURCE_MODE_UNKNOWN_PHYSICS_VALIDATION_REQUIRED",
+  "baselines": {
+    "source_raw": {
+      "support_valid": true,
+      "push_mode_valid": false,
+      "projected_xy_collision_free": true,
+      "specified_waypoints": true
+    },
+    "goal_only": {
+      "exists": true,
+      "length_m": 0.15,
+      "meets_waypoints": true,
+      "collision_free": true,
+      "path_xy": [
+        [
+          0.05152594670653343,
+          -0.04413853585720062
+        ],
+        [
+          0.20152631402015686,
+          -0.044137824326753616
+        ]
+      ]
+    },
+    "goal_waypoint_oracle": {
+      "exists": true,
+      "length_m": 0.15,
+      "meets_waypoints": true,
+      "collision_free": true,
+      "path_xy": [
+        [
+          0.05152594670653343,
+          -0.04413853585720062
+        ],
+        [
+          0.20152631402015686,
+          -0.044137824326753616
+        ]
+      ]
+    }
+  },
+  "proposed_geometric_candidate": {
+    "exists": true,
+    "length_m": 0.15,
+    "meets_waypoints": true,
+    "collision_free": true,
+    "path_xy": [
+      [
+        0.05152594670653343,
+        -0.04413853585720062
+      ],
+      [
+        0.20152631402015686,
+        -0.044137824326753616
+      ]
+    ]
+  },
+  "hard_goal_constraint": true,
+  "identical_to_waypoint_oracle": true,
+  "disclaimer": "Geometry checks do not verify robot joint reachability, contact force, slip, collision during approach, or task success. A proposed method identical to Goal+Waypoint Oracle has NO algorithmic improvement; physics rollout and learned source-effect extraction are required for T-RO claims."
+}

@@ -1,0 +1,134 @@
+{
+  "dataset": "LogosRoboticsLab/roboreel",
+  "endpoint": "https://hf-mirror.com",
+  "status": "TRAIN_VIDEOS_ACQUIRED",
+  "error": null,
+  "human_training_front_videos": 260,
+  "limit_hit": false,
+  "warning": "Only genuine TRAINING paths accepted; eval/test paths rejected. This is dataset file discovery, NOT a trained model.",
+  "candidate_examples": [
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0000/front.mp4",
+      "kind": "human_video",
+      "bytes": 3655707
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0001/front.mp4",
+      "kind": "human_video",
+      "bytes": 3536077
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0002/front.mp4",
+      "kind": "human_video",
+      "bytes": 4095558
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0003/front.mp4",
+      "kind": "human_video",
+      "bytes": 3577791
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0004/front.mp4",
+      "kind": "human_video",
+      "bytes": 4055717
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0005/front.mp4",
+      "kind": "human_video",
+      "bytes": 5069668
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0006/front.mp4",
+      "kind": "human_video",
+      "bytes": 4844738
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0007/front.mp4",
+      "kind": "human_video",
+      "bytes": 4010922
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0008/front.mp4",
+      "kind": "human_video",
+      "bytes": 3628382
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0009/front.mp4",
+      "kind": "human_video",
+      "bytes": 4171459
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0010/front.mp4",
+      "kind": "human_video",
+      "bytes": 4241478
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0011/front.mp4",
+      "kind": "human_video",
+      "bytes": 3956026
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0012/front.mp4",
+      "kind": "human_video",
+      "bytes": 4100802
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0013/front.mp4",
+      "kind": "human_video",
+      "bytes": 4060809
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0014/front.mp4",
+      "kind": "human_video",
+      "bytes": 3762676
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0015/front.mp4",
+      "kind": "human_video",
+      "bytes": 4076259
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0016/front.mp4",
+      "kind": "human_video",
+      "bytes": 2949626
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0017/front.mp4",
+      "kind": "human_video",
+      "bytes": 3952477
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0018/front.mp4",
+      "kind": "human_video",
+      "bytes": 4238260
+    },
+    {
+      "path": "human_demos/train/no_distraction/push_cube/0019/front.mp4",
+      "kind": "human_video",
+      "bytes": 4891202
+    }
+  ],
+  "remote_roots": [
+    {
+      "path": "human_demos",
+      "kind": "RepoFolder",
+      "size": 0
+    },
+    {
+      "path": "robot_trajectories",
+      "kind": "RepoFolder",
+      "size": 0
+    },
+    {
+      "path": ".gitattributes",
+      "kind": "RepoFile",
+      "size": 2504
+    },
+    {
+      "path": "README.md",
+      "kind": "RepoFile",
+      "size": 4327
+    }
+  ],
+  "train_videos_downloaded": 6
+}

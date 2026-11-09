@@ -1,0 +1,53 @@
+{
+  "type": "REAL_HUMAN_VIDEO_MASK_LEARNABILITY_GATE",
+  "input_report": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/real_human_supervision_v090/report.json",
+  "validity": "TRAIN_ONLY_NOT_GENERALIZATION",
+  "windows": 14,
+  "baseline_comparison": [
+    {
+      "mode": "persistence",
+      "windows": 14,
+      "mean_full_iou": 0.7987592807572523,
+      "mean_end_iou": 0.7023809523809524,
+      "target_area": 2.482142857142857,
+      "predicted_area": 2.2857142857142856
+    },
+    {
+      "mode": "constant_velocity",
+      "windows": 14,
+      "mean_full_iou": 0.7494857548930902,
+      "mean_end_iou": 0.6785714285714286,
+      "target_area": 2.482142857142857,
+      "predicted_area": 2.2857142857142856
+    },
+    {
+      "mode": "full",
+      "windows": 14,
+      "mean_full_iou": 0.0,
+      "mean_end_iou": 0.0,
+      "target_area": null,
+      "predicted_area": 52.5
+    },
+    {
+      "mode": "anchor",
+      "windows": 14,
+      "mean_full_iou": 0.0023967242647666485,
+      "mean_end_iou": 0.0,
+      "target_area": null,
+      "predicted_area": 516.5
+    },
+    {
+      "mode": "end",
+      "windows": 14,
+      "mean_full_iou": 0.00235694795506243,
+      "mean_end_iou": 0.0,
+      "target_area": null,
+      "predicted_area": 396.125
+    }
+  ],
+  "learned_full_under_persistence": true,
+  "source_has_official_roboreel_eval_video": true,
+  "scientific_status": "NO_VALID_GENERALIZATION_TEST",
+  "recommendation": "Inspect real MP4 overlays, correct segmentation or target motion modeling before robot-policy training; do not increase epochs blindly.",
+  "note": "No real-robot policy was tested; learned IoUs from original report are TRAIN metrics for 0080."
+}
