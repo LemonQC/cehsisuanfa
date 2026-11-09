@@ -30,8 +30,11 @@ def extract_official_single_trial(summary, task, demo_id):
         trials=[]
     if len(trials)!=1:return None
     row=trials[0]
-    if (row.get("task")!=task or int(row.get("demo_id",-1))!=int(demo_id)
-        or not isinstance(row.get("success"),bool)):
+    try:
+        matched_id=int(row.get("demo_id",-1))==int(demo_id)
+    except (ValueError,TypeError):
+        return None
+    if row.get("task")!=task or not matched_id or not isinstance(row.get("success"),bool):
         return None
     return row
 
