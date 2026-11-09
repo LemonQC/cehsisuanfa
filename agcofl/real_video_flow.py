@@ -83,4 +83,16 @@ def extract_video_flow(video_path,out_dir=None,min_coverage=.5,frames=24):
         (out/'human_video_diagnostic.json').write_text(json.dumps(report,indent=2))
         canvas=np.hstack([cv2.resize((m*255).astype(np.uint8),(128,128),interpolation=cv2.INTER_NEAREST) for m in flow])
         cv2.imwrite(str(out/'mask_contact_sheet.png'),canvas)
+        # Verify that HSV actually tracked the blue object, not hands or text.
+        # RGB source frames are shown behind the candidate mask in cyan.
+        overlays=[]
+        for idx in loc:
+            rgb=frames_rgb[int(idx)][1]
+            preview=cv2.resize(rgb,(160,160))
+            candidate=cv2.resize(masks[int(idx)],(160,160),interpolation=cv2.INTER_NEAREST)>0
+            preview=preview.copy()
+            preview[candidate]=(0.4*preview[candidate]+0.6*np.array([0,255,255])).astype(np.uint8)
+            overlays.append(cv2.cvtColor(preview,cv2.COLOR_RGB2BGR))
+        cv2.imwrite(str(out/'human_mask_overlay.png'),np.hstack(overlays))
+
     return flow,report
