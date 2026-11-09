@@ -33,6 +33,7 @@ def test_mp4_masks_and_provenance(tmp_path):
     assert meta['normalized_motion_path']>0
     assert (tmp_path/'out'/'human_video_diagnostic.json').exists()
     assert (tmp_path/'out'/'mask_contact_sheet.png').exists()
+    assert (tmp_path/'out'/'human_mask_overlay.png').exists()
 
 
 def test_official_seven_dimensional_action():
