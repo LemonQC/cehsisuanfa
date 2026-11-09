@@ -18,7 +18,15 @@ def test_one_video_known_official_path():
 def test_existing_local_mp4_requires_no_download(monkeypatch,tmp_path):
     p=tmp_path/video_relative_path(80)
     p.parent.mkdir(parents=True)
-    p.write_bytes(b'\x00\x00\x00\x18ftypisom' + b'\x00'*1024)
+    import cv2
+    import numpy as np
+    writer=cv2.VideoWriter(str(p),cv2.VideoWriter_fourcc(*'mp4v'),12,(96,96))
+    if not writer.isOpened():
+        pytest.skip('No MP4 encoder available')
+    for i in range(12):
+        frame=np.full((96,96,3),i*12,dtype=np.uint8)
+        writer.write(frame)
+    writer.release()
     assert valid_video(p)
     # If already local, no import of Hugging Face or network required.
     assert ensure_video(tmp_path,80)==p
