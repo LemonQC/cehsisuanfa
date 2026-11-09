@@ -35,6 +35,9 @@ python -u -m agcofl.real_human_supervision \
   --max-videos 1 --frames 64 --epochs 20 --batch 8 \
   --seed 42 --device auto --out "$OUT"
 
+# Bundle everything user needs to view and send back in one file.
+python -m agcofl.package_v090
+
 echo "================= VIDEO FILES ================="
 echo "HUMAN ORIGINAL: $HUMAN"
 echo "ROBOT XY REPLAY (NOT RGB): $PHYSICS/physical_xy_replay.mp4"
@@ -43,3 +46,4 @@ echo "TRAIN REPORT: $OUT/report.json"
 echo "SOURCE QUALITY AUDIT: $OUT/source_audit.json"
 echo "================= RESULTS ====================="
 cat "$OUT/report.json"
+echo "SINGLE REVIEW ZIP: $OUT/review_bundle.zip"
