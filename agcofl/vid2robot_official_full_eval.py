@@ -73,6 +73,12 @@ def run(config, official_root, gpu="0"):
        "cuda":torch.cuda.get_device_name(0),
        "redundant_timm_initializer_calls_skipped":modified[0],
        "original_model_and_eval_runner":True}),flush=True)
+    # Observability ONLY: original load_demo_static and rollout are called once
+    # with exactly their original arguments, and their returns are unchanged.
+    # This prints per-demo progress and atomically refreshes progress.json.
+    from agcofl.official_live_progress import install_official_progress
+    install_official_progress(
+        runner, cfg.output_dir, cfg.seed_offset_base, total=20)
     return utils.run_eval_protocol(cfg,runner)
 
 def main():
