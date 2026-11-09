@@ -1,3 +1,26 @@
+# AG-COFL v0.8.1 — 国内无 VPN：RoboReel 单视频镜像下载与离线物理验证
+
+**上次的失败是 Hugging Face 官方站点超时，不是机器人仿真失败。**
+
+已停止调用官方一次下载 20 个视频的脚本，改为从第三方 HF 镜像仅下载 **PushCube 0080/front.mp4**。镜像如果不可达，就直接对 RoboReel 官方保存的场景执行**无视频物理验证**，不会让整个实验中断。物理验证不等于人类跨行为学习。
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull origin main
+conda activate agcofl4090
+unset DISPLAY WAYLAND_DISPLAY
+set -o pipefail
+bash scripts/run_roboreel_bridge.sh 2>&1 | tee roboreel_cn_v081.log
+```
+
+输出两种情况：镜像可用会保存 `outputs/roboreel_cn/inspect_0080/human_mask_overlay.png`、物理 `fixed/report.json`，分割质量足够时还有视频运动控制的配对分析；镜像不可用会生成 `outputs/roboreel_cn/physics_only/report.json`（前提是本机 RoboReel 环境兼容且仿真可以执行）。
+
+支持真实 MP4 本地拷贝到 `third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4`，无需继续联网。任何情况下都不把合成视频或无视频物理运行当作科研跨行为结果。
+
+详见 [国内下载与无视频回退记录](docs/2026-11-09_v081_mainland_download_fallback.md)。
+
+---
+
 # AG-COFL v0.8.0 — REAL human-video + RoboReel physics bridge
 
 **Priority: stop synthetic proxy studies and test an actual human MP4 / robot
