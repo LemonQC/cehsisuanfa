@@ -86,3 +86,38 @@ def test_physics_replay_from_saved_real_state_schema(tmp_path):
     result=json.loads(mp4.with_suffix(".json").read_text())
     assert result["label"]=="PHYSICS_XY_TRACE_REPLAY_NOT_RGB_SIMULATION"
     assert result["frames"]==7
+
+
+def test_real_mp4_three_mode_training_single_video_is_labeled_train_only(tmp_path):
+    from agcofl.real_human_supervision import train_real_videos
+
+    root=tmp_path/"videos"/"0080"
+    root.mkdir(parents=True)
+    source=root/"front.mp4"
+    w=cv2.VideoWriter(str(source),cv2.VideoWriter_fourcc(*"mp4v"),12,(96,96))
+    if not w.isOpened():
+        pytest.skip("No MP4 encoder")
+    for i in range(32):
+        frame=np.zeros((96,96,3),np.uint8)
+        frame[34:57,12+i:34+i]=(220,45,15)
+        w.write(frame)
+    w.release()
+
+    old_threads=torch.get_num_threads()
+    try:
+        torch.set_num_threads(2)
+        out=tmp_path/"train_output"
+        report=train_real_videos(root.parent,out,epochs=1,seed=42,
+                                 max_videos=1,device="cpu",frames=24,batch=4)
+    finally:
+        torch.set_num_threads(old_threads)
+
+    assert report["validity"]=="TRAIN_ONLY_NOT_GENERALIZATION"
+    assert report["test_windows"]==0
+    assert report["train_windows"]>0
+    assert report["modes"]==["full","anchor","end"]
+    for mode in ("full","anchor","end"):
+        assert (out/f"{mode}_real_video.pt").is_file()
+    assert (out/"mode_summary.csv").exists()
+    assert (out/"three_mode_predictions.png").exists()
+    assert (out/"video_0080"/"human_mask_overlay.png").exists()
