@@ -97,8 +97,31 @@ def run(official_root,assets_root,out,gpu="0",smoke_id=80):
         # unchanged. Never report this as the official full last20 result.
         utils.EVAL_DEMO_SCOPES["last20"]=[int(smoke_id)]
         utils.EVAL_DEMO_SCOPES_DISTRACT["last20"]=[int(smoke_id)]
-        runner=build_runner(cfgobj)
+        # The official Vid2Robot constructor asks timm to fetch ImageNet
+        # INITIALIZER weights, then immediately overwrites every tensor with
+        # the authors' released checkpoint via strict load_state_dict.
+        # Disable ONLY this redundant initializer network transfer; the
+        # original official model/runner files and inference remain unchanged.
+        import timm
+        original_create=timm.create_model
+        init_bypass={"calls":0}
+        def no_redundant_initializer(name,*args,**kwargs):
+            if kwargs.get("pretrained",False):
+                kwargs["pretrained"]=False
+                init_bypass["calls"]+=1
+            return original_create(name,*args,**kwargs)
+        try:
+            timm.create_model=no_redundant_initializer
+            runner=build_runner(cfgobj)
+        finally:
+            timm.create_model=original_create
         result["checkpoint_loaded"]=True
+        result["official_state_dict_strict_loaded"]=True
+        result["timm_pretrained_initialization_skipped"]=bool(init_bypass["calls"])
+        result["initializer_only_adaptation"]=(
+            "Only timm ImageNet initialization fetch was bypassed; "
+            "official Vid2Robot.load_state_dict remains STRICT, full released "
+            "checkpoint overrides all randomly initialized parameters.")
         summary=utils.run_eval_protocol(cfgobj,runner)
         result["official_summary_path"]=str(Path(cfgobj.output_dir)/"summary.json")
         trial=extract_official_single_trial(summary,"push_cube",smoke_id)
