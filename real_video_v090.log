@@ -1,0 +1,69 @@
+...........                                                              [100%]
+11 passed in 1.17s
+PHYSICS_REPLAY_WRITTEN {"source_trace": "outputs/roboreel_cn/fixed/episode_0000/physical_trace.json", "source_result": "outputs/roboreel_cn/fixed/episode_0000/episode_result.json", "video": "outputs/roboreel_cn/fixed/episode_0000/physical_xy_replay.mp4", "frames": 32, "fps": 12, "label": "PHYSICS_XY_TRACE_REPLAY_NOT_RGB_SIMULATION", "success_from_saved_result": true, "end_error_m_from_saved_result": 0.04542199522256851}
+REAL_HUMAN_VIDEO_READY {"video": "0080", "frames": 64, "windows": 14, "coverage": 1.0}
+MODE_TRAINED {"mode": "full", "epochs": 20, "train_windows": 14, "last_loss": 1.2560099959373474}
+MODE_TRAINED {"mode": "anchor", "epochs": 20, "train_windows": 14, "last_loss": 1.1065959334373474}
+MODE_TRAINED {"mode": "end", "epochs": 20, "train_windows": 14, "last_loss": 1.00657057762146}
+REAL_VIDEO_SUPERVISION_COMPLETE {"type": "REAL_HUMAN_VIDEO_MASK_PREDICTION_ONLY_NOT_ROBOT_TRANSFER", "validity": "TRAIN_ONLY_NOT_GENERALIZATION", "video_root": "/mnt/4Tdata/LemonData/cehsisuanfa/third_party/roboreel/human_demos/eval/no_distraction/push_cube", "source_videos": 1, "accepted_videos": 1, "split": {"train": ["0080"], "val": [], "test": []}, "train_windows": 14, "val_windows": 0, "test_windows": 0, "device": "cuda", "epochs": 20, "seed": 42, "modes": ["full", "anchor", "end"], "preview_split": "train"}
+REVIEW_BUNDLE_READY {"path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/real_human_supervision_v090/review_bundle.zip", "total_files": 11, "missing": [], "bytes": 5612864}
+================= VIDEO FILES =================
+HUMAN ORIGINAL: third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4
+ROBOT XY REPLAY (NOT RGB): outputs/roboreel_cn/fixed/episode_0000/physical_xy_replay.mp4
+TRAINED PREDICTIONS: outputs/real_human_supervision_v090/three_mode_predictions.png
+TRAIN REPORT: outputs/real_human_supervision_v090/report.json
+SOURCE QUALITY AUDIT: outputs/real_human_supervision_v090/source_audit.json
+================= RESULTS =====================
+{
+  "type": "REAL_HUMAN_VIDEO_MASK_PREDICTION_ONLY_NOT_ROBOT_TRANSFER",
+  "validity": "TRAIN_ONLY_NOT_GENERALIZATION",
+  "warning": "At least one source video is from RoboReel's official EVALUATION split; do not use its video IDs in any official benchmark score. The mask detector is HSV, not verified instance segmentation. No robot actions or policy rollouts use the predicted masks. For one video, reported training-fit IoUs are NOT generalization.",
+  "video_root": "/mnt/4Tdata/LemonData/cehsisuanfa/third_party/roboreel/human_demos/eval/no_distraction/push_cube",
+  "source_videos": 1,
+  "accepted_videos": 1,
+  "split": {
+    "train": [
+      "0080"
+    ],
+    "val": [],
+    "test": []
+  },
+  "train_windows": 14,
+  "val_windows": 0,
+  "test_windows": 0,
+  "device": "cuda",
+  "epochs": 20,
+  "seed": 42,
+  "modes": [
+    "full",
+    "anchor",
+    "end"
+  ],
+  "summary": [
+    {
+      "mode": "full",
+      "split": "train",
+      "windows": 14,
+      "mean_full_iou": 0.0,
+      "mean_end_iou": 0.0,
+      "prediction_coverage": 0.05126953125
+    },
+    {
+      "mode": "anchor",
+      "split": "train",
+      "windows": 14,
+      "mean_full_iou": 0.0023967242647666485,
+      "mean_end_iou": 0.0,
+      "prediction_coverage": 0.50439453125
+    },
+    {
+      "mode": "end",
+      "split": "train",
+      "windows": 14,
+      "mean_full_iou": 0.00235694795506243,
+      "mean_end_iou": 0.0,
+      "prediction_coverage": 0.3868408203125
+    }
+  ],
+  "preview_split": "train"
+}SINGLE REVIEW ZIP: outputs/real_human_supervision_v090/review_bundle.zip
