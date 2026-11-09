@@ -59,7 +59,8 @@ def cartesian_action(actual, target, shape=(4,)):
     return np.r_[delta, -1.0].astype(np.float32).reshape(shape)
 
 
-def _servo_tcp(recorder, target, *, max_steps=45, tolerance=0.018, stop_when=None):
+def _servo_tcp(recorder, target, *, max_steps=45, tolerance=0.018,
+               stop_when=None, abort_when=None):
     """Servo a TCP pose; optionally finish early when the cube reaches its waypoint.
 
     In v0.3 the TCP was sent all the way past the waypoint even when the cube
@@ -77,21 +78,30 @@ def _servo_tcp(recorder, target, *, max_steps=45, tolerance=0.018, stop_when=Non
         if len(recorder.records) >= 530:
             raise RuntimeError("Reached episode step budget (530) before TCP target")
         recorder.step(cartesian_action(xyz, target, recorder.env.action_space.shape))
+        if abort_when is not None and abort_when():
+            return False
     if stop_when is not None and stop_when():
         return True
     return bool(np.linalg.norm(np1(b.agent.tcp.pose.p)[:3] - target) < tolerance)
 
 
-def _push_leg(recorder, waypoint_xy):
+def _push_leg(recorder, waypoint_xy, *, tolerance=0.030, contact_gap=0.060):
+    """Re-contacting physics push, with one explicit tolerance per waypoint.
+
+    The old implementation accepted a corner at 4.8 cm residual error, then
+    attempted the final turn from a poorly placed cube. For turns, use 3 cm;
+    final-goal approach uses its own (unchanged) evaluation rule.
+    """
     b = recorder.unwrapped
-    cube = np1(b.obj.pose.p)[:3]
+    cube = np1(b.obj.pose.p)[:3].copy()
     goal = np.asarray(waypoint_xy, dtype=np.float32).reshape(2)
     dxy = goal - cube[:2]
     distance = float(np.linalg.norm(dxy))
-    if distance < 0.040:
+    recorder.last_push_telemetry = {}
+    if distance < tolerance:
         return True
     direction = dxy / distance
-    behind = cube[:2] - 0.060 * direction
+    behind = cube[:2] - float(contact_gap) * direction
     tcp = np1(b.agent.tcp.pose.p)[:3]
     for pose, budget, phase in (
         (np.r_[tcp[:2], 0.16], 35, "raise"),
@@ -99,18 +109,64 @@ def _push_leg(recorder, waypoint_xy):
         (np.r_[behind, 0.028], 45, "descend"),
     ):
         if not _servo_tcp(recorder, pose, max_steps=budget):
-            raise RuntimeError(f"Failed TCP {phase}; target={pose.tolist()}, actual={np1(b.agent.tcp.pose.p)[:3].tolist()}")
-    final_tcp = np.r_[behind + direction * (distance + 0.090), 0.028]
-    def cube_at_waypoint():
-        return np.linalg.norm(np1(b.obj.pose.p)[:2] - goal) < 0.050
-    if not _servo_tcp(recorder, final_tcp, max_steps=85, tolerance=0.024,
-                      stop_when=cube_at_waypoint):
-        raise RuntimeError(f"Failed contact push towards waypoint={goal.tolist()}")
-    tcp = np1(b.agent.tcp.pose.p)[:3]
-    if not _servo_tcp(recorder, np.r_[tcp[:2], 0.16], max_steps=40):
-        raise RuntimeError("Failed retract from push")
-    return bool(np.linalg.norm(np1(b.obj.pose.p)[:2] - goal) < 0.055)
+            raise RuntimeError(
+                f"Failed TCP {phase}; target={pose.tolist()}, "
+                f"actual={np1(b.agent.tcp.pose.p)[:3].tolist()}"
+            )
 
+    contact_tcp = np1(b.agent.tcp.pose.p)[:3].copy()
+    cube_at_contact = np1(b.obj.pose.p)[:2].copy()
+    final_tcp = np.r_[behind + direction * (distance + 0.090), 0.028]
+    push_first_step = len(recorder.records)
+
+    def cube_at_waypoint():
+        return np.linalg.norm(np1(b.obj.pose.p)[:2] - goal) < tolerance
+
+    def push_stalled():
+        # Do not consume 85 actions once contact is demonstrably lost.
+        # Require at least 24 push actions, then test the last 12 *measured*
+        # physics frames; avoid guessing from commanded TCP movements.
+        steps = len(recorder.records) - push_first_step
+        if steps < 24 or len(recorder.records) < 12:
+            return False
+        recent = np.asarray([r["cube_after"][:2]
+                             for r in recorder.records[-12:]], dtype=float)
+        return float(np.max(np.linalg.norm(recent - recent[0], axis=1))) < 0.0015
+
+    reached = _servo_tcp(
+        recorder, final_tcp, max_steps=85, tolerance=0.024,
+        stop_when=cube_at_waypoint, abort_when=push_stalled
+    )
+    actual_tcp = np1(b.agent.tcp.pose.p)[:3].copy()
+    cube_after_push = np1(b.obj.pose.p)[:2].copy()
+    recorder.last_push_telemetry = {
+        "contact_gap_m": float(contact_gap),
+        "waypoint_tolerance_m": float(tolerance),
+        "cube_at_contact": cube_at_contact.tolist(),
+        "cube_after_push": cube_after_push.tolist(),
+        "cube_push_displacement_m": round(float(np.linalg.norm(
+            cube_after_push - cube_at_contact)), 5),
+        "tcp_at_contact": contact_tcp.tolist(),
+        "tcp_target": np.asarray(final_tcp).tolist(),
+        "tcp_after_push": actual_tcp.tolist(),
+        "tcp_target_error_m": round(float(np.linalg.norm(actual_tcp - final_tcp)), 5),
+        "push_steps": len(recorder.records) - push_first_step,
+        "servo_reached": bool(reached),
+    }
+    if not reached:
+        print("PUSH_SERVO_INCOMPLETE",
+              __import__("json").dumps(recorder.last_push_telemetry), flush=True)
+
+    # A missed TCP servo target is not proof of global infeasibility.
+    # Return the measured cube result and let the bounded outer loop try
+    # a different approach distance, provided safe retraction is possible.
+    retract_tcp = np1(b.agent.tcp.pose.p)[:3]
+    if not _servo_tcp(recorder, np.r_[retract_tcp[:2], 0.16], max_steps=40):
+        raise RuntimeError(
+            "Failed retract from push; "
+            f"tcp={np1(b.agent.tcp.pose.p)[:3].tolist()}"
+        )
+    return bool(np.linalg.norm(np1(b.obj.pose.p)[:2] - goal) < tolerance)
 
 def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=2):
     """Closed-loop, re-contacting physical push teacher; never calls MPLib.
@@ -147,13 +203,26 @@ def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=2):
                 before = np1(b.obj.pose.p)[:2].copy()
                 start_distance = float(np.linalg.norm(before - point))
                 step_before = len(rec.records)
+                tcp_before = np1(b.agent.tcp.pose.p)[:3].tolist()
+                # Turns must be reached more precisely than the old 0.055 m
+                # tolerance; final success evaluation itself is unchanged.
+                tolerance = 0.030 if leg < len(strokes) else 0.045
+                # Fallback contact distances are only used on the final turn,
+                # after the first strategy actually fails in simulation.
+                gap = ([0.060, 0.045, 0.075][min(attempt, 2)]
+                       if leg == len(strokes) else 0.060)
+                rec.last_push_telemetry = {}
                 try:
-                    good = _push_leg(rec, point)
+                    good = _push_leg(rec, point, tolerance=tolerance,
+                                     contact_gap=gap)
                 except Exception as exc:
                     attempts.append(dict(leg=leg, attempt=attempt+1,
                         target=point.tolist(), before=before.tolist(),
                         after=np1(b.obj.pose.p)[:2].tolist(),
                         error=f"{type(exc).__name__}: {exc}",
+                        tcp_before=tcp_before,
+                        tcp_after=np1(b.agent.tcp.pose.p)[:3].tolist(),
+                        push_telemetry=dict(rec.last_push_telemetry),
                         steps=len(rec.records)-step_before))
                     raise
                 after = np1(b.obj.pose.p)[:2].copy()
@@ -165,6 +234,9 @@ def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=2):
                     end_error_m=round(end_distance, 5),
                     progress_m=round(start_distance-end_distance, 5),
                     steps=len(rec.records)-step_before,
+                    tcp_before=tcp_before,
+                    tcp_after=np1(b.agent.tcp.pose.p)[:3].tolist(),
+                    push_telemetry=dict(rec.last_push_telemetry),
                     reached=bool(good),
                 )
                 attempts.append(diagnostic)
