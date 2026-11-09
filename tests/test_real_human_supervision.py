@@ -25,7 +25,7 @@ def test_real_future_windows_use_only_past_mask_frames():
     # No future frame passed into the model input.
     assert ex["past"].shape==(2,32,32)
     assert ex["future"].shape==(8,32,32)
-    assert np.all(ex["past"][0] != ex["future"][0]) is False or True  # different time slices
+    assert not np.array_equal(ex["past"][0], ex["future"][0])  # distinct observed and future frames
     assert ex["source_id"]=="0080"
 
 
