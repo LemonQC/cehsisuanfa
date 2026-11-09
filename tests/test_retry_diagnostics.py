@@ -62,8 +62,8 @@ def test_teacher_recontacts_using_measured_cube(monkeypatch):
     monkeypatch.setattr(teacher, "_push_leg", fake_leg)
     result = teacher.scripted_rollout(env, side=-1, seed=100, max_retries=1)
     assert result["success"], result["error"]
-    assert len(result["push_attempts"]) == 8
-    assert [a["reached"] for a in result["push_attempts"]] == [False, True] * 4
+    assert len(result["push_attempts"]) == 6
+    assert [a["reached"] for a in result["push_attempts"]] == [False, True] * 3
     assert all(a["progress_m"] > 0 for a in result["push_attempts"])
     assert all(counts[key] == 2 for key in counts)
 
@@ -86,3 +86,24 @@ def test_teacher_persists_failed_retries(monkeypatch, tmp_path):
     import json
     meta = json.loads(path.with_suffix(".json").read_text())
     assert len(meta["push_attempts"]) == 3
+
+
+def test_straight_stroke_merging_preserves_checkpoint_and_flow_route():
+    from agcofl.representation import contact_waypoints, route_points, future_masks
+    for side in (-1, 1):
+        route = route_points(side)
+        strokes = contact_waypoints(side)
+        assert route.shape == (5, 2)
+        assert strokes.shape == (3, 2)
+        # The middle of the straight line is no longer a forced contact break.
+        assert not np.any(np.all(np.isclose(strokes, route[2]), axis=-1))
+        # Both actual corners and the terminal goal are unchanged.
+        assert np.allclose(strokes, route[[1, 3, 4]])
+        # This new controller scheduling must NOT alter side-specific masks.
+        assert future_masks(route[0], side).shape == (4, 32, 32)
+        # Push from corner 1 to corner 2 crosses the original checkpoint.
+        a, b, checkpoint = strokes[0], strokes[1], route[2]
+        d = b - a
+        t = np.dot(checkpoint-a, d) / np.dot(d, d)
+        assert 0 < t < 1
+        assert np.linalg.norm(a + t*d-checkpoint) < 1e-5
