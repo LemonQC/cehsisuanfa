@@ -23,12 +23,16 @@ if ! python -m pytest -q tests/test_v110_vit_baseline.py tests/test_v110_officia
   exit 3
 fi
 
+CLONED_NOW=0
 if [ ! -d "$OFFICIAL/.git" ]; then
   echo "OFFICIAL_REPO_DOWNLOAD: pulling SOURCE ONLY, NO checkpoints/submodules"
   if command -v timeout >/dev/null 2>&1; then
-    timeout 100s git clone --depth 1 --single-branch --no-recurse-submodules \
-      https://github.com/weiweigu1998/roboreel_models.git "$OFFICIAL" \
-      || echo "OFFICIAL_REPO_BLOCKED: clone failed; preflight records missing status"
+    if timeout 100s git clone --depth 1 --single-branch --no-recurse-submodules \
+      https://github.com/weiweigu1998/roboreel_models.git "$OFFICIAL"; then
+      CLONED_NOW=1
+    else
+      echo "OFFICIAL_REPO_BLOCKED: clone failed; preflight records missing status"
+    fi
   else
     echo "OFFICIAL_REPO_BLOCKED: no bounded timeout available"
   fi
@@ -37,8 +41,18 @@ fi
 if [ -d "$OFFICIAL/.git" ]; then
   SHA=$(git -C "$OFFICIAL" rev-parse HEAD 2>/dev/null || true)
   if [ "$SHA" != "$EXPECTED" ]; then
-    echo "OFFICIAL_REPO_COMMIT_DIFFERENT: have=$SHA expected=$EXPECTED"
-    echo "Skipping checkout rewrite; audit marks this unpinned until reconciled."
+    if [ "$CLONED_NOW" -eq 1 ]; then
+      echo "PINNING_OFFICIAL_SOURCE: fetching exact published code commit $EXPECTED"
+      if timeout 100s git -C "$OFFICIAL" fetch --depth 1 origin "$EXPECTED" &&
+         git -C "$OFFICIAL" checkout --detach "$EXPECTED"; then
+        echo "OFFICIAL_SOURCE_PINNED: $EXPECTED"
+      else
+        echo "OFFICIAL_SOURCE_PIN_BLOCKED: do not treat HEAD as pinned"
+      fi
+    else
+      echo "OFFICIAL_REPO_COMMIT_DIFFERENT: have=$SHA expected=$EXPECTED"
+      echo "Existing external checkout left untouched; audit will report unpinned."
+    fi
   fi
 fi
 python -u -m agcofl.official_baseline_audit --repo "$OFFICIAL" \
