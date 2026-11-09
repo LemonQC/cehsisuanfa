@@ -1,5 +1,16 @@
 # 换新聊天窗口先看这里：研究聊天与实验完整交接
 
+## 最新研究状态：v1.3 已完成并成功归档（2026-11-09）
+
+**正式官方 Vid2Robot PushCube ND 单格，20个 EVAL 视频 × 3 seed：1/20、2/20、0/20，累计3/60=5.0%，跨seed SEM=2.89个百分点。**
+
+GitHub 已核实 [正式实验汇总](research_reports/2026-11-09_v130/official_aggregated_summary.json) 和 [正式评测状态](research_reports/2026-11-09_v130/status.json)：full_3pass_complete=true，errors=[]。**不需要再执行 v1.3 这60次评测**；本文下方早期“正在运行第三组、下一步跑v1.3”的文字为历史快照，不是当前状态。
+
+新聊天请首先阅读 [完整研究交接（含Git修复和最新科研任务）](docs/RESEARCH_CONVERSATION_HANDOFF_FULL_2026-11-09.md)。下一步优先核实作者原版评测对齐程度、开展视频条件 π0.5 等强 Baseline，并行开始 CUSTOM-ADDITIONAL 同目标 source Pick→target Push-only 的物理效应可执行性实验。
+
+---
+
+
 ## v1.3 实时进度查看（不要中断正在执行的评测）
 
 此前前两组已真实完成：seed=0 1/20、seed=100000 2/20，第三组已启动；这不是最终3-seed结果。原先每20个 demo 才有完整输出，现在已增加逐demo控制台消息和原子更新的 progress.json（**仅在下一次启动的 Python 评测进程中生效**，无法给运行中的旧进程补日志）。
