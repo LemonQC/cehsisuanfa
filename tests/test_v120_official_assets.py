@@ -15,9 +15,15 @@ class RepoFile:
 class MockApi:
     def __init__(self,records):
         self.records=records
-    def list_repo_tree(self,repo_type=None,path_in_repo=None,**kwargs):
+    def list_repo_tree(self,repo_id,repo_type=None,path_in_repo=None,**kwargs):
+        # Match huggingface_hub.HfApi.list_repo_tree(repo_id, *, repo_type=...).
+        # The previous mock omitted repo_id; every asset test then failed
+        # before either the budget or path selection logic was exercised.
+        assert repo_id in ("LogosRoboticsLab/roboreel",
+                           "LogosRoboticsLab/roboreel_models")
         assert repo_type in ("model","dataset")
         assert path_in_repo
+        assert kwargs.get("recursive") is True
         return (x for x in self.records if x.path.startswith(path_in_repo+"/"))
 
 
