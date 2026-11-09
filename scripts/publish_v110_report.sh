@@ -23,6 +23,18 @@ short["downloaded_ids"]=[x.get("demo") for x in d.get("downloaded",[])]
 Path(sys.argv[2]).write_text(json.dumps(short,indent=2))
 PY
 fi
+if [ -s "$S/human_pose_annotation_audit.json" ]; then
+  python - "$S/human_pose_annotation_audit.json" "$D/human_pose_annotation_audit.json" <<'PY'
+import json,sys
+from pathlib import Path
+d=json.loads(Path(sys.argv[1]).read_text())
+short={k:d.get(k) for k in ("type","status","source","tasks","endpoint","warning","error")}
+short["candidate_paths"]=[x.get("path") for x in d.get("possible_annotation_files",[])][:40]
+short["folder_status"]=[{"folder":f.get("folder"),"status":f.get("status"),
+ "files":len(f.get("entries",[]))} for f in d.get("folders",[])]
+Path(sys.argv[2]).write_text(json.dumps(short,indent=2))
+PY
+fi
 if [ -s "$S/vit_pilot/report.json" ]; then
   cp "$S/vit_pilot/report.json" "$D/vit_report.json"
   cp "$S/vit_pilot/summary.csv" "$D/vit_summary.csv"
