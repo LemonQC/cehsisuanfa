@@ -69,29 +69,53 @@ def eval_plan(api,task="push_cube",max_mb=250):
                 task=task,files=files,bytes=size,budget_mb=max_mb)
 
 
-def acquire(repo,files,root):
-    """Official hub downloader always validates exact byte sizes and SHA256."""
-    from huggingface_hub import hf_hub_download
+def acquire(repo,files,root,endpoint=ENDPOINT):
+    """Download with resume; return partial successes even on file failures.
+
+    Reuses the verified existing 0080 file from the earlier RoboReel
+    integration, provided the exact expected size matches the official
+    metadata. No EVAL data are ever used as robot training examples.
+    """
+    from .resumable_hf_assets import get_file,sha256_file
+    from pathlib import Path
+    import os
+    import shutil
     output=[]
-    root=Path(root)
+    errors=[]
+    root=Path(root).resolve()
     root.mkdir(parents=True,exist_ok=True)
     for x in files:
-        p=Path(hf_hub_download(repo_id=repo,
-            repo_type="model" if repo==MODELS else "dataset",
-            filename=x["path"],local_dir=str(root)))
-        n=p.stat().st_size
-        if n!=x["bytes"]:
-            raise RuntimeError(f"Incomplete official download {x['path']}: {n} != {x['bytes']}")
-        # Stream large weight file hash rather than Path.read_bytes() 6+GB RAM.
-        h=hashlib.sha256()
-        with p.open("rb") as f:
-            for block in iter(lambda:f.read(8*1024*1024),b""):
-                h.update(block)
-        output.append(dict(path=x["path"],bytes=n,sha256=h.hexdigest()))
-        print("OFFICIAL_ASSET_READY",json.dumps(dict(
-             path=x["path"],bytes=n,repo=repo)),flush=True)
-    return output
-
+        # The original user repo already contains one official eval sample.
+        # If bytes match, preserve disk by hard-linking it into the official
+        # checkpoint evaluation layout, never relying on naming alone.
+        if repo==DATASET and x["path"].endswith("/0080/front.mp4"):
+            existing=(Path.cwd()/"third_party/roboreel"/x["path"])
+            target=root/x["path"]
+            if (not target.exists()) and existing.is_file() and (
+                existing.stat().st_size==int(x["bytes"])):
+                target.parent.mkdir(parents=True,exist_ok=True)
+                try:
+                    os.link(existing,target)
+                except OSError:
+                    shutil.copyfile(existing,target)
+                print("HF_ASSET_REUSED_PRIOR_EVAL",json.dumps(dict(
+                    path=x["path"],bytes=target.stat().st_size)),flush=True)
+        try:
+            got=get_file(x,repo,
+                "model" if repo==MODELS else "dataset",
+                root,endpoint=endpoint)
+            output.append({k:got[k] for k in ("path","bytes","sha256","transport")})
+            print("OFFICIAL_ASSET_READY",json.dumps(dict(
+                path=x["path"],bytes=got["bytes"],source=got["transport"])),flush=True)
+        except Exception as ex:
+            errors.append(dict(path=x["path"],
+                error=f"{type(ex).__name__}: {str(ex)[:550]}"))
+            print("OFFICIAL_ASSET_NOT_READY",json.dumps(errors[-1]),flush=True)
+            # A large released checkpoint is the primary priority. Don't
+            # continue attempting thousands of model files on a broken link.
+            if repo==MODELS:
+                break
+    return output,errors
 
 def run(output,endpoint,max_checkpoint_gb=8.0,max_eval_mb=250,download=False):
     from huggingface_hub import HfApi
@@ -126,12 +150,19 @@ def run(output,endpoint,max_checkpoint_gb=8.0,max_eval_mb=250,download=False):
         target=(Path(output)/("released_checkpoints" if category=="model"
               else "official_eval_data"))
         name=MODELS if category=="model" else DATASET
-        try:
-            step["downloaded"]=acquire(name,step["files"],target)
-            step["status"]="OFFICIAL_RELEASE_ASSETS_ACQUIRED"
-        except Exception as ex:
-            step["status"]="OFFICIAL_RELEASE_DOWNLOAD_PARTIAL"
-            step["error"]=f"{type(ex).__name__}: {str(ex)[:550]}"
+        done,errors=acquire(name,step["files"],target,endpoint=endpoint)
+        step["downloaded"]=done
+        step["failures"]=errors
+        step["status"]=("OFFICIAL_RELEASE_ASSETS_ACQUIRED"
+                        if len(done)==len(step["files"]) else
+                        "OFFICIAL_RELEASE_DOWNLOAD_PARTIAL")
+        if errors:
+            step["error"]=errors[0]["error"]
+        # Persist stage progress BEFORE trying another category. An interrupted
+        # 2.3GB checkpoint must not erase earlier verified downloads.
+        outpath=Path(output)/"official_vid2robot_assets.json"
+        outpath.parent.mkdir(parents=True,exist_ok=True)
+        outpath.write_text(json.dumps(report,indent=2))
     modelok=report["model"]["status"]=="OFFICIAL_RELEASE_ASSETS_ACQUIRED"
     evalok=report["eval_videos"]["status"]=="OFFICIAL_RELEASE_ASSETS_ACQUIRED"
     if modelok and evalok:report["status"]="OFFICIAL_VID2ROBOT_RELEASE_AND_EVAL_DATA_READY"
