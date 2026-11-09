@@ -28,13 +28,15 @@ Dataset: https://huggingface.co/datasets/LogosRoboticsLab/roboreel
 
 ## Mandatory baseline matrix (method, family, priority, reproduction status)
 
+Latest status evidence: research_reports/2026-11-09_v130/ (Vid2Robot ACTUAL) and research_reports/2026-11-09_v141/ (π0.5 and custom physics NOT_RUN); see docs/2026-11-09_V141_OFFICIAL_AUDIT_PI05_CUSTOM_GATES.md. The following table preserves frozen scientific controls but updates execution status only.
+
 | ID | Method | Family | Priority | Status / reproduction rule |
 |---|---|---|---|---|
 | B01 | Robot-only Transformer BC, RGB, no human | No-human reference | P0 | Needs target robot training trajectories; local implementation clearly REIMPLEMENTED |
 | B02 | Robot-only Diffusion Policy, RGB, no human | No-human reference | P1 | Official DP architecture preferred; inspect dependency and training protocol |
-| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | OFFICIAL_CODE_AVAILABLE; inspect checkpoint and feature cache |
-| B04 | Video-conditioned pi0.5, Keyframes | RoboReel official | P0 | OFFICIAL_CODE_AVAILABLE; compare same base weights/data |
-| B05 | Vid2Robot | RoboReel official | P0 | OFFICIAL_CODE_AVAILABLE; released model/checkpoint review |
+| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | v1.4.1 OFFICIAL_PREP/EVAL_CODE_COMMITTED; GPU/physics NOT_RUN; must verify actual official checkpoint and 20x3 per-trial |
+| B04 | Video-conditioned pi0.5, Keyframes | RoboReel official | P0 | v1.4.1 OFFICIAL_PREP/EVAL_CODE_COMMITTED; GPU/physics NOT_RUN; requires original SigLIP bundles and VLM keyframe JSON |
+| B05 | Vid2Robot | RoboReel official | P0 | v1.3 ACTUAL_60_PHYSICAL_TRIALS: PushCube ND 3/60=5.0%, 20x3; only one official cell; no rerun |
 | B06 | UniSkill policy | RoboReel official | P1 | OFFICIAL_CODE_AVAILABLE; external ISD checkpoint/24GB batch constraints |
 | B07 | VLM + pi0.5 | RoboReel official | P1 | OFFICIAL_CODE_AVAILABLE; may need Qwen annotation, pi0.5 base |
 | B08 | SeeDo | RoboReel paper | P2 | OFFICIAL_MODEL_REPO_NOT_YET_AVAILABLE; no fake reproduction |
