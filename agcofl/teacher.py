@@ -6,7 +6,7 @@ Failed or incomplete trajectories are recorded as failures.
 from __future__ import annotations
 import numpy as np
 import torch
-from .representation import future_masks, route_points, mask_route_side
+from .representation import future_masks, route_points, contact_waypoints, mask_route_side
 
 
 def np1(x):
@@ -125,13 +125,22 @@ def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=2):
     error = None
     success = False
     attempts = []
+    # Consecutive collinear segments share ONE physical contact stroke.
+    # The original middle waypoint remains in the reference masks and in
+    # the simulator's check_visited evaluation; we just do not force a
+    # needless retract/descend exactly at the intermediate checkpoint.
+    strokes = contact_waypoints(side)
+    print("EXPERT_CONTACT_STROKES", __import__("json").dumps({
+        "side": int(side), "strokes": strokes.tolist(),
+        "flow_route": route_points(side).tolist()
+    }), flush=True)
     try:
         if tuple(env.action_space.shape) not in ((4,), (1,4)):
             raise RuntimeError(f"Wrong controller, action shape={env.action_space.shape}; use pd_ee_delta_pos")
         close = np.array([0., 0., 0., -1.], dtype=np.float32).reshape(env.action_space.shape)
         for _ in range(8):
             rec.step(close)
-        for leg, point in enumerate(route_points(side)[1:], start=1):
+        for leg, point in enumerate(strokes, start=1):
             good = False
             point = np.asarray(point, dtype=np.float32)
             for attempt in range(int(max_retries) + 1):
@@ -184,6 +193,7 @@ def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=2):
     return dict(success=success, error=error, side=int(side), seed=int(seed),
                 controller="pd_ee_delta_pos", trajectory=traj, frames=[],
                 push_attempts=attempts, max_retries=int(max_retries),
+                contact_strokes=strokes.tolist(),
                 end_cube=np1(b.obj.pose.p)[:3].tolist(),
                 check_visited=bool(np1(b.evaluate()["check_visited"])[0]))
 
