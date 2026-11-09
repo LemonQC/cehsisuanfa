@@ -1,3 +1,25 @@
+# AG-COFL v1.2.1 — Official Vid2Robot 权重续传与真实物理 Baseline
+
+**v1.2 已实测成功**：2段官方 RoboReel TRAIN 机器人 H5 动作 + base/hand RGB 视频全部通过检查（动作形状 138×8、136×8）。**还未执行官方学习型机器人物理闭环**：作者公开模型权重和 EVAL 视频的 Hugging Face 下载不完整，官方 rollout 状态 false。
+
+**下一步只需运行这一条（避免重复ViT和H5数据）：**
+
+\`\`\`bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --rebase --autostash origin main
+conda activate agcofl4090
+set -o pipefail
+bash scripts/run_v121_official_baseline_resume.sh 2>&1 | tee baseline_v121.log
+\`\`\`
+
+v1.2.1：重用已有机器人 TRAIN H5、核对/复用原来可能已下载完整的2.37GB官方 Vid2Robot checkpoint；文件缺失时通过显式 Hugging Face 镜像、官方地址与HTTP Range断点续传；下载20段约97MB固定评测视频；在**作者官方模型与官方ManiSkill**执行单段预先固定的集成测试；报告自动提交 \`research_reports/2026-11-09_v121/\`。**不上传权重、视频或H5**，不以一次调试成功冒充论文正式成绩，也不使用测试视频调参。
+
+**只以下述状态判成功：** \`OFFICIAL_ASSET_READY\`（具体文件）；\`VID2ROBOT_OFFICIAL_RELEASE_GATE.status=OFFICIAL_VID2ROBOT_RELEASE_AND_EVAL_DATA_READY\`（资源就绪）；\`VID2ROBOT_ROLLOUT_GATE.rollout_executed=true\`（真正执行物理运行）。最终 \`V121_AUTOPUBLISH_OK\` 仅说明归档完成。
+
+详见 [v1.2实验诊断与v1.2.1研究计划](docs/2026-11-09_V120_FINDINGS_V121_RECOVERY.md)。
+
+---
+
 # AG-COFL v1.2 — 真实机器人动作和官方 Vid2Robot 闭环 Baseline（已提交，待4090执行）
 
 **v1.1 已实际成功：** DINOv2 ViT-S/14 + Transformer 在 RTX 4090 上训练完毕，并归档7份报告。独立测试视频（仅1段）的平均位置误差：恒速 7.58px、Full ViT 9.73px、Anchor 14.50px、End 11.85px。该实验不是机器人策略，也不是跨行为创新验证。
