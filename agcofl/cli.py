@@ -166,11 +166,11 @@ def main():
     dr=sub.add_parser('doctor');dr.add_argument('--seed',type=int,default=42);dr.set_defaults(func=run_doctor)
     sm=sub.add_parser('smoke');sm.add_argument('--seed',type=int,default=42);sm.set_defaults(func=run_smoke)
     co=sub.add_parser('collect');co.add_argument('--episodes',type=int,default=10);co.add_argument('--seed',type=int,default=100);
-    co.add_argument('--out',default='outputs/ee_v040_episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');
+    co.add_argument('--out',default='outputs/ee_v050_episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');
     co.add_argument('--max-retries',type=int,default=2,help='Additional measured re-contact attempts for each missed intermediate waypoint (default 2)');co.set_defaults(func=run_collect)
-    tr=sub.add_parser('train-bc');tr.add_argument('--data',default='outputs/ee_v030_episodes');tr.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');
+    tr=sub.add_parser('train-bc');tr.add_argument('--data',default='outputs/ee_v050_episodes');tr.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v050.pt');
     tr.add_argument('--epochs',type=int,default=80);tr.add_argument('--batch',type=int,default=256);tr.set_defaults(func=run_train)
-    ev=sub.add_parser('gate-a');ev.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');ev.add_argument('--out',default='outputs/gate_a');
+    ev=sub.add_parser('gate-a');ev.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v050.pt');ev.add_argument('--out',default='outputs/gate_a');
     ev.add_argument('--episodes',type=int,default=5);ev.add_argument('--seed',type=int,default=9000);ev.add_argument('--max-steps',type=int,default=500);
     ev.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');ev.set_defaults(func=run_gate)
     los=sub.add_parser('test-loss');los.set_defaults(func=run_losscheck)
