@@ -1,0 +1,39 @@
+{
+  "model": "vid2robot",
+  "runner": "vid2robot",
+  "scope": "last20",
+  "seed_offset_base": 0,
+  "tasks": [
+    "push_cube"
+  ],
+  "chunk_size": 1,
+  "max_rollout_steps": 200,
+  "demo_ids_no_distract": [
+    80
+  ],
+  "demo_ids_distract": [
+    80
+  ],
+  "human_demo_and_env_types": [
+    [
+      "without_distraction",
+      "without_distraction"
+    ]
+  ],
+  "table": {
+    "demo_distract=False|env_distract=False": {
+      "success": 0,
+      "total": 1,
+      "rate": 0.0
+    }
+  },
+  "per_trial": {
+    "demo_distract=False|env_distract=False": [
+      {
+        "task": "push_cube",
+        "demo_id": 80,
+        "success": false
+      }
+    ]
+  }
+}

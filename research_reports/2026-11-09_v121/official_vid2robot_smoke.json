@@ -1,0 +1,24 @@
+{
+  "type": "RELEASED_VID2ROBOT_ACTUAL_MANISKILL_SMOKE",
+  "status": "OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED",
+  "checkpoint_is_official": true,
+  "task": "push_cube",
+  "human_demo_id": 80,
+  "gpu": "0",
+  "privileged_state_in_policy": false,
+  "checkpoint_loaded": true,
+  "official_state_dict_strict_loaded": true,
+  "timm_pretrained_initialization_skipped": true,
+  "initializer_only_adaptation": "Only timm ImageNet initialization fetch was bypassed; official Vid2Robot.load_state_dict remains STRICT, full released checkpoint overrides all randomly initialized parameters.",
+  "rollout_executed": true,
+  "official_success": false,
+  "official_step_record": {
+    "task": "push_cube",
+    "demo_id": 80,
+    "success": false
+  },
+  "max_rollout_steps": 200,
+  "error": null,
+  "is_formal_paper_score": false,
+  "missing": null
+}
