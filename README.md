@@ -1,109 +1,57 @@
-# AG-COFL | Research execution status (v0.9.0, 2026-11-09)
+# AG-COFL — Actionability-Guided Cross-Behavior Object Flow
 
-**Current priority: evaluate human/robot behavior supervision, not manually tune a scripted pushing expert.**
+**Current execution gate: v1.0 (2026-11-09).**
 
-## Run now: true human MP4 + three-mode training + robot video replay
+## One command on your RTX4090 (existing environment, no new installs)
 
-Runs with existing authentic RoboReel PushCube demo 0080 and previously saved 31-step physical rollout. **No more downloading, and no rerunning simulation.**
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull origin main
+conda activate agcofl4090
+set -o pipefail
+bash scripts/run_v100_next_gate.sh 2>&1 | tee next_gate_v100.log
+```
 
-    cd /mnt/4Tdata/LemonData/cehsisuanfa
-    git pull origin main
-    conda activate agcofl4090
-    set -o pipefail
-    bash scripts/run_v090_real_video_and_replay.sh 2>&1 | tee real_video_v090.log
+The script checks four questions in the same run:
 
-### View videos
+1. **Did v0.9 real-mask learning actually work?** On one authentic RoboReel evaluation MP4, 11 tests passed but train IoU was Full=0, Anchor≈0.00240, End≈0.00236, endpoint IoU=0 for all. New test compares against simple real-video persistence and constant-velocity baselines; no further meaningless synthetic training.
+2. **Can our 3D source effect / target Push-only interface produce geometrically valid task-relevant paths?** Uses previously measured 31-step PushCube robot PhysX object trajectory as an interface check only. It does not relabel it a human Pick source, infer unmeasured contact or claim physically successful new projection.
+3. **Can we access real *training* source videos/annotations without VPN?** Metadata-first official RoboReel train split discovery through optional hf-mirror.com, with <=6 actual train front MP4s, <=300 MB. Official EVAL demo IDs 0080–0099 are explicitly excluded from train-data discovery.
+4. **Can the results reach GitHub automatically?** Only small JSON/CSV/MD research reports are staged and pushed to [research_reports/2026-11-09_v100](research_reports/2026-11-09_v100/README.md) if Git credentials/network permit. MP4, ZIP, checkpoints and personal files are NOT uploaded.
 
-Actual human video (214 source frames):
+See [full v1.0 plan and provenance](docs/2026-11-09_v100_effect_gate_and_train_data.md).
 
-    third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4
+## Files to review after the run
 
-Actual Panda PHYSICS measured top-down replay, newly generated:
+```
+outputs/next_gate_v100/
+  learnability_gate.json
+  learning_vs_motion_baselines.csv
+  effect_gate.json
+  train_data/train_discovery.json
+  train_video_audit.json
+```
 
-    outputs/roboreel_cn/fixed/episode_0000/physical_xy_replay.mp4
+Status lines: `REAL_LEARNABILITY_GATE`, `EFFECT_GEOMETRY_GATE`, `TRAIN_DATA_GATE`, `TRAIN_MASK_GATE`, `AUTOPUBLISH_OK` or `AUTOPUBLISH_PUSH_BLOCKED`, `V100_GATE_COMPLETE`.
 
-It plots cube, Panda TCP and goal, using stored env.step measurements.
-**It is NOT a real rendered camera video of the robot** (RGB rendering was
-disabled for headless compatibility).
+If automatic GitHub push succeeds, you do not need to upload a ZIP again. Send only the short final status or the link to the results folder.
 
-Human RGB with segmentation candidate highlighted:
+## What is proven so far
 
-    outputs/real_human_supervision_v090/video_0080/human_mask_overlay.png
+- Existing official RoboReel PushCube-v2 episode 0 physics **succeeded 1/1 in 31 steps**, goal error 0.0454 m within 0.05 m radius. It used a privileged-state scripted controller, not video-conditioned learning.
+- Genuine source human evaluation video `third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4` was downloaded. A saved physical XY animation exists at `outputs/roboreel_cn/fixed/episode_0000/physical_xy_replay.mp4` (not RGB robot footage).
+- Full / Anchor / End CNN code trains, but real video training IoUs are near zero and there is **NO** independently held-out human source sample. It is not a positive research result.
 
-Full/Anchor/End side-by-side model prediction image:
+## Crucial T-RO research requirements
 
-    outputs/real_human_supervision_v090/three_mode_predictions.png
+The actual proposed concept is **Pick-source object effect -> capability-aware Push-only Reachable Effect Projection -> robot-executable object flow**, not simply mask video reconstruction. Source effect needs task goal, essential intermediate waypoints, observed contact/support modes and calibrated 3D object poses. Geometry-only candidate planning is the SAME as Goal+Waypoint Oracle today, so it has **not established a new algorithmic gap**.
 
-Open remote files using VS Code Remote SSH or download with SFTP.
-The program additionally packages original human MP4, measured physics MP4,
-these figures and CSV/JSON into ONE transferable file:
+Before further policy training, obtain genuine non-evaluation source demonstrations/3D annotations, prove at least one real Pick-vs-Push capability incompatibility and task-essential intermediate constraint, then compare physics-backed projection against Goal-only, filtering, random candidates and Goal+Waypoint Oracle on paired simulated scenes and fixed action budget.
 
-    outputs/real_human_supervision_v090/review_bundle.zip
+**Do not claim T-RO novelty from code running, one robot success or one video train IoU.**
 
-Upload that ONE ZIP and real_video_v090.log in your next message for
-one-pass diagnosis and research go/no-go review.
+## Archive
 
-### What the code ACTUALLY trains
-
-The authentic human front MP4 is sampled at 64 times. The high-level CNN
-gets **two observed** object-mask candidates and predicts **eight future**
-candidates. Three identical networks with the same initialization, training
-samples, budget and seeds are trained with Full, Anchor and End future-mask
-losses. No simulated/synthetic future traces enter training.
-
-With only one human video, all windows belong to the train set and the report
-is marked TRAIN_ONLY_NOT_GENERALIZATION. Results are a SAME-VIDEO training
-diagnostic, NOT a held-out test.
-
-**Important:** the RoboReel human 0080 video belongs to its official
-EVALUATION set, so this run is for engineering development ONLY. These
-videos cannot be used as official RoboReel training demonstrations in a
-subsequent reported benchmark test. The HSV blue-object candidates must
-also be visually verified against the original human video.
-
-Full code: agcofl/real_human_supervision.py
-Replay: agcofl/physics_replay.py
-Bundle: agcofl/package_v090.py
-Tests: tests/test_real_human_supervision.py
-One command: scripts/run_v090_real_video_and_replay.sh
-
-## What is already physically proven
-
-On the user's RTX4090, RoboReel PushCube-v2 episode 0 ran real CPU PhysX
-Panda actions from the official fixed scene successfully in 31 steps,
-final goal XY error 4.54 cm against the official 5 cm radius.
-This was a privileged-state oracle diagnostic, **not** a learned policy
-following human video.
-
-Previously, the synthetic proxy Full/Anchor/End training flow and masks
-loss tests passed. Synthetic results are not paper evidence.
-
-## What must still happen before T-RO feasibility can be claimed
-
-1. Real HUMAN TRAINING videos, independent of the official RoboReel eval
-   clips, with verified segmentation and annotated event-stage boundaries.
-2. Real robot action trajectories under multiple task layouts and robot
-   capabilities; all ROBOT masks must get Full supervision.
-3. A genuinely shared high-level model trained on the same source clips
-   under Full / Anchor / End human labels and matched robot budget.
-4. A **learned** low-level robot policy conditioned on the PREDICTED masks,
-   with verified human-to-robot camera coordinate alignment. The prior
-   synthetic FlowBC accepts a DIFFERENT 4-channel top-down mask tensor;
-   simply swapping human camera pixels into it would be invalid.
-5. Same-scene, paired closed-loop success/route/violations and strong
-   baselines (robot-only, random-K, uniform-K, full human alignment).
-6. A task with genuinely necessary AND feasible-but-unnecessary human
-   intermediate events. Plain direct PushCube-v2 has neither contrast.
-   The T-RO hypothesis cannot be established from plain PushCube success
-   or offline mask IoU, regardless of how high the score is.
-
-**Hard stop:** if we cannot get paired real footage with the required
-actionability contrast, stop escalating synthetic datasets or hand-coded
-push hyperparameters; reevaluate the research design.
-
-## Experiment diary
-
-- docs/2026-11-09_v090_real_video_training_and_replay.md
-- docs/2026-11-09_roboreel_episode0_physics_success.md
-- docs/2026-11-09_v070_proxy_result_and_next_gate.md
-- docs/PARTIAL_FLOW_EXPERIMENT_V070.md
+- [Actual uploaded v0.9 evidence / v1.0 plan](docs/2026-11-09_v100_effect_gate_and_train_data.md)
+- [v0.9 video and measured replay](docs/2026-11-09_v090_real_video_training_and_replay.md)
+- [Expert baseline and 3D effect plan](docs/PARTIAL_FLOW_EXPERIMENT_V070.md)
