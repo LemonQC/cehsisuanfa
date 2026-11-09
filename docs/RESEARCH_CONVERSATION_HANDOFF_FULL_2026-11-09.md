@@ -6,6 +6,59 @@
 >
 > **安全：** GitHub PAT、密码、HF token 等不得放到 GitHub；模型权重、H5和原始 MP4 仅留服务器。
 
+## ★ 最新补充：v1.3 正式结果已经完成并上传 GitHub
+
+**本节替换下面历史部分“v1.3 尚未运行”的旧状态。此前那段话记录的是旧时点，不能用于判断当前研究进展。**
+
+### 已核验的真实实验
+
+GitHub main 已包含研究报告：
+- research_reports/2026-11-09_v130/official_aggregated_summary.json
+- research_reports/2026-11-09_v130/status.json
+- research_reports/2026-11-09_v130/README.md
+
+本次报告归档提交为 99377a72358eefea8161d465da5f12807e5cf3e8，已由 GitHub 文件读取确认。报告显示 OFFICIAL_VID2ROBOT_ND_3PASS_EVALUATED，full_3pass_complete=true，errors=[]，官方作者 Vid2Robot 的 PushCube clean-human/clean-env ND 单条件，EVAL 0080–0099 共20段视频，每段在三组环境初始化上评测。官方原 checkpoint 严格加载成功，max_rollout_steps=800，chunk_size=1。
+
+| seed offset | 完整物理 trial | 成功 trial | 成功率 | 服务器日志耗时 |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 20 | 1 | 5% | 332秒 |
+| 100000 | 20 | 2 | 10% | 319秒 |
+| 200000 | 20 | 0 | 0% | 344秒 |
+| 合计 | **60** | **3** | **5%** | 995秒 |
+
+原始报告中的三个 seed 成功率均值为 0.05，跨 seed SEM 为 0.02886751345948129，即 **5.00% ± 2.89 个百分点**。成功演示编号：seed 0 为 0095；seed 100000 为 0082 和 0097；seed 200000 无成功。20个人类评测视频在不同环境bank中重复使用，不应将60个物理 rollout 解释成60个独立人类演示。
+
+这个结果仅代表**官方 Vid2Robot 在当前 PushCube 无干扰单格**的已复现实验结果；不是整个 RoboReel 全任务、WD/ED benchmark，也不是我们的创新方法结果，更不等于跨行为研究不值得继续。
+
+### 本轮 Git 问题完整经过及现状
+
+原始正式评测执行成功后，服务器 detached HEAD 下本地 commit b82d0b9 保存了 3 个 v1.3 报告文件，第一次向 origin/main push 因 non-fast-forward 失败。同时主分支在服务器评测期间已收到新提交，因此需要正常整合。
+
+用户曾复制字面命令 git pull ...，其中 ... 被当作仓库路径；普通 git pull 又因 detached HEAD 无所属分支而失败。旧工作树还残留了之前进行到提交 9a116e6 的交互式 rebase。不能在未清理该状态下重开 rebase，也不能在 cherry-pick 时强行切换分支。之前建议先给 b82d0b9 和旧 main 建备份分支，再用 git rebase --quit 安全退出旧 rebase；基于 origin/main 建 publish-v130-results 分支，再 cherry-pick b82d0b9。
+
+新 cherry-pick 在 Git 身份缺失时停下：本次 3 个报告文件已经暂存、没有冲突，但 Git 尚未生成提交，直接 git push 只会报告 Everything up-to-date。正确处理是在当前仓库配置 user.name=LemonQC、user.email=30914380+LemonQC@users.noreply.github.com，继续已有的 git cherry-pick --continue，然后提交并推送；不能重新 cherry-pick，也不能使用 git push --force、git reset --hard 或无理由中止原提交。
+
+**最新远端事实：** 已直接读取到远端 main 的 99377a7 正式实验报告和完整 3/60 数据，因此该报告现在已经保存在 GitHub，无需再次运行60次实验。此聊天没直接看到用户最后一组本地 git status 输出，不能断言服务器本地是否已彻底恢复正常 main；若继续服务器操作，先检查 git status、git branch -vv 和 git log -1 --oneline 与 origin/main 的关系。
+
+### 执行进度、GPU监控和下一步
+
+此前原版作者日志 logger.info 未启用，控制台只在每20个 trial 后报告 PASS_VERIFIED，用户看不到组内进度。后续已向 GitHub 提交 agcofl/official_live_progress.py、tests/test_v130_live_progress.py 与 scripts/show_v130_progress.sh，仅对将来的运行增加每个 demo 的 START、DONE、时长和只读 progress.json。不能对已经运行的旧进程补进度，也不必因此重做这60次评测。
+
+GPU 显存占用约63%不是故障，也不等于计算利用率必须100%。GPU-Util可能受CPU物理仿真、视频解码与串行逐步控制的交替影响。不能为追求100%改变官方控制模式、动作chunk和成功判据。
+
+**下一步行动：**
+1. 不再重复 v1.3 Vid2Robot PushCube ND 60次实验，不重训旧CNN/ViT，不下载已核验的官方权重；不要在EVAL 0080–0099上调参。
+2. 对照官方论文、官方模型加载、控制/仿真配置和原始物理成功判据分析当前3/60低成功率的复现一致性；明确原版论文任务/条件是否真的相同，不把复现差异误判为方法差。
+3. 优先接入官方 video-conditioned π0.5 Uniform/Keyframes、UniSkill 等强学习型Baseline，报告原版与移植差异、真实可执行和实际trial结果，不要仅列算法名。
+4. 并行尽快落地独立标注为 CUSTOM-ADDITIONAL 的**同目标 Pick-source → Push-only-target** 物理任务：必要中间事件、可省略绕行、不可达、真实接触与支撑限制。与 Goal-only、Goal+Waypoint Oracle、Raw Flow、几何方案和同信息/训练预算学习策略形成实际闭环对照。
+5. 确保所有后续关键决定、原始结果和代码继续提交到 LemonQC/cehsisuanfa。不要单独因为某个基线低成功率就放弃研究方向。
+
+### 新窗口最新版启动提示
+
+> 继续 AG-COFL 的 T-RO 跨行为物体效应迁移项目。仓库 https://github.com/LemonQC/cehsisuanfa 。请先完整读取 docs/RESEARCH_CONVERSATION_HANDOFF_FULL_2026-11-09.md、README、docs/BASELINE_MATRIX_TRO_V110.md 和最新 research_reports。特别是 research_reports/2026-11-09_v130/official_aggregated_summary.json 与 status.json，确认已经跑完的正式结果。**v1.3 原版 Vid2Robot PushCube ND 共20评测视频×3 seed=60次真实物理评测，成功数1/20、2/20、0/20，总计3/60=5.0%，SEM=2.89个百分点；报告已上传 GitHub。绝对不要再跑一遍。** 历次 Git detached HEAD、rebase、cherry-pick 和身份问题详见交接文档。下一步先核实官方复现一致性，再推进真实可运行的 π0.5 Uniform/Keyframes 等强 Baseline，并行落地同最终任务目标下 source Pick → target Push-only 能力约束的 Object Effect Projection + learned policy 物理对照。不得将原版 PickCube 与 PushCube 的不同目标假装为同目标迁移；坚持 Goal-only、Raw Flow、Goal+Waypoint Oracle 等强对照，信息预算相同，实际物理成功率可核验。直接查看 GitHub、分析结果、写代码并提交新的决策/报告，不重复无效实验也不虚构尚未执行的方法。
+
+---
+
 ## 0. 项目、服务器、用户不可变要求
 
 - GitHub 主项目：https://github.com/LemonQC/cehsisuanfa 。所有阶段性研究决定、代码变化、失败教训、实验结果和下一步计划提交 Markdown 和小型 JSON/CSV，便于任何新窗口恢复。
