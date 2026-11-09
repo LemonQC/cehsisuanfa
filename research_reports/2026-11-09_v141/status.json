@@ -1,0 +1,32 @@
+{
+  "type": "V141_CODE_AND_PREFLIGHT_STATUS",
+  "date": "2026-11-09",
+  "vid2robot_v130": {
+    "status": "EVALUATED_ALREADY_ARCHIVED",
+    "pooled_successes": 3,
+    "pooled_trials": 60,
+    "rerun_requested": false
+  },
+  "official_pi05_uniform": {
+    "status": "CODE_PREPARED_NOT_EXECUTED",
+    "preflight_executed_on_4090": false,
+    "physics_executed": false,
+    "successes": null,
+    "trials": null
+  },
+  "official_pi05_keyframes": {
+    "status": "CODE_PREPARED_NOT_EXECUTED",
+    "preflight_executed_on_4090": false,
+    "physics_executed": false,
+    "successes": null,
+    "trials": null
+  },
+  "custom_same_goal_pick_push": {
+    "status": "PHYSICS_DEV_CODE_PREPARED_NOT_EXECUTED",
+    "physical_trials_executed": false,
+    "learned_policy_trained": false,
+    "successes": null,
+    "trials": null
+  },
+  "note": "Author paper baseline figures are not local measured trials. No GPU execution occurred in this commit; numbers must remain null until archived physical JSON is verified."
+}
