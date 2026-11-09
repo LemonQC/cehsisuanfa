@@ -131,7 +131,7 @@ def _batch(cases,device):
 def _eval(model,group,device,mode):
     rows=[]
     if not group:return rows
-    model.eval()
+    if model is not None:model.eval()
     with torch.no_grad():
         for sample in group:
             if model is None:
