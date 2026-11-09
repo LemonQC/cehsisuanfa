@@ -1,3 +1,25 @@
+# AG-COFL v1.2 — 真实机器人动作和官方 Vid2Robot 闭环 Baseline（已提交，待4090执行）
+
+**v1.1 已实际成功：** DINOv2 ViT-S/14 + Transformer 在 RTX 4090 上训练完毕，并归档7份报告。独立测试视频（仅1段）的平均位置误差：恒速 7.58px、Full ViT 9.73px、Anchor 14.50px、End 11.85px。该实验不是机器人策略，也不是跨行为创新验证。
+
+**现在优先跑官方 Baseline，不再重复旧ViT训练：**
+
+\`\`\`bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --rebase --autostash origin main
+conda activate agcofl4090
+set -o pipefail
+bash scripts/run_v120_real_robot_and_official_baseline.sh 2>&1 | tee baseline_v120.log
+\`\`\`
+
+**v1.2 工作内容：** 修正官方发布目录 \`robot_trajectories/no_distraction/push_cube/\`（此前使用内部别名 \`without_distraction\` 导致404）；限量获取并审计真实机器人 H5+base/hand 视频；下载作者发布的 Vid2Robot 权重（上限8GiB）和固定20段 PushCube EVAL 视频（≤250MB）；尝试一段 0080 **DEV ONLY** 的真正学得策略→物理模拟器闭环，明确记载阻碍、真实成功及其证据；实验 JSON/MD 自动提交 GitHub \`research_reports/2026-11-09_v120/\`。源视频、权重和H5不上传。
+
+详细数值与决策：[v1.1 结果及 v1.2 任务](docs/2026-11-09_V110_RESULTS_V120_DECISIONS.md)。
+
+**准确理解状态：** \`V120_COMPLETE_IS_NOT_A_SUCCESS_FLAG\` 只表示流程结束；只有 \`OFFICIAL_VID2ROBOT_DEV_SMOKE_EXECUTED\` + \`rollout_executed:true\` 才说明真正执行过学习型机器人闭环，\`official_success\` 才表示该次物理成功与否。一次 DEV 结果不能替代完整官方 Baseline 比较。
+
+---
+
 # AG-COFL | v1.1 — 官方 Baseline 优先 + 预训练 ViT GPU 验证
 
 **研究方向继续推进，不因 v0.9 的简易 CNN 失效而放弃。** 创新问题保持：源人类物体运动效应如何在目标机器人不同操作能力下转化为物理可执行行为。CNN 只是旧的工程烟雾测试；从 v1.1 开始使用预训练 DINOv2 ViT + 时序 Transformer，固定官方 Baseline、数据协议和闭环实验。
