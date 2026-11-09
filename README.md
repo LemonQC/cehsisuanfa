@@ -1,144 +1,109 @@
-# AG-COFL v0.8.1 — 国内无 VPN：RoboReel 单视频镜像下载与离线物理验证
+# AG-COFL | Research execution status (v0.9.0, 2026-11-09)
 
-**上次的失败是 Hugging Face 官方站点超时，不是机器人仿真失败。**
+**Current priority: evaluate human/robot behavior supervision, not manually tune a scripted pushing expert.**
 
-已停止调用官方一次下载 20 个视频的脚本，改为从第三方 HF 镜像仅下载 **PushCube 0080/front.mp4**。镜像如果不可达，就直接对 RoboReel 官方保存的场景执行**无视频物理验证**，不会让整个实验中断。物理验证不等于人类跨行为学习。
+## Run now: true human MP4 + three-mode training + robot video replay
 
-```bash
-cd /mnt/4Tdata/LemonData/cehsisuanfa
-git pull origin main
-conda activate agcofl4090
-unset DISPLAY WAYLAND_DISPLAY
-set -o pipefail
-bash scripts/run_roboreel_bridge.sh 2>&1 | tee roboreel_cn_v081.log
-```
-
-输出两种情况：镜像可用会保存 `outputs/roboreel_cn/inspect_0080/human_mask_overlay.png`、物理 `fixed/report.json`，分割质量足够时还有视频运动控制的配对分析；镜像不可用会生成 `outputs/roboreel_cn/physics_only/report.json`（前提是本机 RoboReel 环境兼容且仿真可以执行）。
-
-支持真实 MP4 本地拷贝到 `third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4`，无需继续联网。任何情况下都不把合成视频或无视频物理运行当作科研跨行为结果。
-
-详见 [国内下载与无视频回退记录](docs/2026-11-09_v081_mainland_download_fallback.md)。
-
----
-
-# AG-COFL v0.8.0 — REAL human-video + RoboReel physics bridge
-
-**Priority: stop synthetic proxy studies and test an actual human MP4 / robot
-physics integration on an RTX4090.** This new bridge is a DIAGNOSTIC oracle
-state controller, not a trained human-to-robot or Full/Anchor/End algorithm.
-
-## Run on existing server
+Runs with existing authentic RoboReel PushCube demo 0080 and previously saved 31-step physical rollout. **No more downloading, and no rerunning simulation.**
 
     cd /mnt/4Tdata/LemonData/cehsisuanfa
     git pull origin main
     conda activate agcofl4090
-    # Only if imports are missing; do not alter the installed ManiSkill/PyTorch stack
-    python -c 'import cv2, huggingface_hub' || python -m pip install 'opencv-python-headless==4.10.0.84' huggingface_hub
     set -o pipefail
-    bash scripts/run_roboreel_bridge.sh 2>&1 | tee roboreel_v080.log
+    bash scripts/run_v090_real_video_and_replay.sh 2>&1 | tee real_video_v090.log
 
-This selectively downloads only official RoboReel PushCube front human video
-evaluation clips and tries paired real physical PushCube-v2 runs in headless
-ManiSkill CPU PhysX, recording video candidate masks, actual actions, cube
-position and task success.
+### View videos
 
-**Compatibility caveat:** official RoboReel pins ManiSkill 3.0.0b22; your
-environment uses 3.0.1. If the repo import or saved initial states fail, send
-the traceback; don't reinstall CUDA or silently modify the benchmark.
+Actual human video (214 source frames):
 
-Read [docs/ROBOREEL_REAL_BRIDGE_V080.md](docs/ROBOREEL_REAL_BRIDGE_V080.md)
-for the precise run, file outputs, validation gates and scientific limits.
+    third_party/roboreel/human_demos/eval/no_distraction/push_cube/0080/front.mp4
 
-What matters: human mask overlay quality, benchmark physical step success,
-paired fixed/video-timing action/pose changes. This is NOT YET a learned
-Full/Anchor/End closed-loop comparison or a T-RO result.
+Actual Panda PHYSICS measured top-down replay, newly generated:
 
----
+    outputs/roboreel_cn/fixed/episode_0000/physical_xy_replay.mp4
 
-# AG-COFL: Partial Object-Flow Supervision — v0.7.0
+It plots cube, Panda TCP and goal, using stored env.step measurements.
+**It is NOT a real rendered camera video of the robot** (RGB rendering was
+disabled for headless compatibility).
 
-**Research-first update (2026-11-09).** The priority is now paired Full / Anchor / End supervision experiments, not further tuning the manual push expert.
+Human RGB with segmentation candidate highlighted:
 
-## Run now on the RTX 4090
+    outputs/real_human_supervision_v090/video_0080/human_mask_overlay.png
 
-```bash
-cd /mnt/4Tdata/LemonData/cehsisuanfa
-git pull origin main
-conda activate agcofl4090
-bash scripts/run_partial_study_pilot.sh
-```
+Full/Anchor/End side-by-side model prediction image:
 
-This command actually trains **three fixed-architecture high-level models**, produces validation/test mask-IoU metrics and layout-paired CSVs, and creates PNG figures. **The first run uses explicitly synthetic proxy masks and is ONLY a pipeline smoke test.** It is not a human-robot imitation experiment and must NOT be reported as T-RO evidence.
+    outputs/real_human_supervision_v090/three_mode_predictions.png
 
-Complete protocol, real data schema, the importer for recorded robot/human paths, and all expected outputs: [docs/PARTIAL_FLOW_EXPERIMENT_V070.md](docs/PARTIAL_FLOW_EXPERIMENT_V070.md).
+Open remote files using VS Code Remote SSH or download with SFTP.
+The program additionally packages original human MP4, measured physics MP4,
+these figures and CSV/JSON into ONE transferable file:
 
-The physical ManoSkill push teacher remains in the repo as an engineering utility; current real status is v0.5 seed100 upper succeeded, lower failed. Do not train flow BC on unsuccessful teacher episodes. Real human videos and several distinct scene layouts are still required for credible scientific results.
+    outputs/real_human_supervision_v090/review_bundle.zip
 
----
+Upload that ONE ZIP and real_video_v090.log in your next message for
+one-pass diagnosis and research go/no-go review.
 
-## Previous physical teacher notes (v0.6 and earlier)
+### What the code ACTUALLY trains
 
-# AG-COFL / Partial Object-Flow Supervision — 4090 ManiSkill pilot
+The authentic human front MP4 is sampled at 64 times. The high-level CNN
+gets **two observed** object-mask candidates and predicts **eight future**
+candidates. Three identical networks with the same initialization, training
+samples, budget and seeds are trained with Full, Anchor and End future-mask
+losses. No simulated/synthetic future traces enter training.
 
-**Current version: v0.6.0 (2026-11-09).** This repo implements a *physical* Panda push-teacher for the Gate A oracle-flow experiment, with separate Full / Anchor / End partial-supervision loss tests. Gate A is NOT yet passed.
+With only one human video, all windows belong to the train set and the report
+is marked TRAIN_ONLY_NOT_GENERALIZATION. Results are a SAME-VIDEO training
+diagnostic, NOT a held-out test.
 
-## Experimental record (actual RTX 4090 output)
+**Important:** the RoboReel human 0080 video belongs to its official
+EVALUATION set, so this run is for engineering development ONLY. These
+videos cannot be used as official RoboReel training demonstrations in a
+subsequent reported benchmark test. The HSV blue-object candidates must
+also be visually verified against the original human video.
 
-**v0.5.0 seed 100: 1/2 full teacher successes.**
+Full code: agcofl/real_human_supervision.py
+Replay: agcofl/physics_replay.py
+Bundle: agcofl/package_v090.py
+Tests: tests/test_real_human_supervision.py
+One command: scripts/run_v090_real_video_and_replay.sh
 
-- Upper: `success=true`, `steps=174`, `check_visited=true`. First corner 2 pushes, long straight segment 1 push, final target 3 pushes.
-- Lower: `success=false`, `check_visited=true`. First corner reached in 2 pushes. Long straight stroke was stopped at cube `[0.06755,-0.12523]` because the old contact policy accepted a **0.04784 m** corner error; nominal far corner is `[0.105,-0.155]`. The next goal push moved the cube less than a millimeter and failed after 95 steps with `Failed contact push`.
-- The lower-side cause is not proven to be an IK singularity or collision; v0.5.0 never logged actual TCP location at the failure. v0.6.0 adds TCP telemetry.
+## What is already physically proven
 
-## Changes in v0.6.0
+On the user's RTX4090, RoboReel PushCube-v2 episode 0 ran real CPU PhysX
+Panda actions from the official fixed scene successfully in 31 steps,
+final goal XY error 4.54 cm against the official 5 cm radius.
+This was a privileged-state oracle diagnostic, **not** a learned policy
+following human video.
 
-1. **Consistent waypoint arrival tolerance:** 0.030 m for the two turn endpoints during the physical teacher, 0.045 m for the final physical push. The simulator's original task success limits (check zone, final goal and cube on table) remain unchanged. The long straight push should no longer stop at 0.04784 m error; it continues while contact exists.
-2. **Do not throw immediately on a failed final TCP push:** retract if safe, check *measured* cube position, then make bounded new contact attempts with final-turn gaps **0.060 → 0.045 → 0.075 m**. Retries are still bounded by `--max-retries`; no teleportation or hidden robot interventions.
-3. **Early stall detection:** after at least 24 contact-push steps, if the most recent 12 cube positions vary less than 1.5 mm, stop the unproductive push instead of always consuming 85 steps. This is a conservative engineering heuristic, not an academic contribution.
-4. **Diagnostic logs:** `PUSH_SERVO_INCOMPLETE` records TCP contact/target/end, target error and cube push displacement. Each `PUSH_ATTEMPT` now includes TCP before/after and push telemetry; errors preserve these details.
-5. The original source flow waypoint sequence, side-specific checkpoint, barrier geometry and task success calculation are **unchanged**. The teacher still merges collinear physical pushes through the checkpoint.
-6. All episodes are saved separately under `outputs/ee_v060_episodes` by default. Existing successful v0.5 examples should not be mixed blindly with later training until controller compatibility and the final collection protocol are frozen.
+Previously, the synthetic proxy Full/Anchor/End training flow and masks
+loss tests passed. Synthetic results are not paper evidence.
 
-**v0.6.0 is a candidate fix, not a verified physical success.** The unit tests are logic tests with mocked physics, not proof of successful 4090 rollouts.
+## What must still happen before T-RO feasibility can be claimed
 
-## Next steps on RTX 4090 (no reinstall)
+1. Real HUMAN TRAINING videos, independent of the official RoboReel eval
+   clips, with verified segmentation and annotated event-stage boundaries.
+2. Real robot action trajectories under multiple task layouts and robot
+   capabilities; all ROBOT masks must get Full supervision.
+3. A genuinely shared high-level model trained on the same source clips
+   under Full / Anchor / End human labels and matched robot budget.
+4. A **learned** low-level robot policy conditioned on the PREDICTED masks,
+   with verified human-to-robot camera coordinate alignment. The prior
+   synthetic FlowBC accepts a DIFFERENT 4-channel top-down mask tensor;
+   simply swapping human camera pixels into it would be invalid.
+5. Same-scene, paired closed-loop success/route/violations and strong
+   baselines (robot-only, random-K, uniform-K, full human alignment).
+6. A task with genuinely necessary AND feasible-but-unnecessary human
+   intermediate events. Plain direct PushCube-v2 has neither contrast.
+   The T-RO hypothesis cannot be established from plain PushCube success
+   or offline mask IoU, regardless of how high the score is.
 
-```bash
-cd /mnt/4Tdata/LemonData/cehsisuanfa
-git pull origin main
-conda activate agcofl4090
-unset DISPLAY WAYLAND_DISPLAY
-export MPLBACKEND=Agg PYTHONFAULTHANDLER=1
+**Hard stop:** if we cannot get paired real footage with the required
+actionability contrast, stop escalating synthetic datasets or hand-coded
+push hyperparameters; reevaluate the research design.
 
-python -m pytest -q tests
-python -m agcofl.cli test-loss
+## Experiment diary
 
-python -u -X faulthandler -m agcofl.cli collect \
-  --episodes 1 --seed 100 --max-retries 2 \
-  --out outputs/ee_v060_episodes \
-  2>&1 | tee collect_v060.log
-
-cat outputs/ee_v060_episodes/collection_summary.json
-```
-
-For exact failure diagnosis inspect `outputs/ee_v060_episodes/route_lower_000100.json`, particularly `push_attempts[].push_telemetry` with `tcp_target_error_m`, `cube_push_displacement_m`, `tcp_after_push`, `contact_gap_m` and `waypoint_tolerance_m`.
-
-**Only after both routes have repeatedly successful physical demonstrations**, collect a balanced demonstration set and train the Flow-conditioned BC. Do not train on failed trajectories. The initial masks are controlled synthetic geometric occupancy references, NOT human RGB videos or learned object flow. The `--video` flag creates an offline 2D measured cube trajectory, not RGB robot footage.
-
-## Later commands (not until physical teacher is validated)
-
-```bash
-python -m agcofl.cli collect --episodes 15 --seed 200 --out outputs/ee_v060_episodes
-python -m agcofl.cli train-bc --data outputs/ee_v060_episodes --epochs 100 \
-   --ckpt outputs/models/flow_bc_ee_v060.pt
-python -m agcofl.cli gate-a --ckpt outputs/models/flow_bc_ee_v060.pt \
-   --episodes 5 --seed 9000 --max-steps 500
-```
-
-## Limits
-
-- Physics simulation: ManiSkill3 CPU PhysX with `pd_ee_delta_pos`; no MPLib, `render_backend=none`.
-- The current authoring container cannot reproduce ManiSkill physics, so **do not interpret a passing unit test as a success rate**.
-- No cross-behavior transfer, human demonstration benefit, high-level Full/Anchor/End training comparison, or T-RO-ready method has been established by this pilot.
-
-See [diagnosis and rationale](docs/2026-11-09_v050_failure_and_v060_fix.md).
+- docs/2026-11-09_v090_real_video_training_and_replay.md
+- docs/2026-11-09_roboreel_episode0_physics_success.md
+- docs/2026-11-09_v070_proxy_result_and_next_gate.md
+- docs/PARTIAL_FLOW_EXPERIMENT_V070.md
