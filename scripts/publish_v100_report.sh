@@ -4,6 +4,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DIR=research_reports/2026-11-09_v100
 SOURCE=outputs/next_gate_v100
+if [ ! -s "$SOURCE/learnability_gate.json" ] || [ ! -s "$SOURCE/effect_gate.json" ]; then
+  echo "AUTOPUBLISH_SKIPPED: required local experiment reports missing";exit 2
+fi
 mkdir -p "$DIR"
 for f in learnability_gate.json learning_vs_motion_baselines.csv effect_gate.json train_video_audit.json; do
   if [ -f "$SOURCE/$f" ]; then cp "$SOURCE/$f" "$DIR/$f"; fi
@@ -49,7 +52,17 @@ if ! git diff --cached --quiet; then
   echo "AUTOPUBLISH_SKIPPED: other staged files";exit 2
 fi
 git add -- "$DIR"
-if git diff --cached --quiet; then echo "AUTOPUBLISH_NO_CHANGES";exit 0;fi
+if git diff --cached --quiet; then
+  # A previous attempt may have COMMITTED locally but failed to PUSH.
+  if ! git ls-tree -r --name-only HEAD -- "$DIR" | grep -q "learnability_gate.json"; then
+    echo "AUTOPUBLISH_SKIPPED: no new files and no experiment result in local HEAD";exit 2
+  fi
+  if git push origin HEAD:main; then
+    echo "AUTOPUBLISH_OK_EXISTING_COMMIT: $(git rev-parse HEAD)"
+    exit 0
+  fi
+  echo "AUTOPUBLISH_PUSH_BLOCKED: retry push existing local commit after remote sync";exit 2
+fi
 if ! git -c user.name="LemonQC Research Bot" -c user.email="30914380+LemonQC@users.noreply.github.com" \
     commit -m "Archive v1.0 measured video and geometry research gates"; then
   echo "AUTOPUBLISH_COMMIT_FAILED";exit 2
