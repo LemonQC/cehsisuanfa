@@ -9,7 +9,8 @@ state controller, not a trained human-to-robot or Full/Anchor/End algorithm.
     cd /mnt/4Tdata/LemonData/cehsisuanfa
     git pull origin main
     conda activate agcofl4090
-    python -m pip install huggingface_hub opencv-python-headless
+    # Only if imports are missing; do not alter the installed ManiSkill/PyTorch stack
+    python -c 'import cv2, huggingface_hub' || python -m pip install 'opencv-python-headless==4.10.0.84' huggingface_hub
     set -o pipefail
     bash scripts/run_roboreel_bridge.sh 2>&1 | tee roboreel_v080.log
 
