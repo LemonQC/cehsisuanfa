@@ -83,7 +83,7 @@ class DiagnosticPushTeacher:
         elif self.phase=='push':
             target=np.r_[goal[:2]+unit*(half+.05),z_contact]
             if self.last_cube is not None:
-                movement=float(np.linalg.norm(cube[:2]-self.last_cube))
+                movement=float(np.linalg.norm(cube[:2]-self.last_cube[:2]))
                 self.stale_steps=self.stale_steps+1 if movement<.00035 else 0
             if self.stale_steps>=18 and self.phase_steps>=24:
                 self._phase('recover');self.attempt+=1
