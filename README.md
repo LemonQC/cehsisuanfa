@@ -1,3 +1,27 @@
+# v1.3 — 正式官方 Vid2Robot 20场景 × 3 seed 物理评测（代码已提交）
+
+**v1.2.1 已验证成功的环节：** 2.37GB 原版 Vid2Robot 预训练权重严格加载；20/20 官方 EVAL front 视频完整；作者的物理评测器运行成功。单独的 0080 集成测试结果为失败（0/1），不能代表正式成功率，更不能作为放弃 T-RO 研究的依据。
+
+**现在进入正式官方 Baseline**：PushCube clean-human / clean-environment 条件；评测原始 0080–0099 共20场景，每场景3个官方环境 seed offset 0/100000/200000；保持官方控制方式 chunk=1、单轮800步，不做 EVAL 数据上的模型调参。
+
+运行：
+
+\`\`\`bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --rebase --autostash origin main
+conda activate agcofl4090
+set -o pipefail
+bash scripts/run_v130_official_vid2robot_3pass.sh 2>&1 | tee baseline_v130.log
+\`\`\`
+
+**只核对三个标志：** OFFICIAL_V130_PASS_VERIFIED（本seed完整20条物理记录）、OFFICIAL_V130_EVALUATION_GATE（三seed结果）、V130_AUTOPUBLISH_OK（小型数据报告已提交）。若某seed中断，下一次运行会验证并复用之前已完成的整个seed。不重下2.37GB权重、20段视频和真实机器人训练H5，也不重训ViT。
+
+实验JSON自动上传至 research_reports/2026-11-09_v130/；此处仅覆盖官方 PushCube ND 单格，不代表所有任务/干扰条件的完整 RoboReel benchmark。
+
+研究决策与算法创新实验计划：[v1.2.1结果与v1.3方案](docs/2026-11-09_V121_SUCCESS_V130_BASELINE_PLAN.md)。
+
+---
+
 # AG-COFL v1.2.1 — Official Vid2Robot 权重续传与真实物理 Baseline
 
 **v1.2 已实测成功**：2段官方 RoboReel TRAIN 机器人 H5 动作 + base/hand RGB 视频全部通过检查（动作形状 138×8、136×8）。**还未执行官方学习型机器人物理闭环**：作者公开模型权重和 EVAL 视频的 Hugging Face 下载不完整，官方 rollout 状态 false。
