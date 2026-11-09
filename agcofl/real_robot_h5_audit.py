@@ -36,6 +36,7 @@ def audit_one(entry,root):
         names=list(group.keys())
         key="panda_wristcam_hd" if "panda_wristcam_hd" in names else names[0]
         art=group[key]
+        art_shape=list(art.shape)
         if art.ndim!=2 or art.shape[1]<22:
             raise ValueError(f"Unexpected articulation layout {art.shape}")
         qpos=art[:min(10,art.shape[0]),13:22]
@@ -58,7 +59,7 @@ def audit_one(entry,root):
         if not ok or meta["frame_count"]<2:raise ValueError(f"Invalid real RGB stream {v}")
         videos[name]=meta
     return dict(demo=entry["demo"],h5=str(fpath),action_shape=list(shp),
-        articulation_name=key,articulation_shape=list(art.shape),
+        articulation_name=key,articulation_shape=art_shape,
         qpos_9d_is_finite=True,action_min_preview=float(action_preview.min()),
         action_max_preview=float(action_preview.max()),
         camera_videos=videos,real_robot_actions=True,
