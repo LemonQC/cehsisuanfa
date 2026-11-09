@@ -42,7 +42,10 @@ python -u -X faulthandler -m agcofl.roboreel_bridge evaluate \
   --out outputs/roboreel_real/video_motion \
   2>&1 | tee roboreel_video_motion.log
 
+python -m agcofl.analyze_roboreel --out outputs/roboreel_real
+
 echo "RESULTS:"
 echo " outputs/roboreel_real/inspect_0080/human_video_diagnostic.json"
 echo " outputs/roboreel_real/fixed/report.json"
 echo " outputs/roboreel_real/video_motion/report.json"
+echo " outputs/roboreel_real/paired_diagnostic.csv"
