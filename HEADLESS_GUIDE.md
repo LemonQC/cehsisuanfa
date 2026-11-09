@@ -1,4 +1,4 @@
-# v0.3.0 diagnosis — native MPLib crash
+> **v0.4.0 update (2026-11-09):** The MPLib crash was bypassed in v0.3.0. The first successful physical-motion pilot reached only ~half of the first requested lateral waypoint on both sides. The expert now performs up to two *measured* re-contacts per missed waypoint by default; `PUSH_ATTEMPT` logs the start/error/end/progress. Follow the current [README.md](README.md) and use a fresh `outputs/ee_v040_episodes` folder. No revised success rate is claimed until server results arrive.\n\n# v0.3.0 diagnosis — native MPLib crash
 
 Latest 4090 trace:
 - mplib/planner.py, line 65, __init__
