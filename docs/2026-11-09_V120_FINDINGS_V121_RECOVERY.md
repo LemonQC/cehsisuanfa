@@ -27,6 +27,12 @@ bash scripts/run_v121_official_baseline_resume.sh 2>&1 | tee baseline_v121.log
 
 目标输出：`outputs/v120_baselines/official_vid2robot_assets.json` 和 `outputs/v120_baselines/official_vid2robot_smoke/smoke_result.json`，小体积报告自动存入 `research_reports/2026-11-09_v121/`。这套代码已提交但尚未在用户4090设备上执行；不可预称下载或物理评测成功。
 
+## 官方复现的必要工程差异（透明记录）
+
+作者 Vid2Robot 代码在 eval runner 内使用 `Vid2RobotConfig(vit_pretrained=True)`，创建 ViT-B/16 时默认会再下载 timm ImageNet 初始化权重，随后 `model.load_state_dict(ckpt["model"])` 严格加载作者完整官方模型权重并覆盖初始化结果。我们的 `agcofl/vid2robot_official_smoke.py` **只在构建网络期间临时将 timm 的 pretrained 初始化设为 False**，加载结束立即恢复原函数。作者网络结构、完整 checkpoint、严格权重匹配、推理和 ManiSkill 评测器没有改变；运行报告明确记录该初始化网络调用省略，避免把它伪装成完全原封不动的一键执行。若 checkpoint 缺少权重，严格加载仍会失败，而不会隐藏差异。
+
+另外：官方代码依赖 `timm`、`decord`、`einops`。v1.2.1 只补缺失的小依赖，不替换已运行的 torch/CUDA/ManiSkill。正式可复现论文记录应把这种适配与作者官方环境/提交分开注明。
+
 ## 科学进展路线
 
 官方Vid2Robot运行通过后，先完成训练数据与评测协议严格分离的正式Baseline（同源数据、相同任务、相同观测、相同控制模式或明确不同原始实现），再接入强对照：官方Vid.Cond.π₀.₅（keyframes/uniform）、UniSkill、ViT-Transformer robot-only和同预算Object Flow变体。我们的方法重点不应是CNN/ViT换代，而是**同一任务目标下的源行为→目标机器人能力约束的可执行物体效应转换**，必须以物理成功率、有效中间事件、接触/支撑约束和匹配信息预算的Goal+Waypoint Oracle等测量创新优势。
