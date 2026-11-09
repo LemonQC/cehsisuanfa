@@ -100,8 +100,12 @@ def build_windows(records,split,strict=False):
                         target=future.copy(),native_wh=rec["native_wh"])
             for group,ids in split.items():
                 if rec["video"] in ids:out[group].append(sample)
-    if not out["train"] or not out["test"]:
-        raise RuntimeError("Not enough valid real TRAIN video windows")
+    # Unit tests may inspect a single training video to prove no future-frame
+    # leakage; the full experiment must have disjoint train/val/test windows.
+    if not out.get("train"):
+        raise RuntimeError("Not enough valid real TRAIN video windows: empty training partition")
+    if strict and (not out.get("val") or not out.get("test")):
+        raise RuntimeError("Strict training requires valid, independent train/val/test video windows")
     return out
 
 
@@ -216,7 +220,7 @@ def run(index_path,out,epochs=15,seed=42,frames=48,batch_size=16,
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     records,dim=_extract(index_path,out,frames,model_id,device)
     split=video_split([r["video"] for r in records],seed)
-    samples=build_windows(records,split)
+    samples=build_windows(records,split,strict=True)
     (out/"split.json").write_text(json.dumps(split,indent=2))
     baseline_rows=[]
     for name in ("persistence","constant_velocity"):
