@@ -19,13 +19,20 @@ echo "DEVICE $(python -c 'import torch; print(torch.cuda.get_device_name(0) if t
 
 # Do not use another small network error as a reason to re-run GPU ViT
 # training or download the already-validated robot H5 dataset.
-if ! python -m pytest -q tests/test_v120_official_assets.py tests/test_v121_resumable_hf.py; then
+if ! python -m pytest -q tests/test_v120_official_assets.py tests/test_v121_resumable_hf.py tests/test_v121_official_summary_parser.py; then
   echo "V121_TEST_BLOCKED: transport/tests failed before any downloads"
   exit 3
 fi
 echo "TRAIN_ACTION_DATA: reusing existing 2 validated REAL_ROBOREEL demos"
 if [ ! -s "$OUT/real_robot_h5_audit.json" ]; then
    echo "TRAIN_ACTION_DATA_WARN: v1.2 validated H5 report missing"
+fi
+
+# requests is small and used only for bounded fallback HTTP Range transfers.
+# Do not install or upgrade torch, CUDA, ManiSkill or the policy model.
+if ! python -c 'import requests' >/dev/null 2>&1; then
+  python -m pip install --no-cache-dir "requests>=2.31,<3" \
+    || echo "REQUESTS_INSTALL_BLOCKED: native HuggingFace cache manager still attempted"
 fi
 
 # Authoritative HF file metadata sizes are checked BEFORE each download.
