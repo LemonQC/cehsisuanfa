@@ -1,5 +1,1 @@
-# Historical v0.1.1 headless fix
-
-**Superseded by v0.2.0.** Please use [HEADLESS_GUIDE.md](HEADLESS_GUIDE.md).
-
-All `agcofl.cli` commands now set `render_backend='none'` even if `--video` is supplied. The flag produces a 2D animation of recorded cube coordinates; it **does not** initialize the RGB camera renderer or provide a robot RGB video. Start with `python -m agcofl.cli doctor`.
+The previous v0.2 workaround disabled GLX/Vulkan rendering. The v0.3 workaround removes MPLib Planner from teacher execution. See HEADLESS_GUIDE.md.

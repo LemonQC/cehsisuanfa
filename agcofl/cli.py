@@ -13,7 +13,7 @@ def make_env(side,video=False):
     import gymnasium as gym
     import mani_skill.envs
     from . import env as _register  # noqa: F401
-    kwargs={'obs_mode':'state_dict','control_mode':'pd_joint_pos','sim_backend':'physx_cpu',
+    kwargs={'obs_mode':'state_dict','control_mode':'pd_ee_delta_pos','sim_backend':'physx_cpu',
             'render_backend':'none',  # ALWAYS no Vulkan; video is offline 2D trajectory movie
             'route_side':int(side),'reward_mode':'dense','num_envs':1}
     kwargs['render_mode'] = None
@@ -52,6 +52,7 @@ def run_collect(args):
     for side in (-1,1):
         env=make_env(side,video=args.video)
         try:
+            print('EXPERT_CONTROLLER pd_ee_delta_pos, no MPLib',flush=True)
             for i in range(args.episodes):
                 seed=args.seed+i
                 result=scripted_rollout(env,side=side,seed=seed,save_video=False)
@@ -128,7 +129,7 @@ def run_doctor(args):
     import sapien, mani_skill.envs
     print('TORCH',torch.__version__,'CUDA',torch.cuda.is_available(),flush=True)
     print('STOCK_CREATE',flush=True)
-    env=gym.make('PushCube-v1',obs_mode='state_dict',control_mode='pd_joint_pos',
+    env=gym.make('PushCube-v1',obs_mode='state_dict',control_mode='pd_ee_delta_pos',
                  sim_backend='physx_cpu',render_backend='none',render_mode=None,num_envs=1)
     try:
         print('STOCK_RESET',flush=True)
@@ -162,10 +163,10 @@ def main():
     dr=sub.add_parser('doctor');dr.add_argument('--seed',type=int,default=42);dr.set_defaults(func=run_doctor)
     sm=sub.add_parser('smoke');sm.add_argument('--seed',type=int,default=42);sm.set_defaults(func=run_smoke)
     co=sub.add_parser('collect');co.add_argument('--episodes',type=int,default=10);co.add_argument('--seed',type=int,default=100);
-    co.add_argument('--out',default='outputs/episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');co.set_defaults(func=run_collect)
-    tr=sub.add_parser('train-bc');tr.add_argument('--data',default='outputs/episodes');tr.add_argument('--ckpt',default='outputs/models/flow_bc.pt');
+    co.add_argument('--out',default='outputs/ee_v030_episodes');co.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');co.set_defaults(func=run_collect)
+    tr=sub.add_parser('train-bc');tr.add_argument('--data',default='outputs/ee_v030_episodes');tr.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');
     tr.add_argument('--epochs',type=int,default=80);tr.add_argument('--batch',type=int,default=256);tr.set_defaults(func=run_train)
-    ev=sub.add_parser('gate-a');ev.add_argument('--ckpt',default='outputs/models/flow_bc.pt');ev.add_argument('--out',default='outputs/gate_a');
+    ev=sub.add_parser('gate-a');ev.add_argument('--ckpt',default='outputs/models/flow_bc_ee_v030.pt');ev.add_argument('--out',default='outputs/gate_a');
     ev.add_argument('--episodes',type=int,default=5);ev.add_argument('--seed',type=int,default=9000);ev.add_argument('--max-steps',type=int,default=500);
     ev.add_argument('--video',action='store_true',help='Save offline 2D cube-trajectory MP4; does not enable GPU/GLX rendering');ev.set_defaults(func=run_gate)
     los=sub.add_parser('test-loss');los.set_defaults(func=run_losscheck)

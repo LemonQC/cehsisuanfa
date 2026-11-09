@@ -31,6 +31,10 @@ class Demonstrations(Dataset):
         for path in paths:
             with np.load(path) as d:
                 if not bool(d['success']): continue
+                if 'controller' not in d or str(d['controller'].item()) != 'pd_ee_delta_pos':
+                    raise RuntimeError(f'Legacy/incompatible controller in {path}; expected pd_ee_delta_pos. Do not mix old datasets.')
+                if d['action'].shape[-1] != 4:
+                    raise RuntimeError(f'Expected 4D Cartesian actions in {path}, got {d["action"].shape}')
                 xs.append(d['state'].astype(np.float32))
                 fs.append(d['flow'].astype(np.float32))
                 ys.append(d['action'].astype(np.float32))

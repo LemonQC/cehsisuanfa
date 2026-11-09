@@ -1,7 +1,7 @@
-"""Physical Panda scripted rollout with official ManiSkill/mplib solver.
+"""Headless Panda physically-controlled teacher without MPLib.
 
-The planner is used only to collect expert demonstrations; learned controller
-gets joint actions. Failed or incomplete trajectories are recorded as failures.
+The native ManiSkill pd_ee_delta_pos controller supplies the IK internally.
+Failed or incomplete trajectories are recorded as failures.
 """
 from __future__ import annotations
 import numpy as np
@@ -48,82 +48,92 @@ class RecorderEnv:
     def __getattr__(self,k): return getattr(self.env,k)
 
 
-def _planner_move(planner, target, quat, approach=False):
-    import sapien
-    p=sapien.Pose(p=np.asarray(target,dtype=np.float64),q=np.asarray(quat,dtype=np.float64))
-    if approach:
-        res=planner.move_to_pose_with_RRTConnect(p)
-        if isinstance(res,int) and res == -1:
-            res=planner.move_to_pose_with_screw(p)
-    else:
-        res=planner.move_to_pose_with_screw(p)
-    if isinstance(res,int) and res == -1:
-        raise RuntimeError(f'motion planning failed for TCP target {target}')
-    return res
+def cartesian_action(actual, target, shape=(4,)):
+    """Normalized Panda XYZ delta control plus closed gripper; no MPLib."""
+    shape = tuple(shape)
+    if shape not in ((4,), (1, 4)):
+        raise ValueError(f"pd_ee_delta_pos action should have 4 entries, got {shape}")
+    a = np.asarray(actual, dtype=np.float32).reshape(3)
+    b = np.asarray(target, dtype=np.float32).reshape(3)
+    delta = np.clip(0.75 * (b - a) / 0.1, -0.65, 0.65)
+    return np.r_[delta, -1.0].astype(np.float32).reshape(shape)
 
 
-def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=1):
-    """Four physical pushing legs via PandaArmMotionPlanningSolver.
+def _servo_tcp(recorder, target, *, max_steps=45, tolerance=0.018):
+    b = recorder.unwrapped
+    target = np.asarray(target, dtype=np.float32).reshape(3)
+    for _ in range(max_steps):
+        xyz = np1(b.agent.tcp.pose.p)[:3]
+        if np.linalg.norm(xyz - target) < tolerance:
+            return True
+        if len(recorder.records) >= 530:
+            raise RuntimeError("Reached episode step budget before TCP target")
+        recorder.step(cartesian_action(xyz, target, recorder.env.action_space.shape))
+    return bool(np.linalg.norm(np1(b.agent.tcp.pose.p)[:3] - target) < tolerance)
 
-    Does NOT use env routing labels as input to learned policy: side is expert-only.
-    Uses RRT for free-space waypoints, screw motion during contact pushing.
-    """
-    import sapien
-    from mani_skill.examples.motionplanning.panda.motionplanner import PandaArmMotionPlanningSolver
+
+def _push_leg(recorder, waypoint_xy):
+    b = recorder.unwrapped
+    cube = np1(b.obj.pose.p)[:3]
+    goal = np.asarray(waypoint_xy, dtype=np.float32).reshape(2)
+    dxy = goal - cube[:2]
+    distance = float(np.linalg.norm(dxy))
+    if distance < 0.040:
+        return True
+    direction = dxy / distance
+    behind = cube[:2] - 0.060 * direction
+    tcp = np1(b.agent.tcp.pose.p)[:3]
+    for pose, budget, phase in (
+        (np.r_[tcp[:2], 0.16], 35, "raise"),
+        (np.r_[behind, 0.16], 55, "hover"),
+        (np.r_[behind, 0.028], 45, "descend"),
+    ):
+        if not _servo_tcp(recorder, pose, max_steps=budget):
+            raise RuntimeError(f"Failed TCP {phase}; target={pose.tolist()}, actual={np1(b.agent.tcp.pose.p)[:3].tolist()}")
+    final_tcp = np.r_[behind + direction * (distance + 0.090), 0.028]
+    if not _servo_tcp(recorder, final_tcp, max_steps=85, tolerance=0.024):
+        raise RuntimeError(f"Failed contact push towards waypoint={goal.tolist()}")
+    tcp = np1(b.agent.tcp.pose.p)[:3]
+    if not _servo_tcp(recorder, np.r_[tcp[:2], 0.16], max_steps=40):
+        raise RuntimeError("Failed retract from push")
+    return bool(np.linalg.norm(np1(b.obj.pose.p)[:2] - goal) < 0.055)
+
+
+def scripted_rollout(env, side=1, seed=0, save_video=False, max_retries=0):
+    """Real physics Cartesian-IK push teacher; never calls mplib.Planner."""
     env.reset(seed=int(seed))
-    base=env.unwrapped
-    recorder=RecorderEnv(env,side,video=save_video)
-    planner=None
-    error=None
+    b = env.unwrapped
+    rec = RecorderEnv(env, side, video=False)
+    error = None
+    success = False
     try:
-        planner=PandaArmMotionPlanningSolver(recorder, debug=False,vis=False,
-                    base_pose=base.agent.robot.pose,visualize_target_grasp_pose=False,
-                    print_env_info=False,joint_vel_limits=.65,joint_acc_limits=.65)
-        # Collision cloud for the central barrier, used by free-space motion planning.
-        # It can be omitted if the installed mplib rejects this obstacle.
-        try:
-            planner.add_box_collision(np.array([.10,.154,.09]),
-                                      sapien.Pose(p=[0,0,.045]))
-        except Exception as exc:
-            print('warning: obstacle cloud rejected:',repr(exc))
-        planner.close_gripper(t=6)
-        quat=np1(base.agent.tcp.pose.q)[:4]
-        for target in route_points(side)[1:]:
-            for attempt in range(max_retries+1):
-                cube=np1(base.obj.pose.p)[:3].copy()
-                diff=np.asarray(target)-cube[:2]
-                dist=np.linalg.norm(diff)
-                if dist < .045: break
-                direction=diff/max(dist,1e-8)
-                contact_xy=cube[:2]-direction*.055
-                above=np.r_[contact_xy,.125]
-                at_contact=np.r_[contact_xy,.025]
-                # Put gripper behind the cube, keep jaws closed and on tabletop.
-                _planner_move(planner,above,quat,approach=True)
-                _planner_move(planner,at_contact,quat)
-                # Push slightly beyond object goal to compensate gripper/cube offset.
-                push_target=at_contact+np.r_[direction*(dist+.025),0]
-                _planner_move(planner,push_target,quat)
-                _planner_move(planner,np.r_[push_target[:2],.125],quat)
-                actual=np1(base.obj.pose.p)[:2]
-                if np.linalg.norm(actual-target)<.055: break
-        info=base.evaluate()
-        complete=bool(np1(info['success'])[0])
+        if tuple(env.action_space.shape) not in ((4,), (1,4)):
+            raise RuntimeError(f"Wrong controller, action shape={env.action_space.shape}; use pd_ee_delta_pos")
+        close = np.array([0., 0., 0., -1.], dtype=np.float32).reshape(env.action_space.shape)
+        for _ in range(8):
+            rec.step(close)
+        for point in route_points(side)[1:]:
+            good = False
+            for _ in range(int(max_retries) + 1):
+                good = _push_leg(rec, point)
+                if good:
+                    break
+            if not good:
+                raise RuntimeError(f"Cube missed waypoint {np.asarray(point).tolist()}; measured={np1(b.obj.pose.p)[:2].tolist()}")
+        success = bool(np1(b.evaluate()["success"])[0])
+        if not success:
+            error = "Final physics task evaluation failed"
     except Exception as exc:
-        complete=False
-        error=f'{type(exc).__name__}: {exc}'
-    finally:
-        if planner is not None:
-            try: planner.close()
-            except Exception: pass
-    trajectory={}
-    if recorder.records:
-        for k in ('state','action','flow','cube_before','cube_after','visited'):
-            trajectory[k]=np.stack([r[k] for r in recorder.records])
-    return {'success':complete,'error':error,'side':int(side),'seed':int(seed),
-            'trajectory':trajectory,'frames':recorder.frames,
-            'end_cube':np1(base.obj.pose.p)[:3].tolist(),
-            'check_visited':bool(np1(base.evaluate()['check_visited'])[0])}
+        success = False
+        error = f"{type(exc).__name__}: {exc}"
+    traj = {}
+    if rec.records:
+        for key in ("state","action","flow","cube_before","cube_after","visited"):
+            traj[key] = np.stack([r[key] for r in rec.records])
+    return dict(success=success, error=error, side=int(side), seed=int(seed),
+                controller="pd_ee_delta_pos", trajectory=traj, frames=[],
+                end_cube=np1(b.obj.pose.p)[:3].tolist(),
+                check_visited=bool(np1(b.evaluate()["check_visited"])[0]))
 
 
 def save_episode(result,path,trajectory_video=False):
@@ -132,7 +142,7 @@ def save_episode(result,path,trajectory_video=False):
     path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
     data=result['trajectory']
     if data:
-        np.savez_compressed(path, **data, side=np.array(result['side'],dtype=np.int8),
+        np.savez_compressed(path, **data, controller=np.asarray('pd_ee_delta_pos'), side=np.array(result['side'],dtype=np.int8),
                             seed=np.array(result['seed'],dtype=np.int32),
                             success=np.array(result['success'],dtype=np.bool_))
     meta={k:v for k,v in result.items() if k not in ('trajectory','frames')}

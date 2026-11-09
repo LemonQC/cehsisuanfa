@@ -1,56 +1,24 @@
-# RTX 4090 / SSH no-display guide (v0.2.0)
+# v0.3.0 diagnosis — native MPLib crash
 
-## What changed
+Latest 4090 trace:
+- mplib/planner.py, line 65, __init__
+- mani_skill/examples/motionplanning/panda/motionplanner.py
+- agcofl/teacher.py, scripted_rollout
 
-Older versions used `render_backend='gpu'` whenever `--video` was enabled. With
-`DISPLAY=localhost:10.0` (SSH X11 forwarding without GLX), SAPIEN/Vulkan may segfault
-natively before Python can catch an exception. v0.2.0 **always** uses
-`sim_backend='physx_cpu', render_backend='none', render_mode=None`, whether
-`--video` is present or absent.
+This is not the previous GLX/Vulkan error. Python exception handling cannot catch the native crash. We removed the MPLib dependency in teacher data collection and use ManiSkill's pd_ee_delta_pos (XYZ delta + gripper) built-in IK controller.
 
-`--video` now **only** creates an offline 2D MP4 showing the recorded cube XY trace,
-obstacle, checkpoint regions and goal. It is **not a real RGB robot video**.
-All numerical success metrics are computed from the actual ManiSkill states, not
-the rendered trajectory animation.
+Run:
 
-## First commands
+    cd /mnt/4Tdata/LemonData/cehsisuanfa
+    git pull origin main
+    conda activate agcofl4090
+    unset DISPLAY WAYLAND_DISPLAY
+    export MPLBACKEND=Agg PYTHONFAULTHANDLER=1
+    python -m pytest -q tests
+    python -u -X faulthandler -m agcofl.cli doctor 2>&1 | tee doctor_v030.log
+    python -u -X faulthandler -m agcofl.cli collect --episodes 1 --seed 100 --out outputs/ee_v030_episodes 2>&1 | tee collect_v030.log
+    cat outputs/ee_v030_episodes/collection_summary.json
 
-```bash
-# Your SSH server session (RTX 4090)
-git clone https://github.com/LemonQC/cehsisuanfa.git
-cd cehsisuanfa
-conda activate agcofl4090
-unset DISPLAY WAYLAND_DISPLAY
-export MPLBACKEND=Agg
-export PYTHONFAULTHANDLER=1
+If it still crashes, share doctor_v030.log and collect_v030.log. If it no longer crashes but the teacher fails, share outputs/ee_v030_episodes/route_*.json, which now records actual physical failure details. Do not train on failed episodes.
 
-python -m pytest -q tests
-python -m agcofl.cli test-loss
-python -u -X faulthandler -m agcofl.cli doctor 2>&1 | tee doctor.log
-```
-
-Only after `STOCK_PHYSICS_OK` and `SMOKE_OK`:
-
-```bash
-python -u -m agcofl.cli collect --episodes 1 --seed 100 --out outputs/episodes --video \
-  2>&1 | tee collect.log
-cat outputs/episodes/collection_summary.json
-```
-
-If neither side has a successful teacher physical rollout, **stop** and share
-`doctor.log`, `collect.log`, `outputs/episodes/*.json`. Do not train on failed
-rollouts. You can rerun collection without `--video` (faster). `--video` no
-longer depends on GPU rendering.
-
-## Failure isolation
-
-- `STOCK_CREATE` or `STOCK_RESET` crashes: stock ManiSkill/SAPIEN/PhysX or native
-  graphics libraries; unrelated to the custom task or supervision loss.
-- Stock stage succeeds but `SMOKE_CREATE` crashes: custom task initialization.
-- Both stages succeed but teacher fails: `mplib`, grasp pose, collision/path or
-  push contact geometry; inspect errors in per-episode JSON.
-- `LOSS_CHECK_OK` does **not** validate any ManiSkill physics. Equal loss values
-  are possible with uniform test logits even though gradients touch different frames.
-
-Do not blindly upgrade NVIDIA/CUDA/PyTorch. Record `nvidia-smi`, `python -m pip
-freeze`, and the exact stage marker where a failure occurs.
+The changed controller means old episodes and checkpoints are incompatible. --video only draws post-simulation 2D trajectory MP4; no Vulkan is used.

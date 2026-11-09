@@ -1,121 +1,40 @@
-> **GitHub v0.2.0 / RTX 4090 headless**: All commands, including `collect --video` and `gate-a --video`, use `render_backend='none'`. `--video` saves a **2D animated trace of physically recorded cube positions**, not RGB camera video; therefore SSH GLX/Vulkan is never required. Read [HEADLESS_GUIDE.md](HEADLESS_GUIDE.md) and start with `python -m agcofl.cli doctor`.
+# AG-COFL Partial Object-Flow Supervision — ManiSkill 3 Pilot
 
-# AG-COFL / Partial Object-Flow Supervision — ManiSkill 3 pilot
+Version v0.3.0. FIX: the prior crash in mplib/planner.py:65 inside PandaArmMotionPlanningSolver has been bypassed. The new agcofl/teacher.py uses ManiSkill's built-in pd_ee_delta_pos Cartesian controller (XYZ+gripper) for all real Panda physics actions. It NEVER instantiates MPLib.
 
-**Purpose:** verify the essential Gate A before investing in full/anchor/end high-level training. This is a real `env.step()` robotic experiment with a Panda in a custom two-route tabletop task, **not a precomputed success illustration**.
+The official PushCube doctor, custom task, teacher, BC, and Gate A now use the same four-dimensional pd_ee_delta_pos controller. Existing v0.2 pd_joint_pos data and checkpoints must not be mixed; the dataset loader checks its controller metadata.
 
-**Version:** v0.2.0 (2026-11-09). **Simulation runtime status:** API cross-checked against ManiSkill 3.0.1 documentation and official source; Python syntax and framework-independent unit tests checked in authoring environment; **NOT physically run with ManiSkill/SAPIEN in this container**. Your RTX 4090 Linux machine must run the included smoke test. Do not cite this code as a verified success-rate baseline until you obtain rollouts.
+Physics success of the new teacher is NOT yet verified on the user's RTX 4090. This code is a candidate experimental rollout, not claimed successful data. Stop if the robot cannot push reliably through both routes. Do not train on failures.
 
-## What is delivered
+## Run on existing 4090 conda env (NO reinstall)
 
-* `AGCOFL-TwoRoute-v1`: Panda, rigid cube, central static obstacle, top/bottom path around obstacle, inspection checkpoint, final goal.
-* `teacher.py`: four-leg Panda physical pushing expert using official `PandaArmMotionPlanningSolver`; stores all joint actions and full object position trace. Failed motion plans are failures, never converted to successful examples.
-* `representation.py`: four 32×32 future binary square masks encoding upper vs lower desired object route. They are **synthetic geometric mask references**, not measured human video segmentation and not dense optical flow.
-* `learning.py`: actual trainable CNN + proprioceptive behavioral-cloning controller that consumes future masks and outputs `pd_joint_pos` actions; held-out physical evaluation on both routes from the same starting state.
-* `partial_supervision.py`: torch `full`, `anchor`, `end` losses including selected-frame mask union and central-window anchor matching. Not yet wired into a trained high-level predictor—**Gate B intentionally gated on Gate A**.
-* Reproducible command-line scripts, JSON episode results, optional 2D trajectory MP4, tests.
+    cd /mnt/4Tdata/LemonData/cehsisuanfa
+    git pull origin main
+    conda activate agcofl4090
+    unset DISPLAY WAYLAND_DISPLAY
+    export MPLBACKEND=Agg PYTHONFAULTHANDLER=1
 
-## Hardware / software
+    python -m pytest -q tests
+    python -m agcofl.cli test-loss
+    python -u -X faulthandler -m agcofl.cli doctor 2>&1 | tee doctor_v030.log
 
-Linux x86-64 with NVIDIA RTX 4090, CUDA driver compatible with PyTorch cu121, headless possible. Requires `conda`. `maniskill`/`sapien`/`mplib` are unavailable in the authoring container; physics API compatibility is checked against the 3.0.1 official source but is **not runtime verified**.
+After STOCK_PHYSICS_OK and SMOKE_OK:
 
-### 1. Environment install
+    python -u -X faulthandler -m agcofl.cli collect --episodes 1 --seed 100 --out outputs/ee_v030_episodes 2>&1 | tee collect_v030.log
+    cat outputs/ee_v030_episodes/collection_summary.json
 
-```bash
-unzip agcofl_partialflow_4090.zip
-cd agcofl_partialflow_4090
-bash scripts/setup_linux4090.sh
-conda activate agcofl4090
-```
+Do not use --video on the first run. If you later add it, it makes only a headless 2D animation from measured cube XY positions, NOT RGB camera video. The renderer remains disabled.
 
-If your server already has a stable ManiSkill 3 environment, use it first and install only missing dependencies, rather than overriding your current installation. To check CUDA and versions:
+Normal failure messages such as Failed TCP hover/descend, Cube missed waypoint, or Failed contact push mean the IK/physical demonstration geometry needs correction. They are NOT native segfaults; inspect saved per-episode JSON, and do NOT reinstall CUDA or NVIDIA drivers.
 
-```bash
-python -c 'import torch,mani_skill,sapien,mplib; print(torch.__version__,torch.cuda.is_available(),torch.cuda.get_device_name(0))'
-python -m pytest -q tests
-```
+Only after there are successful recorded physical demonstrations for both sides:
 
-If the specified ManiSkill release or its dependencies conflict with your system, record pip error, installed versions and `nvidia-smi` output; avoid blind upgrades.
+    python -m agcofl.cli collect --episodes 15 --seed 200 --out outputs/ee_v030_episodes
+    python -m agcofl.cli train-bc --data outputs/ee_v030_episodes --epochs 100 --ckpt outputs/models/flow_bc_ee_v030.pt
+    python -m agcofl.cli gate-a --ckpt outputs/models/flow_bc_ee_v030.pt --episodes 5 --seed 9000 --max-steps 500 --video
 
-### 2. One-step smoke test (do this BEFORE collecting data)
+The goal of Gate A is to demonstrate that same-initial-state Panda physically selects upper vs lower tabletop route in response only to the synthetic future object-mask sequence. This is a feasibility experiment, NOT an already-proven result. Full/Anchor/End losses are implemented but the entire high-level human-to-robot training comparison is NOT yet executed.
 
-```bash
-python -m agcofl.cli test-loss
-python -m agcofl.cli doctor
-```
+Official ManiSkill controller documentation: https://maniskill.readthedocs.io/en/latest/user_guide/concepts/controllers.html
 
-Expected: `STOCK_PHYSICS_OK`, then two lines with side ±1, and `SMOKE_OK`. `doctor` first verifies stock ManiSkill physics, then the custom `smoke` verifies physics stepping, registration, masks and action shape; **not expert success**.
-
-### 3. Collect real Panda pushing trajectories
-
-```bash
-python -m agcofl.cli collect --episodes 3 --seed 100 --out outputs/episodes --video
-cat outputs/episodes/collection_summary.json
-```
-
-This can be CPU-physics slow because the official mplib solver is used. Success is required for data inclusion. The reporter tells exactly which seed and motion-plan failed; for failures first inspect `outputs/episodes/route_*.json` and validate joint reach/contact geometry before scaling.
-
-**STOP:** if neither route has a physically successful demonstrated episode, don't attempt training. Do not invent a successful “teacher” trajectory or use kinematic teleportation to fill gaps. The exact workspace dimensions and controller behavior depend on the installed ManiSkill/SAPIEN version and need server validation.
-
-### 4. Train Flow-conditioned low-level policy on RTX 4090
-
-```bash
-python -m agcofl.cli collect --episodes 15 --seed 200 --out outputs/episodes
-python -m agcofl.cli train-bc --data outputs/episodes --epochs 100 --ckpt outputs/models/flow_bc.pt
-```
-
-The training uses GPU automatically if available. Since collection records **real Panda joint actions**, BC has no access to teacher planning targets other than the provided future occupancy masks and robot/object state. All successful expert time steps are used. It is a feasibility baseline, not official Diffusion Policy and not the exact Chen et al. policy.
-
-### 5. Gate A: same seed, different reference mask
-
-```bash
-python -m agcofl.cli gate-a --ckpt outputs/models/flow_bc.pt --seed 9000 --episodes 5 --max-steps 500 --video
-cat outputs/gate_a/gateA_report.json
-```
-
-Success must include visiting the **side-specific checkpoint and reaching goal while on table**, not only reaching either goal. A single success on both sides is an initial pilot, **not** sufficient statistical evidence for T-RO. Keep failure trajectories; report pass counts out of N and reasons. If BC chooses the same side even though reference masks differ, **Gate A fails**, and high-level full/anchor/end comparisons cannot be scientifically interpreted.
-
-For a fast single-command trial after install:
-
-```bash
-bash scripts/run_gate_a.sh
-```
-
-### 6. Supervision module (not a trained policy)
-
-```python
-from agcofl.partial_supervision import torch_segment_loss
-robot_loss = torch_segment_loss(robot_logits, robot_masks, 'full')
-human_loss = torch_segment_loss(human_logits, human_masks, 'anchor')
-loss = robot_loss + 0.5 * human_loss
-```
-
-All tensors above are `[T,H,W]`, logit inputs, target binary masks. The anchor is matched in the middle 50% of the prediction horizon. The end is **end of the supervised segment**, and must not be mislabeled as the final task goal for short windows that do not cover that event. The supplied unit tests verify that unselected prediction frames have no direct gradient. The full high-level experiment (two phases × three modes, nine tables) needs human clips and a working Flow-conditioned low-level controller; do NOT claim it was run here.
-
-## Experimental integrity / what can and cannot be claimed
-
-**Can establish if executed successfully:** a learned Panda policy can condition on future mask references to execute distinct physical upper/lower paths, in a controlled geometry-based pilot.
-
-**Does not establish:** human-to-robot transfer, benefits of anchor/end over full, model innovation, end-to-end imitation from RGB, publication readiness, or superiority over Chen et al. (2026).
-
-**Route information leakage:** task `route_side` changes checkpoint location and success evaluation; policy state deliberately excludes it. The only side-specific policy input is the binary reference masks. Same random seed is used for upper/lower tests. Static marker is non-colliding and visible only in optional rendering, not policy state. To rule out action-level leakage rigorously, compare matching start robot/object states and verify route-side inference from masks.
-
-**Critical baseline caveat:** `mask_sequence` is currently a handcrafted future occupancy label, not raw RGB human masks. This is an Oracle-control Gate A; do not label it as “object flow predictor” or final proposed method.
-
-## Important sources / API reference
-
-- [ManiSkill 3.0.1 PushCubeEnv official implementation](https://github.com/haosulab/ManiSkill/blob/main/mani_skill/envs/tasks/tabletop/push_cube.py)
-- [Official Panda PushCube motion-planning solution](https://github.com/haosulab/ManiSkill/blob/main/mani_skill/examples/motionplanning/panda/solutions/push_cube.py)
-- [Official Panda motion-planning solver](https://github.com/haosulab/ManiSkill/blob/main/mani_skill/examples/motionplanning/panda/motionplanner.py)
-- [ManiSkill task building documentation](https://maniskill.readthedocs.io/en/latest/user_guide/tutorials/custom_tasks/intro.html)
-- [ManiSkill observation documentation](https://maniskill.readthedocs.io/en/latest/user_guide/concepts/observation.html)
-- Source paper: [Cross-Behavior Learning With Object Flow Prediction for Robotic Manipulation](https://eprints.whiterose.ac.uk/id/eprint/242108/1/26-0166_02_MS.pdf)
-
-## Troubleshooting
-
-* `ModuleNotFoundError: mani_skill`: activate the conda env and check pip install.
-* `ImportError: mplib`: install official `mplib` compatible with your Python/ManiSkill, record exact version.
-* `motion planning failed`: inspect per-seed JSON. Check Panda work envelope, barrier size, target pose, RRT cloud and contact height; don't change all parameters simultaneously.
-* No physical expert episodes: Gate A cannot proceed. Report a NO-GO for this **implementation**, not a NO-GO for the scientific hypothesis.
-* Rendering: `--video` is headless 2D trajectory animation only. RGB camera video is **not** enabled in v0.2.0; no need to unset the flag to avoid GLX.
-* GPU running but collection is slow: `physx_cpu` and mplib are CPU workloads; GPU is used for neural network training. This is intentional for minimal deterministic verification.
+See HEADLESS_GUIDE.md for diagnosis.
