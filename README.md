@@ -1,3 +1,33 @@
+# AG-COFL | v1.1 — 官方 Baseline 优先 + 预训练 ViT GPU 验证
+
+**研究方向继续推进，不因 v0.9 的简易 CNN 失效而放弃。** 创新问题保持：源人类物体运动效应如何在目标机器人不同操作能力下转化为物理可执行行为。CNN 只是旧的工程烟雾测试；从 v1.1 开始使用预训练 DINOv2 ViT + 时序 Transformer，固定官方 Baseline、数据协议和闭环实验。
+
+## RTX 4090 一键执行 v1.1
+
+\`\`\`bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --rebase --autostash origin main
+conda activate agcofl4090
+set -o pipefail
+bash scripts/run_v110_official_baselines_and_vit.sh 2>&1 | tee baseline_v110.log
+\`\`\`
+
+这次脚本会：
+
+1. 检查已有真实训练视频6段，以及 **RoboReel 官方 Baseline 仓库** [weiweigu1998/roboreel_models](https://github.com/weiweigu1998/roboreel_models)，固定源码提交 79a0fb0099e73c5560114753a8706276f93aefc2（无需下载全部大模型）。
+2. 从官方数据集抽取最多2段 **真实机器人训练轨迹**，每段必须有 H5 动作及 base/hand MP4，硬上限300MB；缺任何文件都标记 BLOCKED。
+3. **在 CUDA/4090 上**加载 \`facebook/dinov2-small\` 的真实预训练权重（不可用则报 BLOCKED，禁止随机初始化替代），以224×224真实RGB提取视觉特征，训练相同结构的 Full/Anchor/End 时序 Transformer 预测头，并对完整视频级 held-out 数据进行评估。仅供数据/表征 sanity check，不是完整机器人策略。
+4. 将少量结果 JSON/CSV 自动归档到 \`research_reports/2026-11-09_v110/\`。不推送视频、H5或权重。
+
+**输出路径** \`outputs/v110_baselines/\`：\`official_baseline_audit.json\`, \`robot_data_manifest.json\`, \`vit_pilot/report.json\`, \`vit_pilot/summary.csv\`, \`vit_pilot/split.json\`。跑完若看到 \`VIT_GPU_TRAINING_COMPLETED\` 和 \`AUTOPUBLISH_OK\`，只回复“v1.1 完成”即可，我会直接读 GitHub 结果。
+
+**注意**：只有6段训练视频，1段测试视频的 ViT 结果只能验证学习和技术流程。不能用它作为论文统计证据，也不能以某个回归数值判定整项 T-RO 研究无效。现在还需要原始机器人动作示范、源/目标同目标跨行为任务、真实接触/支撑的物理评测。
+
+完整 Baseline 矩阵（14项分层、官方vs改写标注、任务、预算、停止条件）：
+[docs/BASELINE_MATRIX_TRO_V110.md](docs/BASELINE_MATRIX_TRO_V110.md)。
+
+---
+
 # AG-COFL — Actionability-Guided Cross-Behavior Object Flow
 
 **Current execution gate: v1.0 (2026-11-09).**
