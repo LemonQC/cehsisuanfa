@@ -121,3 +121,44 @@ def test_git_blob_sha1_uses_zero_byte_header(tmp_path):
     h=hashlib.sha1(b"blob 4"+bytes([0])+body).hexdigest()
     sib=NS(rfilename=name,size=4,lfs=None,blob_id=h)
     assert p.file_state(file,sib)=="git-blob-verified"
+
+
+def test_zero_byte_orbax_success_marker_is_created_and_hash_verified_without_network(
+        tmp_path, monkeypatch):
+    """Actual pinned manifest has a 0-byte commit_success.txt.
+
+    Offset==size==0 must not mistake a nonexistent .part for a
+    downloaded, hashable file. The Git empty-blob digest is verified.
+    """
+    import hashlib
+    from types import SimpleNamespace as NS
+
+    item = NS(
+        rfilename=p.PREFIX+"commit_success.txt", size=0,
+        blob_id=hashlib.sha1(b"blob 0"+bytes([0])).hexdigest(),
+        lfs=None)
+    def must_not_download(*args, **kwargs):
+        raise AssertionError("No HTTP should be used for verified empty files")
+    monkeypatch.setattr(p.requests, "get", must_not_download)
+    assert p.download_one(item, tmp_path, "https://huggingface.co", 0) == "git-blob-verified"
+    final = tmp_path/item.rfilename
+    assert final.is_file()
+    assert final.stat().st_size == 0
+    assert not final.with_name(final.name+".part").exists()
+    # After resume/retry, the completed zero-byte file is reused.
+    assert p.download_one(item, tmp_path, "https://huggingface.co", 0) == "git-blob-verified"
+
+
+def test_zero_byte_orbax_marker_rejects_wrong_hash_without_network(
+        tmp_path, monkeypatch):
+    from types import SimpleNamespace as NS
+
+    item = NS(
+        rfilename=p.PREFIX+"commit_success.txt", size=0,
+        blob_id="f"*40, lfs=None)
+    def must_not_download(*args, **kwargs):
+        raise AssertionError("Unexpected HTTP GET")
+    monkeypatch.setattr(p.requests, "get", must_not_download)
+    with pytest.raises(RuntimeError, match="bad hash"):
+        p.download_one(item, tmp_path, "https://huggingface.co", 0)
+    assert not (tmp_path/item.rfilename).exists()
