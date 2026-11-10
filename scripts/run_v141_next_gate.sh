@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v1.4.6, repair only missing official model files over approved HTTPS proxy.
+# v1.4.7, post-checkpoint pipeline: one feature smoke, full 20, gated official 20x3.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-gate}"
@@ -42,6 +42,11 @@ case "$MODE" in
     # Independently retry original Hugging Face network after fixing routing.
     python -m agcofl.v141_pi05_assets --variant uniform --download-checkpoint
     ;;
+  smoke-one-feature)
+    # Author's original SigLIP, one EVAL video only. Never trains on EVAL.
+    # Failures in JAX/OpenPI, model loading, ffmpeg appear before 20-demo job.
+    python -m agcofl.v141_pi05_assets --variant uniform --extract-features --max-feature-demos 1
+    ;;
   prepare-features)
     # Local authors' SigLIP extraction of the 20 existing official EVAL videos.
     # Requires the separate JAX/OpenPI environment and possibly cached SigLIP weights.
@@ -64,7 +69,7 @@ case "$MODE" in
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
