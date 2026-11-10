@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "PREPARATION_BLOCKED_HF_CERT_HOSTNAME_MISMATCH_NO_PHYSICS",
+    "status": "NETWORK_BLOCKED_WRONG_DNS_ANSWERS_NO_PHYSICS",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -17,7 +17,25 @@
     "attempted_checkpoint_download": true,
     "checkpoint_download_success": false,
     "missing_siglip_features": 20,
-    "failure_scope": "HfApi().model_info original author checkpoint download; official evaluator was preflight-blocked"
+    "failure_scope": "HfApi().model_info original author checkpoint download; official evaluator was preflight-blocked",
+    "network_diagnosis": {
+      "checked_on_server": true,
+      "proxy_env_detected": false,
+      "dns_answers_ipv4": [
+        "108.160.170.45"
+      ],
+      "dns_answers_ipv6": [
+        "2a03:2880:f10e:83:face:b00c:0:25de"
+      ],
+      "diagnosed_owners": [
+        "Dropbox, Inc.",
+        "Meta/Facebook"
+      ],
+      "direct_tcp_tls_error": "Connect timeout before TLS",
+      "hf_api_error": "ConnectTimeout",
+      "issue": "System DNS answers inconsistent with Hugging Face CDN; verify hosts/resolver upstream before downloading",
+      "not_a_model_result": true
+    }
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -43,5 +61,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.3: add --require-ready evaluation gate, split prepare-checkpoint/prepare-features, TLS diagnostics",
-  "next_operator_action": "Diagnose and correct server HTTPS certificate/domain routing; do not disable SSL verification. Then prepare-checkpoint, prepare-features (pi05 JAX env), evaluate-uniform."
+  "next_operator_action": "Read-only check /etc/hosts, resolvectl, resolv.conf, trusted DNS comparisons; repair authorized DNS/network routing without TLS bypass; then prep official π0.5"
 }
