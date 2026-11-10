@@ -54,3 +54,70 @@ def test_local_completeness_and_idempotent_symlink(tmp_path):
 
 def test_incomplete_install_not_trusted(tmp_path):
     assert not c.trusted_mirror_install(tmp_path,tmp_path/"cache")
+
+
+def test_http_get_skips_hub_head_and_verifies_digest(tmp_path, monkeypatch):
+    import hashlib
+    import io
+    from types import SimpleNamespace as NS
+    content=b"test orbax metadata"
+    expected=NS(rfilename=p.PREFIX+"_METADATA",size=len(content),
+                lfs={"sha256":hashlib.sha256(content).hexdigest()},blob_id=None)
+    seen={}
+    class Reply:
+        url="https://cdn-lfs.huggingface.co/verified-blob"
+        status_code=200
+        headers={}
+        def __enter__(self): return self
+        def __exit__(self,*_): return False
+        def raise_for_status(self): pass
+        def iter_content(self,chunk_size): yield content
+    def fake_get(url,**kwargs):
+        seen["url"]=url
+        seen["kwargs"]=kwargs
+        return Reply()
+    monkeypatch.setattr(p.requests,"get",fake_get)
+    state=p.download_one(expected,tmp_path,"https://huggingface.co",0)
+    assert state=="sha256-verified"
+    assert (tmp_path/expected.rfilename).read_bytes()==content
+    assert seen["kwargs"]["stream"] is True
+    assert p.REVISION in seen["url"]
+    assert not (tmp_path/(expected.rfilename+".part")).exists()
+
+
+def test_get_206_resumes_exact_offset_without_duplicate(tmp_path,monkeypatch):
+    import hashlib
+    from types import SimpleNamespace as NS
+    content=b"hello-world"
+    expected=NS(rfilename=p.PREFIX+"d/shard0",size=len(content),
+                lfs={"sha256":hashlib.sha256(content).hexdigest()},blob_id=None)
+    part=tmp_path/(expected.rfilename+".part")
+    part.parent.mkdir(parents=True)
+    part.write_bytes(content[:5])
+    class Reply:
+        url="https://cdn-lfs.huggingface.co/verified-blob"
+        status_code=206
+        headers={"Content-Range":f"bytes 5-10/{len(content)}"}
+        def __enter__(self): return self
+        def __exit__(self,*_): return False
+        def raise_for_status(self): pass
+        def iter_content(self,chunk_size): yield content[5:]
+    def fake_get(url,**kwargs):
+        assert kwargs["headers"]["Range"]=="bytes=5-"
+        return Reply()
+    monkeypatch.setattr(p.requests,"get",fake_get)
+    assert p.download_one(expected,tmp_path,"https://huggingface.co",0)=="sha256-verified"
+    assert (tmp_path/expected.rfilename).read_bytes()==content
+
+
+def test_git_blob_sha1_uses_zero_byte_header(tmp_path):
+    import hashlib
+    from types import SimpleNamespace as NS
+    body=b"tiny"
+    name=p.PREFIX+"_METADATA"
+    file=tmp_path/name
+    file.parent.mkdir(parents=True)
+    file.write_bytes(body)
+    h=hashlib.sha1(b"blob 4"+bytes([0])+body).hexdigest()
+    sib=NS(rfilename=name,size=4,lfs=None,blob_id=h)
+    assert p.file_state(file,sib)=="git-blob-verified"
