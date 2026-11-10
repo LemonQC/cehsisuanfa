@@ -159,12 +159,18 @@
     "priority": "OUT_OF_SCOPE_CURRENT_PHASE"
   },
   "custom_same_goal_pick_push": {
-    "status": "PHYSICS_DEV_CODE_PREPARED_NOT_EXECUTED",
-    "physical_trials_executed": false,
+    "status": "PHYSICS_EXECUTED_BUT_SOURCE_JSON_SERIALIZATION_CRASHED_OUTCOME_UNVERIFIED",
+    "physical_trials_executed": true,
     "learned_policy_trained": false,
     "successes": null,
     "trials": null,
-    "priority": "P0_PHYSICS_CONFLICT_THEN_LEARNED_POLICY"
+    "priority": "P0_PHYSICS_CONFLICT_THEN_LEARNED_POLICY",
+    "source_rollout_reached_serialization": true,
+    "source_validity_verified": false,
+    "target_rollouts_executed": false,
+    "failure": "TypeError: Object of type bool_ is not JSON serializable in source_summary.json",
+    "environment_observed": "/home/fu/SoftWare/Anaconda/envs/pi05 (log); prefer agcofl4090 for custom-physics-dev as planned",
+    "latest_fix": "v1.5.5: cast numpy.bool_ released_on_table and robust NumPy/Torch JSON encoder; CPU tests committed NOT_RUN on operator server"
   },
   "note": "Author paper baseline figures are not local measured trials. No GPU execution occurred in this commit; numbers must remain null until archived physical JSON is verified.",
   "scope_decision": "No paid external VLM/LLM API pipelines; no attempt to generate official Keyframes via API. Do not fake official annotations with heuristics.",
@@ -174,5 +180,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Run inspect-uniform-vision (read-only local Orbax _METADATA), then only consider released fine-tuned visual subtree as a NON-OFFICIAL conditioning adapter pending actual weight identity verification. Original pi05 baseline still BLOCKED_BY_BASE_SIGLIP. In parallel custom-physics-dev."
+  "next_operator_action": "Pull main; activate agcofl4090; run python -m pytest -q tests/test_v140_custom_pick_push.py; rerun ONLY one custom-physics-dev seed 120, inspect source_summary valid_pick_source, source crossing evidence and physical_report status. No official pi05 Uniform evaluation without SigLIP cache."
 }
