@@ -67,9 +67,10 @@ def main(argv=None):
         print("SIGLIP_CACHE_PRESENT: run one-video smoke to test actual restore.", flush=True)
         return 0
     if status["base_params_possible"]:
-        print("PI05_BASE_CACHE_PRESENT: original tokenizer can export the SigLIP pickle; "
-              "run one-video smoke only if base params are complete.", flush=True)
-        return 0
+        print("PI05_BASE_CACHE_POSSIBLE: metadata exists but checkpoint completeness "
+              "is unverified; inspect before allowing tokenizer restore.", flush=True)
+        if not args.permit_gcs_download:
+            return 2
     if args.permit_gcs_download:
         print("SIGLIP_BASE_DOWNLOAD_EXPLICITLY_ALLOWED: this audit did not download anything.",
               flush=True)
