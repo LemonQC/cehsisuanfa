@@ -1,4 +1,51 @@
-# 2026-11-10 — Official π0.5 Uniform download TLS failure and fail-closed recovery
+## 2026-11-10 third update: HF-Mirror listing 25 files / 6.20 GB, file downloads fail
+
+Server operator ran original selective official command with
+HF_ENDPOINT=https://hf-mirror.com, HF_HUB_DISABLE_IMPLICIT_TOKEN=1 and
+HF_HUB_DISABLE_XET=1. The official HfApi model listing succeeded, selecting
+25 paths (6.20 GB), but snapshot_download failed at displayed 17/25 with
+FileMetadataError "Distant resource does not seem to be on huggingface.co",
+chained to LocalEntryNotFoundError. **17/25 is a futures progress count;
+not proof that 17 complete weights are valid.** Local files must be checked
+against model metadata.
+
+Upstream huggingface_hub issue #4637 (opened August 5, 2026) documents
+precisely this symptom when hf-mirror.com sends HTTP 308 back to
+huggingface.co, and the client's HEAD metadata lacks x-repo-commit. It is a
+plausible explanation, **NOT yet directly proven for this exact model**.
+Repository reference: https://github.com/huggingface/huggingface_hub/issues/4637
+
+Use metadata-only HEAD checks before any repeated large transfers:
+
+    bash scripts/run_v141_next_gate.sh probe-checkpoint-files
+
+It lists each of the 25 official paths, local size status, mirror HTTP
+status, location *hostname only*, and whether x-repo-commit is missing.
+It follows NO redirects and downloads NO model bytes, so it will expose
+the exact paths that redirect to the blocked official hub. If
+BACK_TO_BLOCKED_HUB=true or missing_x_repo_commit=true, do not rerun
+the snapshot_download loop. Running a different huggingface_hub version
+cannot solve a real inability to reach redirected huggingface.co.
+
+For a quick manual single-file probe (prints headers only):
+
+    curl -sS -I --max-time 15 \
+      'https://hf-mirror.com/LogosRoboticsLab/roboreel_models/resolve/main/README.md' \
+      | grep -Ei '^(HTTP/|location:|x-repo-commit:|x-linked-etag:)'
+
+If the mirror redirects to blocked huggingface.co, practical choices are
+an actually hosting trusted mirror (check HEAD on the exact file paths)
+or downloading on a separate network-reachable machine and transferring
+all official ND Uniform files intact. Do not edit HF library source to
+fake metadata headers or bypass TLS verification.
+
+The newer safe prepare-checkpoint-mirror command includes this file-level
+HEAD gate and stops before download when upstream redirects are found.
+The checkpoint is not ready until all params AND train_config.json are
+present and validated; 20 EVAL video SigLIP caches must still be computed
+in the original JAX/OpenPI environment. No new physics rollouts occurred.
+
+\n# 2026-11-10 — Official π0.5 Uniform download TLS failure and fail-closed recovery
 
 ## Evidence from RTX4090 operator log (NO physics)
 
