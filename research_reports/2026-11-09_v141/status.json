@@ -8,12 +8,16 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "CODE_PREPARED_NOT_EXECUTED",
-    "preflight_executed_on_4090": false,
+    "status": "PREPARATION_BLOCKED_HF_CERT_HOSTNAME_MISMATCH_NO_PHYSICS",
+    "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
     "trials": null,
-    "priority": "P0_API_FREE_OFFICIAL_LOCAL_MODEL"
+    "priority": "P0_API_FREE_OFFICIAL_LOCAL_MODEL",
+    "attempted_checkpoint_download": true,
+    "checkpoint_download_success": false,
+    "missing_siglip_features": 20,
+    "failure_scope": "HfApi().model_info original author checkpoint download; official evaluator was preflight-blocked"
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -37,5 +41,7 @@
     "Uniform local-checkpoint + cached SigLIP features, no API",
     "PhysX same-goal Pick→Push capability contradiction, paired controls",
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
-  ]
+  ],
+  "latest_code_fix": "2026-11-10 v1.4.3: add --require-ready evaluation gate, split prepare-checkpoint/prepare-features, TLS diagnostics",
+  "next_operator_action": "Diagnose and correct server HTTPS certificate/domain routing; do not disable SSL verification. Then prepare-checkpoint, prepare-features (pi05 JAX env), evaluate-uniform."
 }
