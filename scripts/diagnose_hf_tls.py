@@ -40,6 +40,8 @@ def main():
         alien = (
             (ipaddress.ip_network("108.160.160.0/20"), "Dropbox"),
             (ipaddress.ip_network("2a03:2880::/29"), "Meta/Facebook"),
+            (ipaddress.ip_network("104.244.40.0/21"), "X/Twitter"),
+            (ipaddress.ip_network("202.160.128.0/22"), "X/Twitter Asia"),
         )
         for addr in addresses:
             ip = ipaddress.ip_address(addr)
