@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# v1.5.3, check exact published SigLIP EVAL bundles before any new base weights.
+# v1.5.9, source original OpenPI base via pinned HF mirror when GCS is unavailable.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-gate}"
+# Project-local OpenPI cache, stable across smoke/extract/eval.
+# Set before original SigLipTokenizer imports; no HOME-level installation.
+export OPENPI_DATA_HOME="${OPENPI_DATA_HOME:-$(pwd)/outputs/v120_baselines/openpi_cache}"
 export MUJOCO_GL=egl
 export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 case "$MODE" in
   gate)
-    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_diagnose_custom_pick_source.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py tests/test_inspect_pi05_uniform_vision_metadata.py
+    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_diagnose_custom_pick_source.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py tests/test_inspect_pi05_uniform_vision_metadata.py tests/test_prepare_pi05_base_from_hf.py
     python -m agcofl.v141_pi05_assets --variant uniform
     ;;
   probe-checkpoint-mirror)
@@ -53,6 +56,16 @@ case "$MODE" in
   audit-siglip-dataset)
     # HTTPS public HF DATASET METADATA ONLY; does not download model / videos.
     python scripts/audit_official_siglip_dataset.py
+    ;;
+  plan-pi05-base-hf)
+    # Metadata-only; third-party mirror of original pi05_base/params.
+    python scripts/prepare_pi05_base_from_hf.py
+    ;;
+  prepare-pi05-base-hf)
+    # Explicit 12.4GB public HF checkpoint transfer, excludes every other variant.
+    # Small metadata file probe first; pinned revision, resumable HF local cache.
+    python scripts/prepare_pi05_base_from_hf.py --download
+    python scripts/check_pi05_siglip_cache.py
     ;;
   check-siglip-cache)
     # NO GCS network: inspect author SigLIP cache path and known local locations.
@@ -102,7 +115,7 @@ case "$MODE" in
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|diagnose-custom-source|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|plan-pi05-base-hf|prepare-pi05-base-hf|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|diagnose-custom-source|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
