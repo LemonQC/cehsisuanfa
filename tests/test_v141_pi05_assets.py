@@ -71,3 +71,33 @@ def test_require_ready_blocks_official_eval_on_missing_assets(tmp_path):
     assert record["physics_executed"] is False
     assert record["official_preflight"]["ready_for_runtime"] is False
     assert "checkpoint_params_directory" in record["official_preflight"]["failures"]
+
+
+def test_feature_smoke_limit_requires_active_extraction(tmp_path):
+    with pytest.raises(SystemExit) as error:
+        main(["--variant", "uniform", "--max-feature-demos", "1"])
+    assert error.value.code == 2
+    with pytest.raises(SystemExit) as error:
+        main(["--variant", "uniform", "--extract-features",
+              "--max-feature-demos", "0"])
+    assert error.value.code == 2
+
+
+def test_feature_smoke_slice_is_one_real_missing_demo(monkeypatch, tmp_path):
+    from agcofl import v141_pi05_assets as mod
+
+    # Fake only the extraction for a CPU scope test, never call a GPU tokenizer.
+    root = tmp_path / "official"
+    root.mkdir()
+    monkeypatch.setattr(mod, "pinned_sha", lambda _: mod.PIN)
+    observed = []
+    monkeypatch.setattr(mod, "prepare_features",
+                        lambda _root, _data, ids: observed.extend(ids))
+    monkeypatch.setattr(mod, "preflight",
+                        lambda *_: {"ready_for_runtime": False,
+                                    "failures": ["checkpoint_params_directory"]})
+    mod.main(["--variant", "uniform", "--official-root", str(root),
+              "--assets", str(tmp_path / "assets"),
+              "--out", str(tmp_path / "report"),
+              "--extract-features", "--max-feature-demos", "1"])
+    assert observed == [80]
