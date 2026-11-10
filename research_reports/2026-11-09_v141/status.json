@@ -139,7 +139,16 @@
       "recursive_find_hits": 0,
       "result": "NO_LOCAL_SIGLIP_BASE_OR_EXPORTED_VISION_ENCODER"
     },
-    "public_eval_feature_dataset_audit": "script added, NOT_RUN on user's network"
+    "public_eval_feature_dataset_audit": "script added, NOT_RUN on user's network",
+    "official_dataset_siglip_audit": {
+      "dataset_revision": "846f5dfdde5d7269fd1cda90bde8264c5cac0e29",
+      "published_eval_front_bundles": 0,
+      "required_eval_front_bundles": 20,
+      "derived_feature_files_listed": 0,
+      "network_bytes_downloaded_for_audit": 0,
+      "reported_by_operator": true
+    },
+    "check_uniform_vision_metadata": "scripts/inspect_pi05_uniform_vision_metadata.py COMMITTED_NOT_EXECUTED"
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -165,5 +174,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Execute bash scripts/run_v141_next_gate.sh audit-siglip-dataset: metadata-only, no blob download. If no 20 official feature bundles, choose authentic base checkpoint via trusted network or explicitly label a finetuned-vision feature adapter as NON-OFFICIAL. Do not rerun 11.6GB GCS while blocked."
+  "next_operator_action": "Run inspect-uniform-vision (read-only local Orbax _METADATA), then only consider released fine-tuned visual subtree as a NON-OFFICIAL conditioning adapter pending actual weight identity verification. Original pi05 baseline still BLOCKED_BY_BASE_SIGLIP. In parallel custom-physics-dev."
 }
