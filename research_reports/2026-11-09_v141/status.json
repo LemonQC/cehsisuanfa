@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "OPENPI_BASE_HF_MIRROR_SMALL_BLOB_HEAD_METADATA_ERROR_FIXED_CODE_NOT_EXECUTED",
+    "status": "OPENPI_BASE_HF_DOWNLOAD_REACHED_FILE5_OF20_ZERO_BYTE_ORBAX_MARKER_FIX_COMMITTED",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -170,6 +170,17 @@
       "observed_failure_explanation": "mirror /resolve headers or redirects rejected by huggingface_hub; prior inspection on related mirror showed HTTP 308 to huggingface.co without required headers, but this exact mirror response has not been independently captured",
       "fix": "v1.6.0 HTTP requests GET official huggingface.co /resolve with user trusted HTTPS_PROXY, Range .part resume, manifest SHA256/size verification; run probe-pi05-base-hf first",
       "fix_executed_on_user_server": false
+    },
+    "openpi_base_hf_transfer_recent": {
+      "observed_by_operator": "File 5/20 listed as commit_success.txt (size 0); prior array_metadatas/process_0 git-blob-verified",
+      "successful_network_transfer": "at least preceding metadata file(s) now downloadable by direct HTTPS GET",
+      "failed_at": "pi05_base/params/commit_success.txt",
+      "cause": "download_one treated absent .part and declared size=0 as a valid finished-part condition; tried to hash nonexistent file",
+      "fixed": "v1.6.1 materialize empty .part, validate announced zero-size digest before atomic final rename; skip HTTP transfer",
+      "operator_rerun_after_fix": false,
+      "checkpoint_fully_staged": false,
+      "siglip_pickle_restored": false,
+      "official_pi05_trials": 0
     }
   },
   "official_pi05_keyframes": {
@@ -237,6 +248,6 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull main, activate pi05, keep same known-good proxy/VPN used for previous Uniform checkpoint. Run probe-pi05-base-hf (only small _METADATA GET), inspect output. Only if probe passes run prepare-pi05-base-hf (pinned direct HTTPS GET, Range resume and hash/size checks), then check-siglip-cache, smoke-one-feature, prepare-features, require-ready, evaluate-uniform. Do not rerun GCS or install CUDA.",
+  "next_operator_action": "git pull --ff-only origin main; activate pi05; run python -m pytest -q tests/test_prepare_pi05_base_from_hf.py (new zero-byte regression); then resume SAME bash scripts/run_v141_next_gate.sh prepare-pi05-base-hf. Preverified files skipped; don't delete outputs or run GCS; after staged run check-siglip-cache then smoke-one-feature.",
   "research_execution_reference": "docs/2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md"
 }
