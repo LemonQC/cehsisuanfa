@@ -153,6 +153,8 @@ def main(argv=None):
     parser.add_argument("--retries", type=int, default=4)
     parser.add_argument("--max-files", type=int, default=None,
                         help="Optional small budget for testing one missing file via proxy")
+    parser.add_argument("--routed-vpn", action="store_true",
+                        help="Allow explicit trusted system-level VPN/TUN routing without proxy env")
     args = parser.parse_args(argv)
     endpoint = urlsplit(args.metadata_endpoint)
     if endpoint.scheme != "https" or not endpoint.hostname or endpoint.username:
@@ -180,9 +182,9 @@ def main(argv=None):
         print("PLAN_ONLY_NO_DOWNLOAD", flush=True)
         return 0
     if not any(os.getenv(n) for n in ("HTTPS_PROXY", "https_proxy",
-                                      "ALL_PROXY", "all_proxy")):
-        parser.error("No HTTPS_PROXY or ALL_PROXY configured; direct Hub route "
-                     "was blocked on this server. Configure approved proxy before downloading.")
+                                      "ALL_PROXY", "all_proxy")) and not args.routed_vpn:
+        parser.error("No proxy environment detected. Configure an approved HTTPS_PROXY "
+                     "or explicitly use --routed-vpn if your trusted VPN/TUN handles traffic.")
     selected = remaining[:args.max_files] if args.max_files is not None else remaining
     failures = []
     for index, (name, s) in enumerate(selected, 1):
