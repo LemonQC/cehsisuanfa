@@ -21,3 +21,46 @@ def test_actual_pick_contact_support_and_goal_are_all_required():
         d = dict(valid)
         d[key] = invalid
         assert not source_valid(d)
+
+
+def test_measured_numpy_booleans_and_scalars_roundtrip_as_json():
+    import json
+    import numpy as np
+    from agcofl.v140_custom_pick_push_physics import _json_dumps
+    summary = {
+        "type": "SIMULATED_PICK_SOURCE_PHYSICS_ONLY",
+        "released_on_table": np.bool_(True),
+        "observed_collision": np.bool_(False),
+        "distance": np.float32(0.03125),
+        "steps": np.int64(12),
+        "position": np.array([0.1, 0.2, 0.3], dtype=np.float32),
+        "valid_pick_source": False,
+    }
+    actual = json.loads(_json_dumps(summary))
+    assert actual["released_on_table"] is True
+    assert actual["observed_collision"] is False
+    assert actual["distance"] == 0.03125
+    assert actual["steps"] == 12
+    assert len(actual["position"]) == 3
+    assert actual["valid_pick_source"] is False
+
+
+def test_physical_json_refuses_unhandled_and_nonfinite_values():
+    import numpy as np
+    from agcofl.v140_custom_pick_push_physics import _json_dumps
+    with pytest.raises(TypeError):
+        _json_dumps({"unexpected": object()})
+    with pytest.raises(ValueError):
+        _json_dumps({"invalid_measurement": np.float64(float("nan"))})
+
+
+def test_torch_scalars_can_be_written_when_torch_is_available():
+    import json
+    import torch
+    from agcofl.v140_custom_pick_push_physics import _json_dumps
+    x = json.loads(_json_dumps({"ok": torch.tensor(True),
+                                "steps": torch.tensor(17),
+                                "state": torch.tensor([0.1, 0.2])}))
+    assert x["ok"] is True
+    assert x["steps"] == 17
+    assert len(x["state"]) == 2
