@@ -53,11 +53,11 @@ def check(path: Path, sibling):
         algo, value = expected
         return "verified" if digest(path, algo) == value else "bad-checksum"
     # Non-LFS files expose Git blob SHA1 in metadata. Do not incorrectly
-    # compare plain SHA1(content) with SHA1('blob {len}\\0'+content).
+    # compare plain SHA1(content) with SHA1('blob {len}\0'+content).
     blob_id = getattr(sibling, "blob_id", None)
     if blob_id and len(blob_id) == 40:
         h = hashlib.sha1()
-        h.update(f"blob {path.stat().st_size}\\0".encode())
+        h.update(f"blob {path.stat().st_size}\0".encode())
         with path.open("rb") as fd:
             for chunk in iter(lambda: fd.read(8 * 1024 * 1024), b""):
                 h.update(chunk)
@@ -115,7 +115,7 @@ def _download_one(dest: Path, name, sibling, retry_count: int):
                     raise RuntimeError(f"{name}: unexpected HTTP {response.status_code}")
                 if response.status_code == 206:
                     cr = response.headers.get("Content-Range", "")
-                    match = re.fullmatch(r"bytes (\\d+)-(\\d+)/(\\d+|\\*)", cr)
+                    match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", cr)
                     if not match or int(match.group(1)) != offset:
                         raise RuntimeError(f"{name}: invalid Range response")
                     mode = "ab" if offset else "wb"
