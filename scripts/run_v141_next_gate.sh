@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v1.5.2, require cached SigLIP weights before accidental 11.6GB GCS transfer.
+# v1.5.3, check exact published SigLIP EVAL bundles before any new base weights.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-gate}"
@@ -7,7 +7,7 @@ export MUJOCO_GL=egl
 export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 case "$MODE" in
   gate)
-    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py
+    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py
     python -m agcofl.v141_pi05_assets --variant uniform
     ;;
   probe-checkpoint-mirror)
@@ -45,6 +45,10 @@ case "$MODE" in
   check-pi05-env)
     # Read-only JAX/OpenPI import and GPU diagnosis in whichever env is active.
     python scripts/check_pi05_runtime.py --mode features
+    ;;
+  audit-siglip-dataset)
+    # HTTPS public HF DATASET METADATA ONLY; does not download model / videos.
+    python scripts/audit_official_siglip_dataset.py
     ;;
   check-siglip-cache)
     # NO GCS network: inspect author SigLIP cache path and known local locations.
@@ -90,7 +94,7 @@ case "$MODE" in
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
