@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v1.5.9, source original OpenPI base via pinned HF mirror when GCS is unavailable.
+# v1.6.0, pinned HF metadata + HTTP Range blobs via approved proxy; avoid mirror HEAD bug.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-gate}"
@@ -61,10 +61,17 @@ case "$MODE" in
     # Metadata-only; third-party mirror of original pi05_base/params.
     python scripts/prepare_pi05_base_from_hf.py --cache "$OPENPI_DATA_HOME"
     ;;
+  probe-pi05-base-hf)
+    # HTTPS GET of original Orbax _METADATA ONLY; no large blobs.
+    python scripts/prepare_pi05_base_from_hf.py \
+      --probe-only --cache "$OPENPI_DATA_HOME" \
+      --blob-endpoint "${PI05_BASE_BLOB_ENDPOINT:-https://huggingface.co}"
+    ;;
   prepare-pi05-base-hf)
     # Explicit 12.4GB public HF checkpoint transfer, excludes every other variant.
     # Small metadata file probe first; pinned revision, resumable HF local cache.
-    python scripts/prepare_pi05_base_from_hf.py --download --cache "$OPENPI_DATA_HOME"
+    python scripts/prepare_pi05_base_from_hf.py --download --cache "$OPENPI_DATA_HOME" \
+      --blob-endpoint "${PI05_BASE_BLOB_ENDPOINT:-https://huggingface.co}"
     python scripts/check_pi05_siglip_cache.py
     ;;
   check-siglip-cache)
@@ -115,7 +122,7 @@ case "$MODE" in
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|plan-pi05-base-hf|prepare-pi05-base-hf|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|diagnose-custom-source|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|plan-pi05-base-hf|probe-pi05-base-hf|prepare-pi05-base-hf|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|diagnose-custom-source|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
