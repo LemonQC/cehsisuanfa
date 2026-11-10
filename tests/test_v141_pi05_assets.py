@@ -90,6 +90,11 @@ def test_feature_smoke_slice_is_one_real_missing_demo(monkeypatch, tmp_path):
     root = tmp_path / "official"
     root.mkdir()
     monkeypatch.setattr(mod, "pinned_sha", lambda _: mod.PIN)
+    # All 20 fixed EVAL video paths must exist for the frozen-data gate.
+    for demo_id in mod.IDS:
+        video, _, _ = mod.asset_paths(tmp_path / "assets/official_eval_data", demo_id)
+        video.parent.mkdir(parents=True, exist_ok=True)
+        video.write_bytes(b"offline-test-placeholder")
     observed = []
     monkeypatch.setattr(mod, "prepare_features",
                         lambda _root, _data, ids: observed.extend(ids))
