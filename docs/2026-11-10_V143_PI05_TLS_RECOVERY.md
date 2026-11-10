@@ -59,7 +59,7 @@ entry. If even a trusted IP cannot be reached, fix outbound networking
 rather than endlessly swapping DNS addresses.
 
 
-## 2026-11-10 second update: DNS injection also affects direct 1.1.1.1
+## 2026-11-10 second update: suspicious 1.1.1.1 UDP DNS answers
 
 Server system DNS (192.168.254.141, 192.168.254.245 via systemd-resolved)
 returned huggingface.co A=104.244.43.104; a UDP DNS query explicitly
@@ -130,7 +130,8 @@ This is a scripted privileged-state physics feasibility probe only:
 not a learned policy, not a new benchmark result until actual measured
 source and target trajectories are verified.
 
-\n## Code corrections (v1.4.3)
+
+## Code corrections (v1.4.3)
 
 - scripts/run_v141_next_gate.sh evaluate-uniform now runs
   agcofl.v141_pi05_assets --variant uniform --require-ready first. An
