@@ -23,6 +23,28 @@ WALL_STEP_Y = 0.05
 WALL_HALF = 0.023
 METHODS = ("goal_only", "waypoint_oracle", "raw_source_xy")
 
+# Conservative diagnostic grasp geometry: target the observed cube center
+# without descending through it; reject a shifted cube before closing fingers.
+SOURCE_PREGRASP_CLEARANCE_M = 0.025
+SOURCE_LATERAL_RESTART_M = 0.010
+SOURCE_GRASP_XY_TOL_M = 0.014
+SOURCE_DESCEND_TIMEOUT_STEPS = 70
+SOURCE_MAX_REAPPROACH = 2
+
+
+def source_pregrasp_xyz(cube):
+    """Command TCP above the current cube center, NOT the original seed pose."""
+    cube = np.asarray(cube, dtype=float).reshape(3)
+    return np.r_[cube[:2], cube[2] + SOURCE_PREGRASP_CLEARANCE_M]
+
+
+def source_cube_shifted(cube, reference):
+    """Return true if descent visibly displaced the source object."""
+    return (float(np.linalg.norm(np.asarray(cube)[:2] -
+                                 np.asarray(reference)[:2]))
+            > SOURCE_LATERAL_RESTART_M)
+
+
 
 def _json_default(value):
     """Convert measured NumPy/Torch scalars without falsifying physical data.
@@ -162,6 +184,9 @@ class ScriptedPickSource:
         self.phase = "above"
         self.steps_in_phase = 0
         self.trace = []
+        self.approach_reference = np.asarray(start, dtype=float).copy()
+        self.reapproach_count = 0
+        self.failure_reason = None
 
     def _to(self, phase):
         self.phase = phase
@@ -173,20 +198,42 @@ class ScriptedPickSource:
         tcp = np1(b.agent.tcp_pose.p)[:3]
         grasp = bool(np1(b.agent.is_grasping(b.obj))[0])
         close = self.phase not in ("above", "descend", "release", "done", "failed")
-        pos = np.r_[self.start[:2], 0.14]
+        # Track the live PhysX cube pose while approaching. The previous
+        # code pursued the initial cube center for 218 descend steps and
+        # drove it 33.7 mm sideways before closing the gripper.
+        pos = np.r_[obj[:2], 0.14]
         if self.phase == "above":
+            close = False
             if np.linalg.norm(tcp - pos) < .035:
+                self.approach_reference = obj.copy()
                 self._to("descend")
         elif self.phase == "descend":
-            pos = np.r_[self.start[:2], self.start[2]]
-            if np.linalg.norm(tcp - pos) < .02:
+            close = False
+            pos = source_pregrasp_xyz(obj)
+            if source_cube_shifted(obj, self.approach_reference):
+                if self.reapproach_count >= SOURCE_MAX_REAPPROACH:
+                    self.failure_reason = "cube_displaced_during_open_gripper_descent"
+                    self._to("failed")
+                else:
+                    self.reapproach_count += 1
+                    self._to("above")
+                pos = np.r_[obj[:2], 0.14]
+            elif self.steps_in_phase >= SOURCE_DESCEND_TIMEOUT_STEPS:
+                self.failure_reason = "pregrasp_descent_timeout"
+                self._to("failed")
+            elif (np.linalg.norm(tcp[:2] - obj[:2]) < SOURCE_GRASP_XY_TOL_M
+                  and np.linalg.norm(tcp - pos) < .018):
                 self._to("grasp")
         elif self.phase == "grasp":
-            pos = np.r_[self.start[:2], self.start[2]]
+            pos = source_pregrasp_xyz(obj)
             close = True
-            if grasp:
+            if source_cube_shifted(obj, self.approach_reference):
+                self.failure_reason = "cube_shifted_during_grasp"
+                self._to("failed")
+            elif grasp:
                 self._to("lift")
             elif self.steps_in_phase > 45:
+                self.failure_reason = "grasp_timeout_no_sustained_contact"
                 self._to("failed")
         elif self.phase == "lift":
             pos = np.r_[self.start[:2], .16]
@@ -219,6 +266,12 @@ class ScriptedPickSource:
         self.steps_in_phase += 1
         self.trace.append(dict(phase=self.phase, cube=obj.tolist(),
                                tcp=tcp.tolist(), is_grasped=grasp,
+                               cube_shift_from_approach_m=float(
+                                   np.linalg.norm(obj[:2] -
+                                   self.approach_reference[:2])),
+                               reapproach_count=self.reapproach_count,
+                               failure_reason=self.failure_reason,
+                               commanded_tcp=pos.tolist(),
                                gripper_command=float(act[-1])))
         return act.reshape(self.action_shape)
 
@@ -281,7 +334,9 @@ def run_source(official, seed, out, max_steps):
                        peak_lift_m=zpeak - float(start[2]),
                        released_on_table=bool(not grasp_now and obj[2] < start[2] + .006),
                        final_goal_error_m=goal_dist, env_success=actual_success,
-                       end_phase=source.phase, final_cube=obj.tolist(),
+                       end_phase=source.phase, failure_reason=source.failure_reason,
+                       reapproach_count=source.reapproach_count,
+                       final_cube=obj.tolist(),
                        is_human_source_video=False)
         summary["crossing_evidence"] = crossing_evidence(source.trace, start)
         summary["wall_overflight_observed"] = summary["crossing_evidence"]["overflight_observed"]
