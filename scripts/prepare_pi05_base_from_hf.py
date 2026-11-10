@@ -61,7 +61,7 @@ def file_state(file: Path, sibling):
     blob=getattr(sibling,"blob_id",None)
     if blob and len(blob)==40:
         h=hashlib.sha1()
-        h.update(f"blob {size}\\0".encode())
+        h.update(f"blob {size}".encode() + bytes([0]))
         with file.open("rb") as stream:
             for block in iter(lambda: stream.read(8*1024*1024),b""):
                 h.update(block)
@@ -114,7 +114,7 @@ def download_one(sibling, root: Path, blob_endpoint: str, retries=4):
                     raise RuntimeError(f"Non-HTTPS redirect for {relative}")
                 response.raise_for_status()
                 if response.status_code==206:
-                    match=re.fullmatch(r"bytes (\\d+)-(\\d+)/(\\d+|\\*)",
+                    match=re.fullmatch(r"bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])",
                                        response.headers.get("Content-Range",""))
                     if not match or int(match.group(1))!=offset:
                         raise RuntimeError(f"Invalid Range response for {relative}")
