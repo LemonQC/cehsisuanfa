@@ -7,7 +7,7 @@ export MUJOCO_GL=egl
 export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 case "$MODE" in
   gate)
-    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py tests/test_inspect_pi05_uniform_vision_metadata.py
+    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_diagnose_custom_pick_source.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py tests/test_inspect_pi05_uniform_vision_metadata.py
     python -m agcofl.v141_pi05_assets --variant uniform
     ;;
   probe-checkpoint-mirror)
@@ -93,12 +93,16 @@ case "$MODE" in
     python scripts/check_pi05_runtime.py --mode eval
     python -m agcofl.v140_official_pi05 --variant uniform --execute
     ;;
+  diagnose-custom-source)
+    # Read recorded seed-120 source summary+trace only; NO new physics/GPU.
+    python scripts/diagnose_custom_pick_source.py
+    ;;
   custom-physics-dev)
     # Actual ManiSkill/PhysX, one paired seed; privileged controller, NOT a learned method.
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|diagnose-custom-source|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
