@@ -64,3 +64,63 @@ def test_torch_scalars_can_be_written_when_torch_is_available():
     assert x["ok"] is True
     assert x["steps"] == 17
     assert len(x["state"]) == 2
+
+
+def test_pregrasp_targets_current_cube_not_frozen_seed_pose():
+    import numpy as np
+    from agcofl.v140_custom_pick_push_physics import (
+        source_pregrasp_xyz, SOURCE_PREGRASP_CLEARANCE_M)
+    current = np.array([0.0349, 0.0419, 0.02])
+    target = source_pregrasp_xyz(current)
+    assert np.allclose(target[:2], current[:2])
+    assert np.isclose(target[2], current[2] + SOURCE_PREGRASP_CLEARANCE_M)
+    assert target[2] > current[2]
+
+
+def test_detect_displaced_cube_before_grasp_instead_of_chasing_old_pose():
+    from agcofl.v140_custom_pick_push_physics import (
+        source_cube_shifted, SOURCE_LATERAL_RESTART_M)
+    initial = [0.0113, 0.0161, 0.02]
+    assert not source_cube_shifted(
+        [0.0113 + SOURCE_LATERAL_RESTART_M * 0.5, 0.0161, 0.02],
+        initial)
+    assert source_cube_shifted([0.0349, 0.0419, 0.02], initial)
+
+
+def test_grasp_tracking_state_reapproaches_or_fails_with_explicit_reason():
+    import numpy as np
+    from agcofl.v140_custom_pick_push_physics import (
+        ScriptedPickSource, SOURCE_DESCEND_TIMEOUT_STEPS)
+
+    class Agent:
+        def __init__(self):
+            from types import SimpleNamespace
+            import torch
+            self.tcp_pose = SimpleNamespace(
+                p=torch.tensor([[0.0, 0.0, 0.14]]))
+        def is_grasping(self, obj):
+            import torch
+            return torch.tensor([False])
+
+    class Body:
+        def __init__(self):
+            from types import SimpleNamespace
+            import torch
+            self.obj = SimpleNamespace(pose=SimpleNamespace(
+                p=torch.tensor([[0.02, 0.02, 0.02]])))
+            self.agent = Agent()
+    class Env:
+        def __init__(self):
+            self.unwrapped = Body()
+            self.action_space = type("Space", (), {"shape": (7,)})()
+
+    env = Env()
+    ctrl = ScriptedPickSource(env, np.array([0.02,0.02,0.02]),
+                              np.array([0.17,0.02,0.02]))
+    ctrl.phase = "descend"
+    ctrl.approach_reference = np.array([0.02,0.02,0.02])
+    ctrl.steps_in_phase = SOURCE_DESCEND_TIMEOUT_STEPS
+    ctrl.act()
+    assert ctrl.phase == "failed"
+    assert ctrl.failure_reason == "pregrasp_descent_timeout"
+    assert ctrl.trace[-1]["failure_reason"] == ctrl.failure_reason
