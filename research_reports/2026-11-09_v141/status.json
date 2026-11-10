@@ -123,7 +123,23 @@
       "root_cause": "Original SigLipTokenizer attempts BASE params download when siglip_params.pkl absent; network/ADC cause not yet isolated",
       "siglip_pickle_path": "$OPENPI_DATA_HOME/pi05_vision_encoder/siglip_params.pkl",
       "new_safety_gate": "scripts/check_pi05_siglip_cache.py"
-    }
+    },
+    "siglip_cache_search_observed": {
+      "checked_paths": [
+        "/home/ubuntu/.cache/openpi",
+        "/home/fu/.cache/openpi"
+      ],
+      "authentic_siglip_pickle_found": false,
+      "base_params_cache_found": false,
+      "recursive_find_paths": [
+        "/home/fu",
+        "/home/ubuntu",
+        "/mnt/4Tdata/LemonData"
+      ],
+      "recursive_find_hits": 0,
+      "result": "NO_LOCAL_SIGLIP_BASE_OR_EXPORTED_VISION_ENCODER"
+    },
+    "public_eval_feature_dataset_audit": "script added, NOT_RUN on user's network"
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -149,5 +165,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull main then check-siglip-cache and look for authentic locally cached SigLIP pickle or official dataset precomputed 20 EVAL features. Do not automatically re-download 11.6GB; only original SigLIP pretraining weights/caches preserve official comparability."
+  "next_operator_action": "Execute bash scripts/run_v141_next_gate.sh audit-siglip-dataset: metadata-only, no blob download. If no 20 official feature bundles, choose authentic base checkpoint via trusted network or explicitly label a finetuned-vision feature adapter as NON-OFFICIAL. Do not rerun 11.6GB GCS while blocked."
 }
