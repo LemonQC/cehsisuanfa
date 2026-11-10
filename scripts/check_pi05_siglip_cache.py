@@ -54,6 +54,33 @@ def audit(project: Path, home: Path):
     return summary
 
 
+def trusted_mirror_install(project: Path, home: Path) -> bool:
+    """Allow author SigLIP restore only after full pinned HF manifest staging.
+
+    The original OpenPI maybe_download short-circuits for a pre-existing
+    local params path, so a complete local symlink avoids any GCS request.
+    This checks our *local install* record, NOT proof of equality to GCS.
+    """
+    manifest=project / "outputs/v120_baselines/openpi_base_hf_manifest.json"
+    if not manifest.is_file():
+        return False
+    try:
+        record=json.loads(manifest.read_text())
+        expected=(home/"openpi-assets/checkpoints/pi05_base/params")
+        check=record["manifest_verification"]
+        return (record["source"]=="robotgeneralist/openpi_checkpoint_mirrors2"
+            and record["revision"]=="1fda6b04e83d625eb1a55d68db32050e248cac2b"
+            and Path(record["openpi_data_home"]).resolve()==home.resolve()
+            and Path(record["openpi_base_cache_link"]).resolve()==expected.resolve()
+            and expected.is_dir() and bool(check["complete"])
+            and all((expected/p).is_file() for p in (
+                "_METADATA","_CHECKPOINT_METADATA","manifest.ocdbt"))
+            and (expected/"ocdbt.process_0").is_dir()
+            and (expected/"d").is_dir())
+    except (ValueError,KeyError,TypeError,OSError):
+        return False
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
@@ -65,6 +92,10 @@ def main(argv=None):
     print("PI05_SIGLIP_DEPENDENCY", json.dumps(status, ensure_ascii=False), flush=True)
     if status["siglip_pickle_available"]:
         print("SIGLIP_CACHE_PRESENT: run one-video smoke to test actual restore.", flush=True)
+        return 0
+    if trusted_mirror_install(args.project.resolve(), root):
+        print("PI05_PINNED_HF_BASE_STAGED: original SigLIP tokenizer can "
+              "use the existing local cache path without reaching GCS.",flush=True)
         return 0
     if status["base_params_possible"]:
         print("PI05_BASE_CACHE_POSSIBLE: metadata exists but checkpoint completeness "
