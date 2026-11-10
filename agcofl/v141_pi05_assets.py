@@ -94,9 +94,14 @@ def main(argv=None):
                         help="Opt-in large official ND checkpoint download")
     parser.add_argument("--extract-features", action="store_true",
                         help="Opt-in author's SigLIP on only EVAL 0080..0099")
+    parser.add_argument("--max-feature-demos", type=int, default=None,
+                        help="Process first N missing EVAL demos for a one-video JAX/SigLIP smoke test")
     parser.add_argument("--require-ready", action="store_true",
                         help="Exit 2 if any official checkpoint/features/protocol prerequisite is missing")
     args = parser.parse_args(argv)
+    if args.max_feature_demos is not None:
+        if args.max_feature_demos < 1 or not args.extract_features:
+            parser.error("--max-feature-demos requires --extract-features and a positive N")
     root, assets = Path(args.official_root).resolve(), Path(args.assets).resolve()
     data_root = assets / "official_eval_data"
     if any((args.download_checkpoint, args.extract_features)):
@@ -108,7 +113,7 @@ def main(argv=None):
     if args.download_checkpoint:
         download_checkpoint(root, assets, args.variant)
     if args.extract_features:
-        prepare_features(root, data_root, before["feature"])
+        prepare_features(root, data_root, before["feature"][:args.max_feature_demos])
     after = pending(data_root, args.variant)
     check = preflight(args.variant, root, assets)
     out = Path(args.out or f"outputs/v141_pi05_{args.variant}")
