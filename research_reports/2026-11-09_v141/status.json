@@ -8,14 +8,14 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "USER_REPORTS_DOWNLOAD_COMPLETE_NEEDS_CHECKPOINT_INTEGRITY_AND_FEATURES_NO_PHYSICS",
+    "status": "CHECKPOINT_AND_PROTOCOL_PREFLIGHT_PASS_SIGLIP_20_MISSING",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
     "trials": null,
     "priority": "P0_API_FREE_OFFICIAL_LOCAL_MODEL",
     "attempted_checkpoint_download": true,
-    "checkpoint_download_success": null,
+    "checkpoint_download_success": true,
     "missing_siglip_features": 20,
     "failure_scope": "HfApi().model_info original author checkpoint download; official evaluator was preflight-blocked",
     "network_diagnosis": {
@@ -71,7 +71,18 @@
     "local_recovery_executed": false,
     "download_completion_user_reported": true,
     "local_file_verification_pending": true,
-    "siglip_features_completion_pending": true
+    "siglip_features_completion_pending": true,
+    "local_preflight_observed_on_4090": true,
+    "preflight_failures": [
+      "siglip_feature_0080...siglip_feature_0099"
+    ],
+    "checkpoint_asset_gate_passed": true,
+    "checkpoint_cryptographic_hash_verified": false,
+    "checkpoint_tensor_restored": false,
+    "jax_openpi_runtime_verified": false,
+    "official_eval_executed": false,
+    "unit_tests_observed": "16 passed in 0.07 s (user-reported server log; before new env tests)",
+    "conda_runtime": "No conda env by name pi05; a separate prefix /home/ubuntu/miniforge3/envs/rokae_pi05 is listed but may be stale; must test existence/imports before reuse."
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -97,5 +108,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Run plan-checkpoint-repair and gate to verify completed checkpoint; setup/check official pi05 JAX/OpenPI env, extract EVAL 0080..0099 SigLIP front.npy, run require-ready then official Uniform 20x3, archive raw per-trial results. Separately run custom same-goal physics DEV. Do not rerun Vid2Robot."
+  "next_operator_action": "Check if /home/ubuntu/miniforge3/envs/rokae_pi05/bin/python exists; if so activate by prefix and run check-pi05-env. Otherwise create new dedicated Python3.11 pi05 with opt-in setup_pi05_author_env.sh. Smoke one SigLIP EVAL feature, prepare all, require-ready, then original Uniform 20x3. No Vid2Robot rerun."
 }
