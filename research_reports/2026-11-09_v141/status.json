@@ -56,8 +56,19 @@
       "exception": "huggingface_hub FileMetadataError missing expected Hub metadata; LocalEntryNotFoundError wrapper",
       "likely_known_issue": "huggingface/huggingface_hub#4637: mirror 308 redirect to official hub; exact file unverified",
       "diagnostic_committed": "scripts/inspect_pi05_mirror_resolve.py",
-      "physical_trials_executed": false
-    }
+      "physical_trials_executed": false,
+      "head_audit": {
+        "total_paths": 25,
+        "local_size_matches_not_checksum_verified": 12,
+        "missing": 13,
+        "mirror_http_status_all_files": 308,
+        "redirect_all_to": "huggingface.co",
+        "no_working_mirror_bytes_route": true
+      }
+    },
+    "operator_network_note": "Some previous official checkpoint downloads used a proxy/VPN, but throughput is slow; avoid re-downloading already valid 12 paths.",
+    "local_recovery_code": "scripts/recover_pi05_uniform_missing.py; metadata-only plan; optionally --download-missing over trusted proxy with HTTP Range",
+    "local_recovery_executed": false
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -83,5 +94,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Run bash scripts/run_v141_next_gate.sh probe-checkpoint-files; inspect mirror redirect hosts for all selected files. If redirected to blocked upstream, transfer verified original ND Uniform checkpoint from another machine."
+  "next_operator_action": "Run plan-checkpoint-repair to get actual remaining byte count. If approved proxy throughput is acceptable, try --download-missing --max-files 1 (or --routed-vpn) then recover-checkpoint-proxy. Otherwise copy official checkpoint files via faster external machine and proceed local physics DEV."
 }
