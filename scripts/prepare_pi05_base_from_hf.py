@@ -123,10 +123,19 @@ def download_one(sibling, root: Path, blob_endpoint: str, retries=4):
                     mode="wb"  # Server ignored Range: restart .part only.
                 else:
                     raise RuntimeError(f"HTTP {response.status_code} for {relative}")
+                next_notice=32*1024*1024
+                t0=time.monotonic()
+                total=offset if mode=="ab" else 0
                 with part.open(mode) as handle:
                     for block in response.iter_content(chunk_size=CHUNK_SIZE):
                         if block:
                             handle.write(block)
+                            total+=len(block)
+                            if total>=next_notice or time.monotonic()-t0>20:
+                                print("OPENPI_BASE_PROGRESS",relative,
+                                      total,"/",size,"bytes",flush=True)
+                                next_notice=total+32*1024*1024
+                                t0=time.monotonic()
             if part.stat().st_size!=size:
                 raise IOError(f"Partial {relative}: {part.stat().st_size}/{size} bytes")
             state=file_state(part,sibling)
