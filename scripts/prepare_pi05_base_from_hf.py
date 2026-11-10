@@ -99,6 +99,12 @@ def download_one(sibling, root: Path, blob_endpoint: str, retries=4):
         if offset>size:
             raise RuntimeError(f"Overlong .part file {relative}, refuse overwrite")
         if offset==size:
+            # Orbax writes zero-byte completion markers (commit_success.txt).
+            # A non-existent .part also has an apparent offset of zero; for
+            # declared 0-byte files create the empty file before validating
+            # its published Git blob SHA-1 / LFS SHA-256. No HTTP GET needed.
+            if size==0 and not part.exists():
+                part.touch(exist_ok=False)
             state=file_state(part,sibling)
             if state in GOOD_STATES:
                 part.replace(final)
