@@ -94,6 +94,8 @@ def main(argv=None):
                         help="Opt-in large official ND checkpoint download")
     parser.add_argument("--extract-features", action="store_true",
                         help="Opt-in author's SigLIP on only EVAL 0080..0099")
+    parser.add_argument("--require-ready", action="store_true",
+                        help="Exit 2 if any official checkpoint/features/protocol prerequisite is missing")
     args = parser.parse_args(argv)
     root, assets = Path(args.official_root).resolve(), Path(args.assets).resolve()
     data_root = assets / "official_eval_data"
@@ -122,6 +124,8 @@ def main(argv=None):
     print("PI05_SELECTIVE_ASSET_GATE", json.dumps({
         "variant": args.variant, "ready": check["ready_for_runtime"],
         "missing": after, "failures": check["failures"]}), flush=True)
+    if args.require_ready and not check["ready_for_runtime"]:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
