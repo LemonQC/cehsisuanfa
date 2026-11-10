@@ -1,3 +1,9 @@
+## ★ v1.4.9 — 2026-11-10 π0.5 环境安装的 716MB NVIDIA cuDNN 下载过慢
+
+用户服务器新日志：在独立 `pi05` Conda 环境执行 JAX GPU 依赖安装时，`nvidia-cudnn-cu12==9.28.1.4` 716.6 MB 下载仅约 0.4–0.7MB/s，中途主动取消。**这不是已下载完成的 π0.5 Uniform 6.2GB 权重。** 已将 `scripts/setup_pi05_author_env.sh` 的普通 PyPI 源默认改为清华 TUNA HTTPS 镜像、PyTorch cu126 改为南京大学 HTTPS 镜像（可由 `PI05_PIP_INDEX_URL`、`PI05_TORCH_INDEX_URL` 覆盖）；不更改官方 JAX/其他包版本、全局 pip 配置或已有 Conda 环境。重新激活 `pi05` 后 `git pull --ff-only origin main`，执行 `bash scripts/setup_pi05_author_env.sh`，然后 `check-pi05-env`，通过后才提取 SigLIP 并评测。此轮没有新增物理评测；Vid2Robot 3/60 仍冻结。见 [安装镜像恢复手册](docs/2026-11-10_V149_JAX_CUDNN_MIRROR_RECOVERY.md)。
+
+---
+
 ## ★ v1.4.8 — 2026-11-10 π0.5 已通过权重资源预检，只缺 20 个 SigLIP 特征
 
 用户服务器实测：16 个 CPU 测试通过；Uniform 资源预检 checkpoint/train_config/协议检查均通过，唯一缺失 EVAL 0080–0099 的 20 个原版 SigLIP 缓存。Conda 中没有名为 pi05 的环境，但发现旧路径 /home/ubuntu/miniforge3/envs/rokae_pi05（是否有效未知）。已新增 check-pi05-env 环境校验、独立 pi05 原作者依赖安装脚本和相应离线测试：优先验证这个旧路径，不应破坏 agcofl4090 或改装他人环境；不通则另建 Python 3.11 pi05。然后依次 smoke-one-feature → prepare-features → --require-ready → evaluate-uniform（20×3），不得重跑 Vid2Robot。此次没有真实 π0.5 trial。见 [详细步骤](docs/2026-11-10_V148_PI05_ENVIRONMENT_GATE.md)。
