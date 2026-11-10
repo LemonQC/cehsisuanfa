@@ -46,6 +46,10 @@ case "$MODE" in
     # Read-only JAX/OpenPI import and GPU diagnosis in whichever env is active.
     python scripts/check_pi05_runtime.py --mode features
     ;;
+  inspect-uniform-vision)
+    # No GPU/tensor restore: inspect whether the released Orbax metadata has a vision subtree.
+    python scripts/inspect_pi05_uniform_vision_metadata.py
+    ;;
   audit-siglip-dataset)
     # HTTPS public HF DATASET METADATA ONLY; does not download model / videos.
     python scripts/audit_official_siglip_dataset.py
@@ -94,7 +98,7 @@ case "$MODE" in
     python -m agcofl.v140_custom_pick_push_physics --seed 120 --max-steps 450
     ;;
   *)
-    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
+    echo "Usage: bash scripts/run_v141_next_gate.sh {gate|plan-checkpoint-repair|recover-checkpoint-proxy|probe-checkpoint-mirror|probe-checkpoint-files|prepare-checkpoint-mirror|prepare-checkpoint|check-pi05-env|inspect-uniform-vision|audit-siglip-dataset|check-siglip-cache|smoke-one-feature|prepare-features|prepare-uniform|evaluate-uniform|custom-physics-dev}" >&2
     exit 2
     ;;
 esac
