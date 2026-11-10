@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+from importlib import metadata
 import json
 from pathlib import Path
 import sys
@@ -80,6 +81,26 @@ def main(argv=None):
                     "and opencv-python-headless==4.11.0.86 (no JAX reinstall)")
         except Exception as exc:
             checks["numpy_openpi_compatibility"] = type(exc).__name__ + ": " + str(exc)[:140]
+    # Import success does not imply that these binary packages are ABI
+    # compatible with NumPy 1.x; pip can install conflicting newer versions.
+    for dist, required in {
+        "ml-dtypes": "0.5.1",
+        "numpydantic": "1.6.11",
+        "pandas": "2.2.3",
+        "opencv-python-headless": "4.11.0.86",
+    }.items():
+        try:
+            actual = metadata.version(dist)
+            checks["dist_" + dist] = ("OK" if actual == required else
+                f"INCOMPATIBLE {actual}: expected {required}")
+        except metadata.PackageNotFoundError:
+            checks["dist_" + dist] = f"MISSING: expected {required}"
+    try:
+        extra = metadata.version("opencv-python")
+        checks["opencv_single_wheel"] = (
+            f"CONFLICT opencv-python {extra} coexists with opencv-python-headless")
+    except metadata.PackageNotFoundError:
+        checks["opencv_single_wheel"] = "OK"
     devices = []
     if checks.get("jax") == "OK":
         try:
