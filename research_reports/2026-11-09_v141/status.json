@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "JAX_GPU_VISIBLE_NUMPY1_INSTALLED_REMAINING_NUMPY2_TRANSITIVE_CONFLICTS",
+    "status": "SIGLIP_BASE_GCS_11_6GB_UNEXPECTED_DOWNLOAD_BLOCKED_0_BYTES",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -113,7 +113,17 @@
       "opencv-python-headless": "4.11.0.86"
     },
     "gym_metadata_exception": "mani-skill 3.0.0b22 declares gymnasium==0.29.1 but original author's environment pins gymnasium==1.3.0; verify actual sim runtime",
-    "physical_rollouts_executed": false
+    "physical_rollouts_executed": false,
+    "siglip_base_attempt": {
+      "source": "gs://openpi-assets/checkpoints/pi05_base/params",
+      "observed_total": "11.6 GiB reported by original gcsfs progress",
+      "first_94_seconds": "0.00 transferred displayed, repeated ADC warning",
+      "interrupted_by_user": true,
+      "checkpoint_role": "BASE Pi0.5 vision SigLIP source; different from downloaded 6.2GB RoboReel Uniform fine-tuned checkpoint",
+      "root_cause": "Original SigLipTokenizer attempts BASE params download when siglip_params.pkl absent; network/ADC cause not yet isolated",
+      "siglip_pickle_path": "$OPENPI_DATA_HOME/pi05_vision_encoder/siglip_params.pkl",
+      "new_safety_gate": "scripts/check_pi05_siglip_cache.py"
+    }
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -139,5 +149,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull main, activate pi05, bash scripts/repair_pi05_numpy_abi.sh, verify GPU/runtime and pip check (author ManiSkill/gym metadata conflict expected), then smoke-one-feature. No full reinstall or checkpoint redownload."
+  "next_operator_action": "Pull main then check-siglip-cache and look for authentic locally cached SigLIP pickle or official dataset precomputed 20 EVAL features. Do not automatically re-download 11.6GB; only original SigLIP pretraining weights/caches preserve official comparability."
 }
