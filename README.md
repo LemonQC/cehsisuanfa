@@ -1,3 +1,9 @@
+## ★ v1.4.6 — 2026-11-10 镜像全 308，代理慢：只补齐 13 个缺失官方权重文件
+
+服务器真实状态：HF-Mirror 的 25/25 HEAD 全部 `308 → huggingface.co`，12 个文件本地大小一致（**尚不能当成哈希验证**），13 个文件缺失；用户已有部分权重通过慢代理获得。新增 `scripts/recover_pi05_uniform_missing.py`：默认仅用镜像读取模型元数据并核对本地文件大小/哈希，`bash scripts/run_v141_next_gate.sh plan-checkpoint-repair` 不下载；主动指定 `--download-missing` 时才通过可信代理走官方 HF 原始文件，`.part` 支持 HTTP Range 续传，避免重复下载。可用 `--max-files 1` 先小规模测试，或在系统级 VPN/TUN 具备可用出口时指定 `--routed-vpn`。详见 [v1.4.6 下载恢复协议](docs/2026-11-10_V146_PI05_PARTIAL_PROXY_RECOVERY.md)。当前 **未实际恢复任何新文件或运行 π0.5 物理评测**，v1.3 3/60 冻结；同目标自定义 PhysX 仍优先推进。
+
+---
+
 ## ★ v1.4.5 — HF-Mirror 下载 17/25 失败，新增逐文件 HEAD 检查（2026-11-10）
 
 服务器真实反馈：HF-Mirror 可以列出 `LogosRoboticsLab/roboreel_models` 官方 ND Uniform 的 25 文件（6.20 GB），但 `snapshot_download` 在 17/25 报 `FileMetadataError`（可能是镜像文件 308 重定向使 `x-repo-commit` 丢失；与 Hugging Face 已知 issue #4637 相符，**仍需核实确切失败路径**）。已提交 `bash scripts/run_v141_next_gate.sh probe-checkpoint-files`：只发 25 次 HEAD、不下载权重，显示各文件镜像重定向目标和现有文件大小。新版 `prepare-checkpoint-mirror` 会先检查这些路径，若重定向到被阻断的官方站则提前终止，避免再重复下载 6.20 GB。详见 [逐文件排查](docs/2026-11-10_V143_PI05_TLS_RECOVERY.md)。π0.5 真实物理 trial 仍为 0，v1.3 Vid2Robot 3/60 保持冻结。
