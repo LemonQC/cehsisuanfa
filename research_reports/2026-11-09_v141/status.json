@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "NETWORK_BLOCKED_WRONG_DNS_ANSWERS_NO_PHYSICS",
+    "status": "HF_MIRROR_MODEL_LIST_OK_FILE_HEAD_METADATA_FAILURE_NO_PHYSICS",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -46,6 +46,17 @@
       "forced_ip_test": "curl --resolve huggingface.co:443:3.171.171.104: TCP connected, TLS handshake reset",
       "conclusion": "Bad domain resolution plus outbound TLS reset, no verified causal source; fix network route or opt-in mirror/other-machine transfer",
       "not_new_trial": true
+    },
+    "mirror_attempt": {
+      "endpoint": "https://hf-mirror.com",
+      "status": "FAILED_DURING_SNAPSHOT_DOWNLOAD",
+      "selection_count": 25,
+      "selection_total_bytes_approx": 6200000000,
+      "progress_when_failed": "17/25 (not evidence of complete validated files)",
+      "exception": "huggingface_hub FileMetadataError missing expected Hub metadata; LocalEntryNotFoundError wrapper",
+      "likely_known_issue": "huggingface/huggingface_hub#4637: mirror 308 redirect to official hub; exact file unverified",
+      "diagnostic_committed": "scripts/inspect_pi05_mirror_resolve.py",
+      "physical_trials_executed": false
     }
   },
   "official_pi05_keyframes": {
@@ -72,5 +83,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Probe public HF mirror metadata only; if HTTPS API returns correct JSON and no redirection, optionally download ND Uniform from mirror; else transfer verified released model from an internet-capable computer; in parallel run custom physics DEV locally."
+  "next_operator_action": "Run bash scripts/run_v141_next_gate.sh probe-checkpoint-files; inspect mirror redirect hosts for all selected files. If redirected to blocked upstream, transfer verified original ND Uniform checkpoint from another machine."
 }
