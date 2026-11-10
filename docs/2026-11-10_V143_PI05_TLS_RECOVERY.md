@@ -16,6 +16,49 @@ This failure is environmental HTTPS/certificate routing, NOT evidence that
 π0.5 Uniform succeeds or fails on PushCube. Source v1.3 Vid2Robot 3/60 is
 unchanged and must not be rerun.
 
+## 2026-11-10 follow-up: confirmed *wrong network* DNS answers
+
+On the user's server the system resolver returned:
+- huggingface.co A = 108.160.170.45: ARIN allocates 108.160.160.0/20 to Dropbox.
+- huggingface.co AAAA = 2a03:2880:f10e:83:face:b00c:0:25de: Meta/Facebook AS32934.
+
+Public Google DNS observation for the same domain returned Amazon CloudFront
+3.171.171.104 / 3.171.171.6 / 3.171.171.128 / 3.171.171.65 at the time
+of investigation. These are **observations, NOT permanent DNS pins**.
+Do not overwrite /etc/hosts with fixed CDN addresses.
+
+Both direct Python TLS and curl failed before handshake: a connect timeout
+is therefore expected; updating pip/certifi is not the right next step.
+Likely causes include poisoned/wrong system or upstream DNS, a locally
+installed hosts rewrite, a local DNS forwarding service, or corporate
+routing. No proxy env variables appeared in the diagnostics.
+
+Run read-only on server:
+
+    grep -nE '(^|[[:space:]])huggingface[.]co([[:space:]]|$)' /etc/hosts || true
+    cat /etc/resolv.conf
+    (resolvectl status || systemd-resolve --status || true) | head -80
+    getent ahostsv4 huggingface.co
+    if command -v dig >/dev/null; then dig +time=3 +tries=1 @1.1.1.1 huggingface.co A; fi
+
+A query to 1.1.1.1 may be blocked by a managed firewall; if so, failure
+does not prove normal DNS and is not a reason to disable TLS. Use an
+approved, trustworthy resolver/VPN/proxy configured by the network
+administrator or an authorized local artifact transfer with integrity
+checks. Verify renewed DNS and HTTPS before re-running downloads:
+
+    python scripts/diagnose_hf_tls.py
+    curl -4 -I --connect-timeout 5 --max-time 15 https://huggingface.co
+    python -c "from huggingface_hub import HfApi; print(HfApi().model_info('LogosRoboticsLab/roboreel_models').id)"
+
+If an independent trusted resolver provides a current AWS CDN IPv4
+address, a *temporary diagnostic* with `curl --resolve` can establish
+whether only DNS resolution is broken; keep HTTPS hostname and certificate
+verification enabled, and never treat that address as a permanent hosts
+entry. If even a trusted IP cannot be reached, fix outbound networking
+rather than endlessly swapping DNS addresses.
+
+
 ## Code corrections (v1.4.3)
 
 - scripts/run_v141_next_gate.sh evaluate-uniform now runs
