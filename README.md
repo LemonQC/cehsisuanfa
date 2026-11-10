@@ -1,3 +1,9 @@
+## ★ v1.5.2 — 2026-11-10 SigLIP 意外请求额外 11.6GB 基础权重，必须停止自动下载
+
+用户执行真实一视频 SigLIP smoke 时，原作者 `SigLipTokenizer` 因找不到 `$OPENPI_DATA_HOME/pi05_vision_encoder/siglip_params.pkl` 自动访问 `gs://openpi-assets/checkpoints/pi05_base/params`，gcsfs 94 秒显示 0/11.6G 并反复输出 ADC 凭证警告，用户手动中断。**这是 OpenPI π0.5 基础模型，和已经下载的 6.2GB RoboReel Uniform 微调模型不是同一文件。** 原作者只需从基础模型 `PaliGemma.img` 导出 SigLIP pickle；不能在不验证权重等效性的情况下用微调模型替换它并声称官方复现。已提交 `bash scripts/run_v141_next_gate.sh check-siglip-cache`（无网络），并为 `smoke-one-feature` / `prepare-features` 增加默认 fail-closed 缓存门槛，避免再次意外请求 11.6GB。先检查本地是否有原版 `siglip_params.pkl` 或官方预生成 EVAL `front.npy`，否则通过可靠网络按原版权重获取。用户没有实际运行 pi05 物理评测；Vid2Robot 3/60 冻结。详见 [v1.5.2 GCS/缓存审计](docs/2026-11-10_V152_SIGLIP_BASE_11GB_BLOCKER.md)。
+
+---
+
 ## ★ v1.5.1 — 2026-11-10 π0.5 环境仅剩 NumPy ABI 依赖冲突
 
 用户新日志：在独立 `pi05` 环境中已成功恢复 `numpy==1.26.4` 和 `opencv-python-headless==4.11.0.86`；pip 仍提示 `numpydantic==2.0.0`、`pandas==3.1.1`、`ml-dtypes==0.6.0`、`opencv-python==5.0.0.93` 依赖 NumPy2。作者明确要求的 Gymnasium 1.3.0 与 ManiSkill 声明的 0.29.1 metadata 警告须通过真实运行验证，不盲目降级。新增 `bash scripts/repair_pi05_numpy_abi.sh` 仅修复 pi05 内上述小型 Python wheel、保持 JAX/GPU/716MB cuDNN 和 6.2GB 官方权重不变；`check_pi05_runtime.py` 新增 ABI 与双 OpenCV wheel 检查。执行 `git pull --ff-only origin main` → `conda activate pi05` → repair → `check-pi05-env` → 单视频 `smoke-one-feature`。本轮未执行 GPU 特征提取或真实物理 π0.5 评测；Vid2Robot 3/60 冻结。详见 [v1.5.1 依赖修复文档](docs/2026-11-10_V151_PI05_NUMPY_ABI_REPAIR.md)。
