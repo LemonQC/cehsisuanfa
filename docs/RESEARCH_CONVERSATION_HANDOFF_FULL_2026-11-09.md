@@ -1,3 +1,9 @@
+## ★ v1.4.4 — 2026-11-10 DNS/IP 路由异常，改用安全镜像预检查或离线传输
+
+服务器新日志显示系统 DNS `104.244.43.104`、指定 1.1.1.1 查询 `202.160.130.145` 均命中 X/Twitter 网段，强制连接 CDN IP 的 TLS 握手也被重置。**不再重试原域名、不改 hosts、不禁用证书验证**。已提交 `bash scripts/run_v141_next_gate.sh probe-checkpoint-mirror`（只检查公开模型元数据，无下载），通过后可自愿执行 `prepare-checkpoint-mirror` 下载官方 ND Uniform 子集；镜像可能重定向回原站，失败则从联网电脑下载并传输权重。同时继续本地 `custom-physics-dev`。详见 [排障记录](2026-11-10_V143_PI05_TLS_RECOVERY.md)。π0.5 正式物理评测仍 **NOT_RUN**；v1.3 Vid2Robot 3/60 不重跑。
+
+---
+
 ## ★ 2026-11-10 — HF 下载根因：服务器 DNS 指向 Dropbox / Facebook
 
 4090 服务端输出：`huggingface.co` 被解析到 `108.160.170.45`（Dropbox 网络）与 `2a03:2880:f10e:83:face:b00c:0:25de`（Meta/Facebook），HTTPS 两个地址均超时，非 Pi0.5 推理故障。外部公共 DNS 返回的是不同的 AWS CloudFront 地址，需排查系统 DNS、/etc/hosts、上游 DNS 或网络出口。GitHub 中 `scripts/diagnose_hf_tls.py` 已新增异常解析警告；[详细只读排查命令](2026-11-10_V143_PI05_TLS_RECOVERY.md)。本轮没有运行真实物理评测，也没有新增成功率；v1.3 3/60 冻结；Keyframes/API 方案仍暂停。
