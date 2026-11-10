@@ -59,12 +59,12 @@ case "$MODE" in
     ;;
   plan-pi05-base-hf)
     # Metadata-only; third-party mirror of original pi05_base/params.
-    python scripts/prepare_pi05_base_from_hf.py
+    python scripts/prepare_pi05_base_from_hf.py --cache "$OPENPI_DATA_HOME"
     ;;
   prepare-pi05-base-hf)
     # Explicit 12.4GB public HF checkpoint transfer, excludes every other variant.
     # Small metadata file probe first; pinned revision, resumable HF local cache.
-    python scripts/prepare_pi05_base_from_hf.py --download
+    python scripts/prepare_pi05_base_from_hf.py --download --cache "$OPENPI_DATA_HOME"
     python scripts/check_pi05_siglip_cache.py
     ;;
   check-siglip-cache)
