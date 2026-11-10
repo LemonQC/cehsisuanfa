@@ -63,6 +63,23 @@ def main(argv=None):
             checks[name] = "OK"
         except Exception as exc:
             checks[name] = type(exc).__name__ + ": " + str(exc).splitlines()[0][:170]
+    # Critical compatibility gate. The original openpi-client==0.1.2
+    # requires numpy<2, but a late JAX re-pin can silently install NumPy 2.x.
+    # Successful imports alone were a false positive on the RTX4090 server.
+    numpy_version = None
+    if checks.get("numpy") == "OK":
+        try:
+            import numpy as np
+            numpy_version = str(np.__version__)
+            version = tuple(int(x) for x in numpy_version.split(".")[:3])
+            if (1, 26, 4) <= version < (2, 0, 0):
+                checks["numpy_openpi_compatibility"] = "OK"
+            else:
+                checks["numpy_openpi_compatibility"] = (
+                    f"INCOMPATIBLE_NUMPY {numpy_version}: install numpy==1.26.4 "
+                    "and opencv-python-headless==4.11.0.86 (no JAX reinstall)")
+        except Exception as exc:
+            checks["numpy_openpi_compatibility"] = type(exc).__name__ + ": " + str(exc)[:140]
     devices = []
     if checks.get("jax") == "OK":
         try:
@@ -73,7 +90,7 @@ def main(argv=None):
     gpu_ok = any(device.startswith("gpu:") or device.startswith("cuda:")
                  for device in devices)
     summary = {"type": "PI05_RUNTIME_READ_ONLY", "python": sys.executable,
-               "mode": args.mode, "jax_devices": devices,
+               "mode": args.mode, "numpy_version": numpy_version, "jax_devices": devices,
                "gpu_visible": gpu_ok, "checks": checks,
                "siglip_weights_restored": "NOT_TESTED",
                "physical_rollouts": 0,
