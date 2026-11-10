@@ -6,6 +6,7 @@ tokens or Authorization headers. Run in the conda env that failed.
 """
 from __future__ import annotations
 import os
+import ipaddress
 import socket
 import ssl
 from urllib.parse import urlsplit
@@ -34,6 +35,20 @@ def main():
         addresses = sorted({entry[4][0] for entry in socket.getaddrinfo(
             host, 443, type=socket.SOCK_STREAM)})
         print("DNS huggingface.co", ", ".join(addresses[:8]))
+        # Only known third-party allocations observed in incident logs are
+        # flagged. This is not a static allowlist of legitimate HF CDN IPs.
+        alien = (
+            (ipaddress.ip_network("108.160.160.0/20"), "Dropbox"),
+            (ipaddress.ip_network("2a03:2880::/29"), "Meta/Facebook"),
+        )
+        for addr in addresses:
+            ip = ipaddress.ip_address(addr)
+            for net, provider in alien:
+                if ip in net:
+                    print("WARNING_SUSPICIOUS_DNS_ROUTING",
+                          addr, "belongs to", provider, "rather than a Hugging Face CDN")
+        print("Next compare system DNS with a trusted independent resolver; "
+              "do not disable HTTPS verification.")
     except Exception as err:
         print("DNS ERROR", type(err).__name__, str(err)[:220])
     try:
