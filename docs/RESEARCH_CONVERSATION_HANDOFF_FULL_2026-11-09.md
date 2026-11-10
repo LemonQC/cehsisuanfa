@@ -1,3 +1,9 @@
+## ★ v1.4.5 — HF-Mirror 下载 17/25 失败，新增逐文件 HEAD 检查（2026-11-10）
+
+服务器真实反馈：HF-Mirror 可以列出 `LogosRoboticsLab/roboreel_models` 官方 ND Uniform 的 25 文件（6.20 GB），但 `snapshot_download` 在 17/25 报 `FileMetadataError`（可能是镜像文件 308 重定向使 `x-repo-commit` 丢失；与 Hugging Face 已知 issue #4637 相符，**仍需核实确切失败路径**）。已提交 `bash scripts/run_v141_next_gate.sh probe-checkpoint-files`：只发 25 次 HEAD、不下载权重，显示各文件镜像重定向目标和现有文件大小。新版 `prepare-checkpoint-mirror` 会先检查这些路径，若重定向到被阻断的官方站则提前终止，避免再重复下载 6.20 GB。详见 [逐文件排查](2026-11-10_V143_PI05_TLS_RECOVERY.md)。π0.5 真实物理 trial 仍为 0，v1.3 Vid2Robot 3/60 保持冻结。
+
+---
+
 ## ★ v1.4.4 — 2026-11-10 DNS/IP 路由异常，改用安全镜像预检查或离线传输
 
 服务器新日志显示系统 DNS `104.244.43.104`、指定 1.1.1.1 查询 `202.160.130.145` 均命中 X/Twitter 网段，强制连接 CDN IP 的 TLS 握手也被重置。**不再重试原域名、不改 hosts、不禁用证书验证**。已提交 `bash scripts/run_v141_next_gate.sh probe-checkpoint-mirror`（只检查公开模型元数据，无下载），通过后可自愿执行 `prepare-checkpoint-mirror` 下载官方 ND Uniform 子集；镜像可能重定向回原站，失败则从联网电脑下载并传输权重。同时继续本地 `custom-physics-dev`。详见 [排障记录](2026-11-10_V143_PI05_TLS_RECOVERY.md)。π0.5 正式物理评测仍 **NOT_RUN**；v1.3 Vid2Robot 3/60 不重跑。
