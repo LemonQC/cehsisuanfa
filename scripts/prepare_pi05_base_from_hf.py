@@ -25,7 +25,6 @@ import sys
 REPO="robotgeneralist/openpi_checkpoint_mirrors2"
 REVISION="1fda6b04e83d625eb1a55d68db32050e248cac2b"
 PREFIX="pi05_base/params/"
-REQUIRED=("._unused",)  # overwritten by the exact real required set below
 REQUIRED=("_METADATA","_CHECKPOINT_METADATA","manifest.ocdbt")
 PROJECT=Path(__file__).resolve().parents[1]
 
@@ -91,7 +90,9 @@ def main(argv=None):
     p.add_argument("--cache",type=Path,
         default=PROJECT/"outputs/v120_baselines/openpi_cache")
     args=p.parse_args(argv)
-    if not args.endpoint.startswith("https://") or args.workers<1 or args.workers>16:
+    from urllib.parse import urlsplit
+    url=urlsplit(args.endpoint)
+    if url.scheme!="https" or not url.hostname or url.username or url.password or args.workers<1 or args.workers>16:
         p.error("HTTPS endpoint and 1..16 workers required")
     # Import after setting HF_ENDPOINT so a single pinned model snapshot is used.
     os.environ["HF_ENDPOINT"]=args.endpoint
