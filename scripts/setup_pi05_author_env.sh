@@ -12,13 +12,22 @@ python - <<'PY'
 import sys
 assert sys.version_info[:2] == (3, 11), "Pinned author env requires Python 3.11"
 PY
+# Public, HTTPS-only mirrors scoped to THIS script; no global pip config changes.
+# Override by setting PI05_PIP_INDEX_URL / PI05_TORCH_INDEX_URL before invocation.
+# cuda12 pip wheels include large NVIDIA CUDA/cuDNN runtimes; cached wheels are reused.
+export PIP_INDEX_URL="${PI05_PIP_INDEX_URL:-https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple}"
+PI05_TORCH_INDEX_URL="${PI05_TORCH_INDEX_URL:-https://mirror.nju.edu.cn/pytorch/whl/cu126}"
+case "$PIP_INDEX_URL" in https://*) ;; *) echo "Require HTTPS PI05_PIP_INDEX_URL" >&2; exit 2;; esac
+case "$PI05_TORCH_INDEX_URL" in https://*) ;; *) echo "Require HTTPS PI05_TORCH_INDEX_URL" >&2; exit 2;; esac
+echo "Using PyPI mirror: $PIP_INDEX_URL"
+echo "Using PyTorch CUDA index: $PI05_TORCH_INDEX_URL"
 python -m pip install "jax[cuda12]==0.5.3"
 python -m pip install \
   "flax==0.10.2" "optax==0.2.8" "orbax-checkpoint==0.11.13" \
   "equinox==0.13.6" "jaxtyping==0.2.36" "treescope==0.1.10" \
   "augmax==0.4.1" "chex==0.1.90"
 python -m pip install "jax==0.5.3" "jaxlib==0.5.3"
-python -m pip install --index-url https://download.pytorch.org/whl/cu126 "torch==2.7.1"
+python -m pip install --index-url "$PI05_TORCH_INDEX_URL" "torch==2.7.1"
 python -m pip install \
   "transformers==4.57.6" "sentencepiece==0.2.1" "huggingface-hub>=0.25"
 python -m pip install \
