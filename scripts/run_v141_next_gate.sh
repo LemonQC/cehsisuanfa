@@ -7,7 +7,7 @@ export MUJOCO_GL=egl
 export MUJOCO_EGL_DEVICE_ID="${MUJOCO_EGL_DEVICE_ID:-0}"
 case "$MODE" in
   gate)
-    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py
+    python -m pytest -q tests/test_v140_official_pi05.py tests/test_v140_custom_pick_push.py tests/test_v141_pi05_assets.py tests/test_hf_endpoint_probe.py tests/test_pi05_mirror_resolve.py tests/test_recover_pi05_uniform_missing.py tests/test_check_pi05_runtime.py tests/test_check_pi05_siglip_cache.py tests/test_audit_official_siglip_dataset.py tests/test_inspect_pi05_uniform_vision_metadata.py
     python -m agcofl.v141_pi05_assets --variant uniform
     ;;
   probe-checkpoint-mirror)
