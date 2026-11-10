@@ -1,3 +1,9 @@
+## ★ v1.5.9 — 2026-11-10 统一目标：必要 checkpoint 应下载；锁定 M0/M1/M2 科学验收
+
+研究纠偏：不再把“不要无效重复下载/调试”等同于“遇到需要的模型权重就放弃”。**M0** 忠实完成 RoboReel 官方 π0.5 Uniform ND PushCube 20×3 物理评测（Vid2Robot 3/60 已归档，不重跑）；**M1** 构造同目标源 Pick→目标 Push-only 的必要新效果插入任务、明确源视频额外信息与强 TAMP 对照；**M2** 训练能力约束 Effect Editor + 闭环机器人策略并公平比较，若无新意则如实停止。发现可公开访问的 OpenPI 基础 pi05_base 的 HF 第三方镜像 `robotgeneralist/openpi_checkpoint_mirrors2`，锁定 SHA `1fda6b04e83d625eb1a55d68db32050e248cac2b`；新 `scripts/prepare_pi05_base_from_hf.py` 只下载原版基础 Orbax `pi05_base/params`（约 12.4GB），做文件完整性检查并在项目目录创建 OpenPI 缓存链接，不替换 RoboReel Uniform 6.2GB 微调模型，不碰原作者代码。使用 `plan-pi05-base-hf`（纯元数据）后 `prepare-pi05-base-hf`（显式下载），随后 `smoke-one-feature`、`prepare-features`、`--require-ready`、`evaluate-uniform`。Hugging Face 镜像声称是 GCS 原件镜像，尚未独立逐字节比对，保留来源说明。此次仅提交代码，服务器未执行新下载与物理试验。见 [冻结研究计划](2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md)。
+
+---
+
 ## ★ v1.5.6 — 2026-11-10 同目标 Pick→Push 源端 seed120 真实物理测试失败
 
 服务器返回实际 PhysX JSON：源端 281 步，`ever_grasped=true`，但物体最高抬升仅 `0.00008825 m`（0.088 mm），没有越障，目标误差 `0.12924 m`，`env_success=false`、`end_phase=failed`、`valid_pick_source=false`。门槛正确阻止目标 Push-only 对照（`targets=[]`），不可宣称跨行为可行性成立。源控制器只有 grasp 阶段超时才转入 failed；`ever_grasped` 在任意阶段的动作后取样，因此并不意味着 grasp 阶段持续抓住。已新增 **无需运行物理实验** 的 `bash scripts/run_v141_next_gate.sh diagnose-custom-source`，读取已保存的 `source_trace.json`，按阶段输出夹爪接触、TCP/物体位置及抓取命令统计。先诊断已有 281 步，避免盲目重跑调参。记录见 [v1.5.6 物理失败诊断](2026-11-10_V156_SOURCE_GRASP_FAILED_TRACE_DIAG.md)。π0.5 Uniform 官方测试仍因 SigLIP 原版权重缺失阻塞，Vid2Robot 3/60 冻结。
