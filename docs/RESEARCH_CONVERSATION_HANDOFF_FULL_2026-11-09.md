@@ -1,3 +1,9 @@
+## ★ v1.6.0 — 2026-11-10 π0.5 Base 下载阻塞修复（M0 目标不变）
+
+用户执行 `prepare-pi05-base-hf` 时，已获取镜像清单但在**第一个极小的** `pi05_base/params/_METADATA` 上遭遇 Hugging Face `FileMetadataError` / `LocalEntryNotFoundError`，尚未下载大权重。原 `hf_hub_download` 的 HEAD/镜像重定向校验不兼容；已改为固定仓库 revision + 公开镜像清单 + 官方 `https://huggingface.co/...` 的 **requests HTTPS GET**（使用用户已配置的 HTTPS_PROXY/VPN），逐文件 `.part`、HTTP Range 断点续传、manifest size/已公布 SHA 校验，失败不覆盖既有完成文件。新增 `probe-pi05-base-hf` 仅验证小文件网络，成功后再运行 `prepare-pi05-base-hf` 下载约12.4GB 原版权重；之后是 `check-siglip-cache` → `smoke-one-feature` → `prepare-features` → `--require-ready` → `evaluate-uniform` 60 次官方评测。此修复尚未在用户 RTX4090 上验证。完整说明见 [v1.6.0 下载恢复步骤](2026-11-10_V160_PI05_BASE_HF_GET_PROXY_RESUME_FIX.md)；科学目标仍按 [M0/M1/M2 冻结协议](2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md)。
+
+---
+
 ## ★ v1.5.9 — 2026-11-10 统一目标：必要 checkpoint 应下载；锁定 M0/M1/M2 科学验收
 
 研究纠偏：不再把“不要无效重复下载/调试”等同于“遇到需要的模型权重就放弃”。**M0** 忠实完成 RoboReel 官方 π0.5 Uniform ND PushCube 20×3 物理评测（Vid2Robot 3/60 已归档，不重跑）；**M1** 构造同目标源 Pick→目标 Push-only 的必要新效果插入任务、明确源视频额外信息与强 TAMP 对照；**M2** 训练能力约束 Effect Editor + 闭环机器人策略并公平比较，若无新意则如实停止。发现可公开访问的 OpenPI 基础 pi05_base 的 HF 第三方镜像 `robotgeneralist/openpi_checkpoint_mirrors2`，锁定 SHA `1fda6b04e83d625eb1a55d68db32050e248cac2b`；新 `scripts/prepare_pi05_base_from_hf.py` 只下载原版基础 Orbax `pi05_base/params`（约 12.4GB），做文件完整性检查并在项目目录创建 OpenPI 缓存链接，不替换 RoboReel Uniform 6.2GB 微调模型，不碰原作者代码。使用 `plan-pi05-base-hf`（纯元数据）后 `prepare-pi05-base-hf`（显式下载），随后 `smoke-one-feature`、`prepare-features`、`--require-ready`、`evaluate-uniform`。Hugging Face 镜像声称是 GCS 原件镜像，尚未独立逐字节比对，保留来源说明。此次仅提交代码，服务器未执行新下载与物理试验。见 [冻结研究计划](2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md)。
