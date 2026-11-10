@@ -151,12 +151,16 @@ def main(argv=None):
     parser.add_argument("--download-missing", action="store_true",
                         help="Explicit opt-in, uses huggingface.co via HTTPS proxy")
     parser.add_argument("--retries", type=int, default=4)
+    parser.add_argument("--max-files", type=int, default=None,
+                        help="Optional small budget for testing one missing file via proxy")
     args = parser.parse_args(argv)
     endpoint = urlsplit(args.metadata_endpoint)
     if endpoint.scheme != "https" or not endpoint.hostname or endpoint.username:
         parser.error("Metadata endpoint must be HTTPS and contain no credentials")
     if args.retries < 0 or args.retries > 15:
         parser.error("--retries must be between 0 and 15")
+    if args.max_files is not None and args.max_files < 1:
+        parser.error("--max-files must be positive")
     manifest = get_manifest(args.metadata_endpoint)
     dest = Path(args.dest).resolve()
     remaining = []
@@ -179,9 +183,10 @@ def main(argv=None):
                                       "ALL_PROXY", "all_proxy")):
         parser.error("No HTTPS_PROXY or ALL_PROXY configured; direct Hub route "
                      "was blocked on this server. Configure approved proxy before downloading.")
+    selected = remaining[:args.max_files] if args.max_files is not None else remaining
     failures = []
-    for index, (name, s) in enumerate(remaining, 1):
-        print("RECOVER", index, "/", len(remaining), name, flush=True)
+    for index, (name, s) in enumerate(selected, 1):
+        print("RECOVER", index, "/", len(selected), name, flush=True)
         try:
             _, result = _download_one(dest, name, s, args.retries)
             print("RECOVERED", name, result, flush=True)
@@ -190,9 +195,13 @@ def main(argv=None):
                   str(error)[:200], flush=True)
             failures.append(name)
     if failures:
-        print("PARTIAL_RECOVERY_ONLY", len(failures), "missing or invalid files",
+        print("PARTIAL_RECOVERY_ONLY", len(failures), "failed download attempts",
               flush=True)
         return 2
+    if len(selected) < len(remaining):
+        print("PARTIAL_RECOVERY_MAX_FILES", len(selected), "of", len(remaining),
+              "attempted; run without --max-files to finish", flush=True)
+        return 0
     print("RECOVERY_COMPLETE_LOCAL_FILE_SET; evaluation still requires "
           "official preflight and SigLIP features", flush=True)
     return 0
