@@ -183,7 +183,29 @@
     "source_end_phase": "failed",
     "paper_ready": false,
     "failure_interpretation": "Source controller ended failed: only path to failed is grasp-phase >45 timeout. ever_grasped was measured after some env.step in any phase, thus not proof of stable grasp during grasp phase. Need existing source_trace by-phase audit before changing grasp control.",
-    "next_step": "bash scripts/run_v141_next_gate.sh diagnose-custom-source reads existing source_trace.json and reports stage/grasp/TCP/cube motion; no physics rerun"
+    "next_step": "bash scripts/run_v141_next_gate.sh diagnose-custom-source reads existing source_trace.json and reports stage/grasp/TCP/cube motion; no physics rerun",
+    "latest_offline_trace_analysis": {
+      "phase_steps": {
+        "above": 16,
+        "descend": 218,
+        "grasp": 46,
+        "failed": 1
+      },
+      "descend_cube_xy_displacement_m": 0.033666771558715454,
+      "grasp_detected_during_grasp_phase": 0,
+      "grasp_closed_command_steps": 45,
+      "grasp_phase_initial_tcp_xy": [
+        0.02179001271724701,
+        0.004448972642421722
+      ],
+      "grasp_phase_initial_cube_xy": [
+        0.034893233329057693,
+        0.04193104803562164
+      ],
+      "cause": "open-gripper descent displaced cube by 33.7mm while controller targeted stale initial cube pose. End-phase failed from grasp timeout; exact collision mechanism still requires new telemetry."
+    },
+    "latest_code_fix": "v1.5.7 live-cube pregrasp target z=cube_z+0.025, movement-triggered reapproach, strict timeout and failure telemetry; physics NOT_RUN since fix",
+    "new_physics_trials_after_fix": 0
   },
   "note": "Author paper baseline figures are not local measured trials. No GPU execution occurred in this commit; numbers must remain null until archived physical JSON is verified.",
   "scope_decision": "No paid external VLM/LLM API pipelines; no attempt to generate official Keyframes via API. Do not fake official annotations with heuristics.",
@@ -193,5 +215,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull main and run diagnose-custom-source ONLY to analyze existing source trace. Do not run more seeds or target rollouts until source physically grasps/lifts/overflies/release; original pi05 SigLIP remains independently blocked."
+  "next_operator_action": "Pull main; run test_v140_custom_pick_push.py then one seed-120 custom-physics-dev in agcofl4090. Inspect source summary failure_reason, reapproach_count, max lift and true overflight; do not relax source_valid. If failed again, inspect trace visual/contact control, not repeatedly retune."
 }
