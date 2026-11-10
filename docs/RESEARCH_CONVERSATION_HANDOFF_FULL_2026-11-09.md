@@ -1,3 +1,7 @@
+## ★ 2026-11-10 — HF 下载根因：服务器 DNS 指向 Dropbox / Facebook
+
+4090 服务端输出：`huggingface.co` 被解析到 `108.160.170.45`（Dropbox 网络）与 `2a03:2880:f10e:83:face:b00c:0:25de`（Meta/Facebook），HTTPS 两个地址均超时，非 Pi0.5 推理故障。外部公共 DNS 返回的是不同的 AWS CloudFront 地址，需排查系统 DNS、/etc/hosts、上游 DNS 或网络出口。GitHub 中 `scripts/diagnose_hf_tls.py` 已新增异常解析警告；[详细只读排查命令](2026-11-10_V143_PI05_TLS_RECOVERY.md)。本轮没有运行真实物理评测，也没有新增成功率；v1.3 3/60 冻结；Keyframes/API 方案仍暂停。
+
 ## ★ v1.4.3 (2026-11-10) π0.5 Uniform TLS 下载失败与修复
 
 用户服务器实测：访问 huggingface.co 的官方 HfApi API 时发生证书域名不匹配，**官方 checkpoint 未下载**；20 个评测视频存在但对应 SigLIP 特征全部缺失，π0.5 尚未开始真实物理评测，成功率依旧 `null`。已修复评测脚本的缺失资源 fail-closed 门控（`--require-ready`），并拆分 `prepare-checkpoint` 与 `prepare-features`，提供不泄露 token/代理密码的 `python scripts/diagnose_hf_tls.py`。不要关闭 SSL 验证或假造模型缓存；不重跑 Vid2Robot v1.3。诊断与恢复步骤见 [v1.4.3 TLS 文档](2026-11-10_V143_PI05_TLS_RECOVERY.md)。
