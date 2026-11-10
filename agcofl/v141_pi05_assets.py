@@ -1,6 +1,6 @@
 """Selective original RoboReel pi0.5 assets: only ND held-out PushCube 0080..0099.
 
-No training, no re-evaluation of Vid2Robot. By default this is a read-only
+No training, no API-based Keyframes, no re-evaluation of Vid2Robot. By default this is a read-only
 preflight. All costly actions require separate explicit CLI flags.
 """
 from __future__ import annotations
@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
-import os
 from pathlib import Path
 import subprocess
 import sys
@@ -73,32 +72,6 @@ def prepare_features(official_root, data_root, demo_ids):
     return completed
 
 
-def prepare_keyframes(official_root, data_root, demo_ids, model):
-    """Original author VLM annotations, explicitly opt-in, may incur API costs."""
-    if not demo_ids:
-        return []
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY missing; no synthetic keyframe fallback")
-    root = Path(official_root).resolve()
-    entry = root / "scripts/extract_keyframes.py"
-    if not entry.is_file():
-        raise FileNotFoundError(entry)
-    completed = []
-    for demo_id in demo_ids:
-        video, _, annotation = asset_paths(data_root, demo_id)
-        if not video.is_file():
-            raise FileNotFoundError(video)
-        if annotation.is_file():
-            continue
-        subprocess.run([sys.executable, str(entry), "--video", str(video),
-                        "--data-root", str(data_root), "--task", "push_cube",
-                        "--model", model], cwd=root, check=True)
-        if not annotation.is_file():
-            raise RuntimeError(f"No official VLM annotation {annotation}")
-        completed.append(demo_id)
-    return completed
-
-
 def download_checkpoint(official_root, assets, variant):
     root = Path(official_root).resolve()
     entry = root / "scripts/download_checkpoints.py"
@@ -112,7 +85,8 @@ def download_checkpoint(official_root, assets, variant):
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--variant", required=True, choices=tuple(VARIANTS))
+    parser.add_argument("--variant", required=True, choices=("uniform",),
+                        help="API-free track only; VLM Keyframes deferred")
     parser.add_argument("--official-root", default="third_party/roboreel_models")
     parser.add_argument("--assets", default="outputs/v120_baselines")
     parser.add_argument("--out", default=None)
@@ -120,26 +94,19 @@ def main(argv=None):
                         help="Opt-in large official ND checkpoint download")
     parser.add_argument("--extract-features", action="store_true",
                         help="Opt-in author's SigLIP on only EVAL 0080..0099")
-    parser.add_argument("--extract-keyframes", action="store_true",
-                        help="Opt-in potentially billable author's VLM API")
-    parser.add_argument("--keyframe-model", default="gpt-5.4-mini")
     args = parser.parse_args(argv)
     root, assets = Path(args.official_root).resolve(), Path(args.assets).resolve()
     data_root = assets / "official_eval_data"
-    if args.extract_keyframes and args.variant != "keyframes":
-        parser.error("--extract-keyframes requires --variant keyframes")
-    if any((args.download_checkpoint, args.extract_features, args.extract_keyframes)):
+    if any((args.download_checkpoint, args.extract_features)):
         if pinned_sha(root) != PIN:
             raise RuntimeError("Only the pinned authors' original commit can prepare assets")
     before = pending(data_root, args.variant)
-    if before["video"] and (args.extract_features or args.extract_keyframes):
+    if before["video"] and args.extract_features:
         raise FileNotFoundError(f"Frozen eval videos missing: {before['video']}")
     if args.download_checkpoint:
         download_checkpoint(root, assets, args.variant)
     if args.extract_features:
         prepare_features(root, data_root, before["feature"])
-    if args.extract_keyframes:
-        prepare_keyframes(root, data_root, before["keyframe"], args.keyframe_model)
     after = pending(data_root, args.variant)
     check = preflight(args.variant, root, assets)
     out = Path(args.out or f"outputs/v141_pi05_{args.variant}")
@@ -147,8 +114,7 @@ def main(argv=None):
         "type": "PI05_SELECTIVE_ASSETS_ONLY_NO_PHYSICS",
         "variant": args.variant,
         "executed_flags": dict(download_checkpoint=args.download_checkpoint,
-                               extract_features=args.extract_features,
-                               extract_keyframes=args.extract_keyframes),
+                               extract_features=args.extract_features),
         "before": before, "after": after,
         "official_preflight": check,
         "physics_executed": False, "trained": False,
