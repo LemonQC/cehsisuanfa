@@ -21,12 +21,12 @@ case "$PIP_INDEX_URL" in https://*) ;; *) echo "Require HTTPS PI05_PIP_INDEX_URL
 case "$PI05_TORCH_INDEX_URL" in https://*) ;; *) echo "Require HTTPS PI05_TORCH_INDEX_URL" >&2; exit 2;; esac
 echo "Using PyPI mirror: $PIP_INDEX_URL"
 echo "Using PyTorch CUDA index: $PI05_TORCH_INDEX_URL"
-python -m pip install "jax[cuda12]==0.5.3"
+python -m pip install "jax[cuda12]==0.5.3" "numpy==1.26.4"
 python -m pip install \
   "flax==0.10.2" "optax==0.2.8" "orbax-checkpoint==0.11.13" \
   "equinox==0.13.6" "jaxtyping==0.2.36" "treescope==0.1.10" \
   "augmax==0.4.1" "chex==0.1.90"
-python -m pip install "jax==0.5.3" "jaxlib==0.5.3"
+python -m pip install "jax==0.5.3" "jaxlib==0.5.3" "numpy==1.26.4"
 python -m pip install --index-url "$PI05_TORCH_INDEX_URL" "torch==2.7.1"
 python -m pip install \
   "transformers==4.57.6" "sentencepiece==0.2.1" "huggingface-hub>=0.25"
@@ -37,14 +37,17 @@ python -m pip install "gymnasium==1.3.0"
 python -m pip install \
   "einops==0.8.2" "dm-tree==0.1.10" "ml_collections==1.0.0" \
   "numpydantic>=1.6" "fsspec[gcs]>=2024.6" "h5py==3.13.0" \
-  "opencv-python-headless>=4.10" "pillow==12.2.0" \
+  "opencv-python-headless==4.11.0.86" "pillow==12.2.0" \
   "imageio==2.37.3" "mediapy==1.2.6" "wandb==0.21.4" \
   "tyro==1.0.12" "tqdm-loggable>=0.2" "loguru==0.7.3" \
   "rich==14.3.3" "hydra-core>=1.3" "beartype==0.19.0" \
   "filelock>=3.16" "typing-extensions>=4.12" \
   "polars>=1.30" "pandas>=2.2" "etils[epath]>=1.0" \
   "imageio-ffmpeg>=0.5"
-python -m pip install "openpi-client>=0.1.2"
+python -m pip install "openpi-client==0.1.2" "numpy==1.26.4"
 # Final re-pin against transitive chex / OpenPI dependency upgrades.
-python -m pip install "jax==0.5.3" "jaxlib==0.5.3"
+# The original OpenPI client 0.1.2 declares numpy<2.0. Pip otherwise
+# upgraded numpy to 2.4.x in the user\x27s environment. Keep NumPy 1.26.4
+# together with JAX 0.5.3 and OpenCV 4.11, which support Python 3.11.
+python -m pip install "jax==0.5.3" "jaxlib==0.5.3" "numpy==1.26.4"
 python scripts/check_pi05_runtime.py --mode features
