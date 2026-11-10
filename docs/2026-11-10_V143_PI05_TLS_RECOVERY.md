@@ -59,7 +59,78 @@ entry. If even a trusted IP cannot be reached, fix outbound networking
 rather than endlessly swapping DNS addresses.
 
 
-## Code corrections (v1.4.3)
+## 2026-11-10 second update: DNS injection also affects direct 1.1.1.1
+
+Server system DNS (192.168.254.141, 192.168.254.245 via systemd-resolved)
+returned huggingface.co A=104.244.43.104; a UDP DNS query explicitly
+addressed to 1.1.1.1 returned A=202.160.130.145 in 7 ms.
+Both IPs are part of AS13414 X/Twitter allocations, so the independent
+UDP resolver query is not reliable evidence that Cloudflare returned
+the DNS answer unmodified. Possible upstream DNS injection, redirection
+or other network controls require attention by network administrator.
+The selected public CDN test with curl --resolve huggingface.co:443:
+3.171.171.104 established a TCP connection but reset during the TLS
+handshake. This is consistent with interference with outbound HTTPS;
+the specific reset agent or mechanism is not yet proven. Updating
+system CA certificates or editing /etc/hosts won't solve both defects.
+
+### Option A: opt-in metadata check of third-party HF mirror
+
+The officially advertised community HF-Mirror https://hf-mirror.com
+supports setting HF_ENDPOINT. This is NOT an LLM inference API.
+However, there are reports of 308 redirects from some mirror artifact
+paths back to the blocked huggingface.co, so **test before downloading**:
+
+    conda activate agcofl4090
+    bash scripts/run_v141_next_gate.sh probe-checkpoint-mirror
+
+Probe reads only the public LogosRoboticsLab/roboreel_models metadata
+over verified HTTPS. It must receive JSON for the exact repository,
+with no redirect. If that succeeds, *only with approval to use the
+third-party mirror for public artifacts*, try the selectively filtered
+checkpoint transfer:
+
+    bash scripts/run_v141_next_gate.sh prepare-checkpoint-mirror
+
+This route sets HF_ENDPOINT=https://hf-mirror.com (unless overridden),
+disables implicit token transmission and unsets explicit HF_TOKEN vars.
+It never downloads every model, never disables TLS verification, and
+does not use a paid generative-model API. Mirror metadata success does
+NOT guarantee large model blob downloads; monitor redirects/errors.
+Do not use account tokens or gated private models with this mirror.
+
+### Option B: transfer verified official checkpoint from another machine
+
+If server networking blocks all mirrors, download only released ND
+Uniform via the Hugging Face client on an Internet-capable machine:
+
+    hf download LogosRoboticsLab/roboreel_models \
+      --include 'nd/vid_cond_pi05_uniform/*' \
+      --local-dir /tmp/roboreel_released_checkpoints
+
+Transfer the complete directory, including the actual params and
+train_config.json, into the RTX4090 project's:
+
+    /mnt/4Tdata/LemonData/cehsisuanfa/outputs/v120_baselines/released_checkpoints/nd/vid_cond_pi05_uniform/
+
+Check content sizes and official metadata, don't fabricate placeholder
+files. A workstation can transfer over SSH with rsync/scp, or via
+offline/portable storage if the host is not remotely accessible.
+This avoids the server's blocked Hugging Face route entirely.
+Even after checkpoint transfer, the SigLIP tokenizer may need its own
+weights, so use the authors' dedicated pi05 environment and check
+feature-extraction assets before official evaluation.
+
+### Separate primary research while networking is blocked
+
+    conda activate agcofl4090
+    bash scripts/run_v141_next_gate.sh custom-physics-dev
+
+This is a scripted privileged-state physics feasibility probe only:
+not a learned policy, not a new benchmark result until actual measured
+source and target trajectories are verified.
+
+\n## Code corrections (v1.4.3)
 
 - scripts/run_v141_next_gate.sh evaluate-uniform now runs
   agcofl.v141_pi05_assets --variant uniform --require-ready first. An
