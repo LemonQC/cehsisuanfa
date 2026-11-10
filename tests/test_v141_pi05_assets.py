@@ -54,3 +54,20 @@ def test_no_api_or_keyframe_run_in_current_phase():
     with pytest.raises(SystemExit) as error:
         main(["--variant", "keyframes", "--extract-keyframes"])
     assert error.value.code == 2
+
+
+def test_require_ready_blocks_official_eval_on_missing_assets(tmp_path):
+    out = tmp_path / "report"
+    with pytest.raises(SystemExit) as exc:
+        main(["--variant", "uniform",
+              "--official-root", str(tmp_path / "not_installed_upstream"),
+              "--assets", str(tmp_path / "empty_assets"),
+              "--out", str(out),
+              "--require-ready"])
+    assert exc.value.code == 2
+    assert (out / "asset_gate.json").is_file()
+    import json
+    record = json.loads((out / "asset_gate.json").read_text())
+    assert record["physics_executed"] is False
+    assert record["official_preflight"]["ready_for_runtime"] is False
+    assert "checkpoint_params_directory" in record["official_preflight"]["failures"]
