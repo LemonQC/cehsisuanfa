@@ -24,6 +24,32 @@ WALL_HALF = 0.023
 METHODS = ("goal_only", "waypoint_oracle", "raw_source_xy")
 
 
+def _json_default(value):
+    """Convert measured NumPy/Torch scalars without falsifying physical data.
+
+    Torch is intentionally imported lazily, so pure CPU unit tests and
+    JSON export do not require a separate CUDA/Torch installation.
+    Unexpected objects fail loudly instead of being silently stringified.
+    """
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    try:
+        import torch
+    except ImportError:
+        pass
+    else:
+        if isinstance(value, torch.Tensor):
+            data = value.detach().cpu()
+            return data.item() if data.ndim == 0 else data.tolist()
+    raise TypeError(f"Unsupported physical-report value: {type(value).__name__}")
+
+
+def _json_dumps(value):
+    return json.dumps(value, indent=2, allow_nan=False, default=_json_default)
+
+
 def success_flag(info):
     return bool(np1(info.get("success", False))[0])
 
@@ -253,7 +279,7 @@ def run_source(official, seed, out, max_steps):
                        goal=goal.tolist(), steps=len(source.trace),
                        ever_grasped=grasped,
                        peak_lift_m=zpeak - float(start[2]),
-                       released_on_table=not grasp_now and obj[2] < start[2] + .006,
+                       released_on_table=bool(not grasp_now and obj[2] < start[2] + .006),
                        final_goal_error_m=goal_dist, env_success=actual_success,
                        end_phase=source.phase, final_cube=obj.tolist(),
                        is_human_source_video=False)
@@ -261,8 +287,8 @@ def run_source(official, seed, out, max_steps):
         summary["wall_overflight_observed"] = summary["crossing_evidence"]["overflight_observed"]
         summary["valid_pick_source"] = bool(source_valid(summary))
         out.mkdir(parents=True, exist_ok=True)
-        (out / "source_trace.json").write_text(json.dumps(source.trace, indent=2))
-        (out / "source_summary.json").write_text(json.dumps(summary, indent=2))
+        (out / "source_trace.json").write_text(_json_dumps(source.trace))
+        (out / "source_summary.json").write_text(_json_dumps(summary))
         return summary, source.trace
     finally:
         env.close()
@@ -304,7 +330,7 @@ def run_target(official, seed, method, via, start_ref, goal_ref,
         final = np1(env.unwrapped.obj.pose.p)[:3]
         evidence = crossing_evidence(controller.trace, start)
         # Goal success alone is insufficient if the open-gripper target lifts.
-        grounded = evidence["max_cube_z_m"] <= float(start[2]) + .012
+        grounded = bool(evidence["max_cube_z_m"] <= float(start[2]) + .012)
         constrained_success = bool(actual and grounded)
         result = dict(type="CUSTOM_ADDITIONAL_REAL_MANISKILL_PHYSICS",
                       is_learned_policy=False,
@@ -320,9 +346,8 @@ def run_target(official, seed, method, via, start_ref, goal_ref,
                       privileged_object_state_used=True,
                       warning="Privileged-state scripted negative control, not LfO policy.")
         out.mkdir(parents=True, exist_ok=True)
-        (out / "physical_result.json").write_text(json.dumps(result, indent=2))
-        (out / "physical_trace.json").write_text(json.dumps(
-            controller.trace, indent=2))
+        (out / "physical_result.json").write_text(_json_dumps(result))
+        (out / "physical_trace.json").write_text(_json_dumps(controller.trace))
         return result
     finally:
         env.close()
@@ -335,8 +360,8 @@ def run(official, seed, out, max_steps):
                   status="SOURCE_INVALID_NO_TARGET_COMPARISON",
                   source=source, targets=[], paper_ready=False)
     if not source["valid_pick_source"]:
-        (out / "status.json").write_text(json.dumps(report, indent=2))
-        print("CUSTOM_PHYSICS_SOURCE_GATE", json.dumps(report["status"]))
+        (out / "status.json").write_text(_json_dumps(report))
+        print("CUSTOM_PHYSICS_SOURCE_GATE", _json_dumps(report["status"]))
         return report
     start, goal = source["initial_cube"], source["goal"]
     candidates = {
@@ -350,8 +375,8 @@ def run(official, seed, out, max_steps):
             official, seed, method, candidates[method], start, goal,
             out / method, max_steps))
     report["status"] = "DEV_SIM_PHYSICS_COMPLETE_NOT_TRO_RESULTS"
-    (out / "status.json").write_text(json.dumps(report, indent=2))
-    print("CUSTOM_PHYSICS_DEV", json.dumps({
+    (out / "status.json").write_text(_json_dumps(report))
+    print("CUSTOM_PHYSICS_DEV", _json_dumps({
         "status": report["status"],
         "source_valid": True,
         "targets": {r["baseline"]: r["success"] for r in report["targets"]}}))
