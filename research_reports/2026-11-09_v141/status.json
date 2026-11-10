@@ -12,21 +12,30 @@
     "preflight_executed_on_4090": false,
     "physics_executed": false,
     "successes": null,
-    "trials": null
+    "trials": null,
+    "priority": "P0_API_FREE_OFFICIAL_LOCAL_MODEL"
   },
   "official_pi05_keyframes": {
-    "status": "CODE_PREPARED_NOT_EXECUTED",
+    "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
     "preflight_executed_on_4090": false,
     "physics_executed": false,
     "successes": null,
-    "trials": null
+    "trials": null,
+    "priority": "OUT_OF_SCOPE_CURRENT_PHASE"
   },
   "custom_same_goal_pick_push": {
     "status": "PHYSICS_DEV_CODE_PREPARED_NOT_EXECUTED",
     "physical_trials_executed": false,
     "learned_policy_trained": false,
     "successes": null,
-    "trials": null
+    "trials": null,
+    "priority": "P0_PHYSICS_CONFLICT_THEN_LEARNED_POLICY"
   },
-  "note": "Author paper baseline figures are not local measured trials. No GPU execution occurred in this commit; numbers must remain null until archived physical JSON is verified."
+  "note": "Author paper baseline figures are not local measured trials. No GPU execution occurred in this commit; numbers must remain null until archived physical JSON is verified.",
+  "scope_decision": "No paid external VLM/LLM API pipelines; no attempt to generate official Keyframes via API. Do not fake official annotations with heuristics.",
+  "next_steps": [
+    "Uniform local-checkpoint + cached SigLIP features, no API",
+    "PhysX same-goal Pick→Push capability contradiction, paired controls",
+    "Trainable closed-loop policy using TRAIN action data and balanced information budget"
+  ]
 }
