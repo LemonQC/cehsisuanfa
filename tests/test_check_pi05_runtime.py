@@ -42,6 +42,13 @@ def test_numpy2_is_rejected_even_when_all_imports_and_gpu_pass(monkeypatch, caps
     monkeypatch.setitem(sys.modules, "numpy", np_fake)
     monkeypatch.setattr(check, "OFFICIAL", tmp_path)
     monkeypatch.setattr(check.importlib, "import_module", lambda _name: object())
+    monkeypatch.setattr(check.metadata, "version", lambda d: {
+        "ml-dtypes": "0.5.1",
+        "numpydantic": "1.6.11",
+        "pandas": "2.2.3",
+        "opencv-python-headless": "4.11.0.86",
+    }[d] if d != "opencv-python" else
+        (_ for _ in ()).throw(check.metadata.PackageNotFoundError()))
 
     assert check.main(["--mode", "features"]) == 2
     out = capsys.readouterr().out
@@ -64,9 +71,47 @@ def test_numpy1264_is_compatible_in_mocked_gpu_preflight(monkeypatch, capsys, tm
     monkeypatch.setitem(sys.modules, "numpy", np_fake)
     monkeypatch.setattr(check, "OFFICIAL", tmp_path)
     monkeypatch.setattr(check.importlib, "import_module", lambda _name: object())
+    monkeypatch.setattr(check.metadata, "version", lambda d: {
+        "ml-dtypes": "0.5.1",
+        "numpydantic": "1.6.11",
+        "pandas": "2.2.3",
+        "opencv-python-headless": "4.11.0.86",
+    }[d] if d != "opencv-python" else
+        (_ for _ in ()).throw(check.metadata.PackageNotFoundError()))
 
     assert check.main(["--mode", "features"]) == 0
     out = capsys.readouterr().out
     report = json.loads(out.split("PI05_RUNTIME_CHECK ", 1)[1].splitlines()[0])
     assert report["ready_for_next_gate"] is True
     assert report["checks"]["numpy_openpi_compatibility"] == "OK"
+
+
+def test_broken_pandas_numpydantic_ml_dtypes_and_opencv_are_rejected(
+        monkeypatch, capsys, tmp_path):
+    import sys
+    import types
+    jax_fake = types.ModuleType("jax")
+    jax_fake.devices = lambda: [types.SimpleNamespace(platform="gpu", id=0)]
+    np_fake = types.ModuleType("numpy")
+    np_fake.__version__ = "1.26.4"
+    monkeypatch.setitem(sys.modules, "jax", jax_fake)
+    monkeypatch.setitem(sys.modules, "numpy", np_fake)
+    monkeypatch.setattr(check, "OFFICIAL", tmp_path)
+    monkeypatch.setattr(check.importlib, "import_module", lambda _name: object())
+    monkeypatch.setattr(check.metadata, "version", lambda d: {
+        "ml-dtypes": "0.6.0",
+        "numpydantic": "2.0.0",
+        "pandas": "3.1.1",
+        "opencv-python-headless": "4.11.0.86",
+        "opencv-python": "5.0.0.93",
+    }[d])
+
+    assert check.main(["--mode", "features"]) == 2
+    out = capsys.readouterr().out
+    report = json.loads(out.split("PI05_RUNTIME_CHECK ", 1)[1].splitlines()[0])
+    assert report["checks"]["numpy_openpi_compatibility"] == "OK"
+    assert "INCOMPATIBLE" in report["checks"]["dist_ml-dtypes"]
+    assert "INCOMPATIBLE" in report["checks"]["dist_numpydantic"]
+    assert "INCOMPATIBLE" in report["checks"]["dist_pandas"]
+    assert "CONFLICT" in report["checks"]["opencv_single_wheel"]
+    assert not report["ready_for_next_gate"]
