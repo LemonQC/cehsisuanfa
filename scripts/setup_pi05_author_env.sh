@@ -36,15 +36,29 @@ python -m pip install \
 python -m pip install "gymnasium==1.3.0"
 python -m pip install \
   "einops==0.8.2" "dm-tree==0.1.10" "ml_collections==1.0.0" \
-  "numpydantic>=1.6" "fsspec[gcs]>=2024.6" "h5py==3.13.0" \
+  "numpydantic==1.6.11" "fsspec[gcs]>=2024.6" "h5py==3.13.0" \
   "opencv-python-headless==4.11.0.86" "pillow==12.2.0" \
   "imageio==2.37.3" "mediapy==1.2.6" "wandb==0.21.4" \
   "tyro==1.0.12" "tqdm-loggable>=0.2" "loguru==0.7.3" \
   "rich==14.3.3" "hydra-core>=1.3" "beartype==0.19.0" \
   "filelock>=3.16" "typing-extensions>=4.12" \
-  "polars>=1.30" "pandas>=2.2" "etils[epath]>=1.0" \
+  "polars>=1.30" "pandas==2.2.3" "etils[epath]>=1.0" \
   "imageio-ffmpeg>=0.5"
 python -m pip install "openpi-client==0.1.2" "numpy==1.26.4"
+# Explicitly align with the original OpenPI client's NumPy-1.x ABI.
+# Never leave NumPy-2-only numpydantic/pandas/ml-dtypes in this env.
+python -m pip install \
+  "numpy==1.26.4" "numpydantic==1.6.11" \
+  "pandas==2.2.3" "ml-dtypes==0.5.1" \
+  "opencv-python-headless==4.11.0.86"
+# The opencv-python and opencv-python-headless packages both install cv2.
+# If the GUI variant was pulled transitively, remove it and reinstall the
+# one headless wheel to restore its shared cv2 files.
+if python -m pip show opencv-python >/dev/null 2>&1; then
+  python -m pip uninstall -y opencv-python
+  python -m pip install --force-reinstall --no-deps \
+    "opencv-python-headless==4.11.0.86"
+fi
 # Final re-pin against transitive chex / OpenPI dependency upgrades.
 # The original OpenPI client 0.1.2 declares numpy<2.0. Pip otherwise
 # upgraded numpy to 2.4.x in the user\x27s environment. Keep NumPy 1.26.4
