@@ -22,19 +22,30 @@
       "checked_on_server": true,
       "proxy_env_detected": false,
       "dns_answers_ipv4": [
-        "108.160.170.45"
+        "108.160.170.45",
+        "104.244.43.104",
+        "202.160.130.145"
       ],
       "dns_answers_ipv6": [
         "2a03:2880:f10e:83:face:b00c:0:25de"
       ],
       "diagnosed_owners": [
-        "Dropbox, Inc.",
-        "Meta/Facebook"
+        "Dropbox",
+        "Meta/Facebook",
+        "X/Twitter AS13414"
       ],
       "direct_tcp_tls_error": "Connect timeout before TLS",
       "hf_api_error": "ConnectTimeout",
       "issue": "System DNS answers inconsistent with Hugging Face CDN; verify hosts/resolver upstream before downloading",
-      "not_a_model_result": true
+      "not_a_model_result": true,
+      "dns_resolvers": [
+        "192.168.254.141",
+        "192.168.254.245",
+        "1.1.1.1 UDP DNS request (answer suspicious; interception not proven)"
+      ],
+      "forced_ip_test": "curl --resolve huggingface.co:443:3.171.171.104: TCP connected, TLS handshake reset",
+      "conclusion": "Bad domain resolution plus outbound TLS reset, no verified causal source; fix network route or opt-in mirror/other-machine transfer",
+      "not_new_trial": true
     }
   },
   "official_pi05_keyframes": {
@@ -60,6 +71,6 @@
     "PhysX same-goal Pick→Push capability contradiction, paired controls",
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
-  "latest_code_fix": "2026-11-10 v1.4.3: add --require-ready evaluation gate, split prepare-checkpoint/prepare-features, TLS diagnostics",
-  "next_operator_action": "Read-only check /etc/hosts, resolvectl, resolv.conf, trusted DNS comparisons; repair authorized DNS/network routing without TLS bypass; then prep official π0.5"
+  "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
+  "next_operator_action": "Probe public HF mirror metadata only; if HTTPS API returns correct JSON and no redirection, optionally download ND Uniform from mirror; else transfer verified released model from an internet-capable computer; in parallel run custom physics DEV locally."
 }
