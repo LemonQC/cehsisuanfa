@@ -82,7 +82,20 @@
     "jax_openpi_runtime_verified": false,
     "official_eval_executed": false,
     "unit_tests_observed": "16 passed in 0.07 s (user-reported server log; before new env tests)",
-    "conda_runtime": "No conda env by name pi05; a separate prefix /home/ubuntu/miniforge3/envs/rokae_pi05 is listed but may be stale; must test existence/imports before reuse."
+    "conda_runtime": "No conda env by name pi05; a separate prefix /home/ubuntu/miniforge3/envs/rokae_pi05 is listed but may be stale; must test existence/imports before reuse.",
+    "jax_setup_status": "INSTALL_CANCELLED_DURING_NVIDIA_CUDNN_716MB_DOWNLOAD",
+    "jax_env_check_passed": false,
+    "jax_setup_observed_from_operator": {
+      "wheel": "nvidia-cudnn-cu12==9.28.1.4",
+      "wheel_bytes_approx": 716600000,
+      "transfer_kBps_observed_range": [
+        386,
+        690
+      ],
+      "action": "user cancelled pip; original Uniform policy checkpoint unaffected",
+      "code_update": "scripts/setup_pi05_author_env.sh configured Tsinghua PyPI/NJU Torch wheel mirrors",
+      "installation_completed": false
+    }
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -108,5 +121,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Check if /home/ubuntu/miniforge3/envs/rokae_pi05/bin/python exists; if so activate by prefix and run check-pi05-env. Otherwise create new dedicated Python3.11 pi05 with opt-in setup_pi05_author_env.sh. Smoke one SigLIP EVAL feature, prepare all, require-ready, then original Uniform 20x3. No Vid2Robot rerun."
+  "next_operator_action": "In dedicated pi05 Python3.11 env, use Tsinghua PyPI mirror to install JAX cuda12 wheel deps (not checkpoint) or rerun updated setup_pi05_author_env.sh, then check-pi05-env, smoke-one-feature, prepare-features, require-ready, evaluate-uniform."
 }
