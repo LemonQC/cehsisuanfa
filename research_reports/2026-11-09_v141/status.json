@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "WAITING_PINNED_ORIGINAL_OPENPI_PI05_BASE_HF_MIRROR_DOWNLOAD",
+    "status": "OPENPI_BASE_HF_MIRROR_SMALL_BLOB_HEAD_METADATA_ERROR_FIXED_CODE_NOT_EXECUTED",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -161,6 +161,15 @@
       "code": "scripts/prepare_pi05_base_from_hf.py",
       "transfer_executed": false,
       "model_restored": false
+    },
+    "base_mirror_small_blob_failure": {
+      "user_attempt": "prepare-pi05-base-hf",
+      "stage": "hf_hub_download metadata HEAD for pi05_base/params/_METADATA",
+      "error": "FileMetadataError: Distant resource does not seem to be on huggingface.co; LocalEntryNotFoundError",
+      "large_model_download_started": false,
+      "observed_failure_explanation": "mirror /resolve headers or redirects rejected by huggingface_hub; prior inspection on related mirror showed HTTP 308 to huggingface.co without required headers, but this exact mirror response has not been independently captured",
+      "fix": "v1.6.0 HTTP requests GET official huggingface.co /resolve with user trusted HTTPS_PROXY, Range .part resume, manifest SHA256/size verification; run probe-pi05-base-hf first",
+      "fix_executed_on_user_server": false
     }
   },
   "official_pi05_keyframes": {
@@ -228,6 +237,6 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "In pi05, git pull; bash scripts/run_v141_next_gate.sh plan-pi05-base-hf; then prepare-pi05-base-hf explicit ~12.4GB HF mirror; check-siglip-cache; smoke-one-feature; prepare-features; require-ready; evaluate-uniform. Independently follow M1/M2 frozen novelty gates. Do not skip required checkpoint or silently substitute finetuned PaliGemma.img.",
+  "next_operator_action": "Pull main, activate pi05, keep same known-good proxy/VPN used for previous Uniform checkpoint. Run probe-pi05-base-hf (only small _METADATA GET), inspect output. Only if probe passes run prepare-pi05-base-hf (pinned direct HTTPS GET, Range resume and hash/size checks), then check-siglip-cache, smoke-one-feature, prepare-features, require-ready, evaluate-uniform. Do not rerun GCS or install CUDA.",
   "research_execution_reference": "docs/2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md"
 }
