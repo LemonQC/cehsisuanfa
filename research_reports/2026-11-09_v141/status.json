@@ -8,14 +8,14 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "HF_MIRROR_MODEL_LIST_OK_FILE_HEAD_METADATA_FAILURE_NO_PHYSICS",
+    "status": "USER_REPORTS_DOWNLOAD_COMPLETE_NEEDS_CHECKPOINT_INTEGRITY_AND_FEATURES_NO_PHYSICS",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
     "trials": null,
     "priority": "P0_API_FREE_OFFICIAL_LOCAL_MODEL",
     "attempted_checkpoint_download": true,
-    "checkpoint_download_success": false,
+    "checkpoint_download_success": null,
     "missing_siglip_features": 20,
     "failure_scope": "HfApi().model_info original author checkpoint download; official evaluator was preflight-blocked",
     "network_diagnosis": {
@@ -68,7 +68,10 @@
     },
     "operator_network_note": "Some previous official checkpoint downloads used a proxy/VPN, but throughput is slow; avoid re-downloading already valid 12 paths.",
     "local_recovery_code": "scripts/recover_pi05_uniform_missing.py; metadata-only plan; optionally --download-missing over trusted proxy with HTTP Range",
-    "local_recovery_executed": false
+    "local_recovery_executed": false,
+    "download_completion_user_reported": true,
+    "local_file_verification_pending": true,
+    "siglip_features_completion_pending": true
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -94,5 +97,5 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Run plan-checkpoint-repair to get actual remaining byte count. If approved proxy throughput is acceptable, try --download-missing --max-files 1 (or --routed-vpn) then recover-checkpoint-proxy. Otherwise copy official checkpoint files via faster external machine and proceed local physics DEV."
+  "next_operator_action": "Run plan-checkpoint-repair and gate to verify completed checkpoint; setup/check official pi05 JAX/OpenPI env, extract EVAL 0080..0099 SigLIP front.npy, run require-ready then official Uniform 20x3, archive raw per-trial results. Separately run custom same-goal physics DEV. Do not rerun Vid2Robot."
 }
