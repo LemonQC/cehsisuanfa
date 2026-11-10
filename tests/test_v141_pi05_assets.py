@@ -1,7 +1,7 @@
 """CPU-only selection tests. Never download checkpoints or execute physics here."""
 import pytest
 
-from agcofl.v141_pi05_assets import asset_paths, pending
+from agcofl.v141_pi05_assets import asset_paths, pending, main
 from agcofl.v140_custom_pick_push_physics import crossing_evidence, scene_geometry
 
 
@@ -47,3 +47,10 @@ def test_observed_wall_crossings_are_not_intended_paths():
     no_cross = crossing_evidence([{"cube": [0.0, 0.0, .02]}], start)
     assert no_cross["slab_samples"] == 0
     assert not no_cross["around_wall_observed"]
+
+
+def test_no_api_or_keyframe_run_in_current_phase():
+    # Reject VLM-dependent branch before touching any file or network.
+    with pytest.raises(SystemExit) as error:
+        main(["--variant", "keyframes", "--extract-keyframes"])
+    assert error.value.code == 2
