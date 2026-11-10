@@ -1,3 +1,9 @@
+## ★ v1.4.7 — 2026-11-10 官方 π0.5 Uniform 权重用户反馈已下完，进入特征与物理实验
+
+**用户反馈下载完成；GitHub 尚未核实 RTX4090 本地文件完整性，不等于 checkpoint 已成功加载。** π0.5 官方物理评测仍 NOT_RUN。下一步先运行 `python -m agcofl.v141_pi05_assets --variant uniform` 和 CPU 测试检查原版权重及协议；独立 `pi05` JAX/OpenPI 环境先执行 `bash scripts/run_v141_next_gate.sh smoke-one-feature`（仅 1 段 EVAL 视频原版 SigLIP），再 `prepare-features`（余下 20 段缺失自动跳过已存在特征），确认 `--require-ready` 为 true 后才执行 `evaluate-uniform` 正式 3 seed×20。并行 `agcofl4090` 运行 `custom-physics-dev` 检查同目标 Pick→Push 物理有效性，不当作学习方法结果。**禁止重新下载原权重、重跑 Vid2Robot v1.3 60 次或开启 Keyframes/VLM API。** 详见 [v1.4.7 完整命令](docs/2026-11-10_V147_POSTDOWNLOAD_NEXT_GATES.md)。
+
+---
+
 ## ★ v1.4.6 — 2026-11-10 镜像全 308，代理慢：只补齐 13 个缺失官方权重文件
 
 服务器真实状态：HF-Mirror 的 25/25 HEAD 全部 `308 → huggingface.co`，12 个文件本地大小一致（**尚不能当成哈希验证**），13 个文件缺失；用户已有部分权重通过慢代理获得。新增 `scripts/recover_pi05_uniform_missing.py`：默认仅用镜像读取模型元数据并核对本地文件大小/哈希，`bash scripts/run_v141_next_gate.sh plan-checkpoint-repair` 不下载；主动指定 `--download-missing` 时才通过可信代理走官方 HF 原始文件，`.part` 支持 HTTP Range 续传，避免重复下载。可用 `--max-files 1` 先小规模测试，或在系统级 VPN/TUN 具备可用出口时指定 `--routed-vpn`。详见 [v1.4.6 下载恢复协议](docs/2026-11-10_V146_PI05_PARTIAL_PROXY_RECOVERY.md)。当前 **未实际恢复任何新文件或运行 π0.5 物理评测**，v1.3 3/60 冻结；同目标自定义 PhysX 仍优先推进。
