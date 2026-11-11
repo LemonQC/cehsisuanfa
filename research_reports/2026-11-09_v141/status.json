@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Current M1 only: git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_current_executor_swap_once.sh. Runs 4 stdlib unit tests, frozen geometry preflight, one physically contact-verified Panda/MPLib side-grasp source on exact old corridor. If source success -> one original PushCube jointspace MPLib clear + push executor smoke. If source fails -> stop target and inspect real contact. Never rerun M0/M1B1/M1B2/M1B3; no B01/M1C.",
-  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_OFFICIAL_EXECUTOR_SWAP_SMOKE.md",
+  "next_operator_action": "Pull latest main and run python -m unittest discover -s tests -p 'test_m1_current_compare_grasp_contact.py' -q; python -m scripts.m1_current_compare_grasp_contact (no physics); then bash scripts/run_m1_current_target_only_once.sh (one independent real PhysX target executor, no source replay). Report M1_SOURCE_CONTACT_ROOT_DIAG and M1_TARGET_OFFICIAL_MPLIB_INDEPENDENT_RESULT. No change to M1 scientific question or old experiments.",
+  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_SOURCE_CONTACT_FAIL_TARGET_INDEPENDENT.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current M1 problem NOT ABANDONED on user's correction. Custom M1B3 grasp adapter failed real source grasp (0 steps) so stop that exact adapter; keep original same-goal blocker-clearance task. Current goal: replace source input with genuinely successful existing Pick video after object-effect/goal verification; target execution with published Panda PushCube MPLib low-level push adapter; no full reruns, no scientific novelty claims before fair TAMP.",
@@ -645,7 +645,7 @@
   },
   "current_m1_executor_swap_v1": {
     "objective": "Replace ONLY the failed low-level execution modules in current same-goal Pick source -> Push-only blocker-clear task; no new research task, dataset, or whole baseline repeat",
-    "stage": "CODE_COMMITTED_UNIT_AND_PHYSICS_NOT_EXECUTED_ON_USER_SERVER",
+    "stage": "SOURCE_SIDE_GRASP_ACTUAL_PHYSX_FAIL_106_STEPS_ZERO_CONTACT; TARGET_ORIGINAL_MPLIB_NOT_RUN",
     "module": "agcofl/m1_current_executor_swap.py",
     "runner": "scripts/run_m1_current_executor_swap_once.sh",
     "unit_test": "tests/test_m1_current_executor_swap.py",
@@ -659,6 +659,24 @@
     "physical_outcomes": "NOT_YET_OBSERVED",
     "new_method": "NOT_STARTED",
     "match_source_goal_to_target": "Only a truly verified successful in-scene x=.21 effect would count. Original Pick reference 3/3 and M1B2 x=.15 are not silently matched.",
-    "caution": "Replacing local controller does not establish source video need, novel effect insertion or strong TAMP baseline."
+    "caution": "Replacing local controller does not establish source video need, novel effect insertion or strong TAMP baseline.",
+    "source_operator_actual": {
+      "source_success": false,
+      "actual_action_steps": 106,
+      "actual_grasp_steps": 0,
+      "observed_lift_m": 0,
+      "goal_error_m": 0.2100003638177595,
+      "error": "RuntimeError: CONTACT_NO_GO: official RRT grasp pose executed, but Panda did not physically grasp cube",
+      "source_raw": "outputs/m1_current_executor_swap_smoke/source_side_grasp/status.json",
+      "target_blocked_by_old_runner": true,
+      "provenance": "user 2026-11-11 actual server console; no original raw H5/trace copied to GitHub"
+    },
+    "next_actions": [
+      "New no-physics comparative post-grasp diagnosis: scripts/m1_current_compare_grasp_contact.py; two existing real traces failed source 106-step versus verified successful M1B2 source; evaluate TCP-cube offsets, actual gripper closure commands and physical grasp count, SHA256 originals.",
+      "Independent target-only official upstream MPLib Push motion executor smoke using scripts/run_m1_current_target_only_once.sh. Bounded once, same exact frozen M1B3 geometry and target, preserve old data; not a same-goal paired result."
+    ],
+    "source_replay_authorized": false,
+    "target_independent_run_authorized": true,
+    "target_actual_result": "NOT_RUN_ON_OPERATOR_SERVER"
   }
 }
