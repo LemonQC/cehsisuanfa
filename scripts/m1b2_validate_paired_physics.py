@@ -38,6 +38,15 @@ def summarize(root):
             missing.append(mode)
             continue
         row=json.loads(file.read_text())
+        if row.get("status")=="M1B2_EXECUTION_ERROR_NOT_VALID_EVIDENCE":
+            return {
+                "type":"M1B2_SAME_GOAL_PHYSX_GATE",
+                "status":"CASE_EXECUTION_ERROR_NO_PAIRED_PHYSICS_CLAIM",
+                "failed_mode":mode,
+                "error":row.get("error"),
+                "passed":False,
+                "paper_ready":False,
+            }
         if row.get("kind")!=(
                 "source_pick_to_same_goal" if mode=="source" else mode):
             raise ValueError(f"Not a valid measured {mode} file: {file}")
