@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Freeze completed M1B2 seed120 raw runs, do not repeat. Redesign actual topology with a physically unique corridor blocked by movable actor and feasible side parking; run blocked/open counterfactual then strong equal-information capability-aware TAMP. Do not train M2 yet. Operator should preserve small raw status.json and summary JSON for archival.",
-  "research_execution_reference": "docs/2026-11-11_M1B2_PHYSICS_ACTUAL_3OF3_INSERTION_GATE_FAILED.md",
+  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b3_corridor_once.sh (CPU geometry preflight first, then four PhysX DEV cases). No M0 or M1B1 or old M1B2 reruns. Return M1B3_PHYSICS_GATE and case errors; do not start M2.",
+  "research_execution_reference": "docs/2026-11-11_M1B3_CORRIDOR_COUNTERFACTUAL_PRE_REGISTERED.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1A PASS; M1B1 Pick reference 3/3 PASS; M1B2 real three-case simulation ALL SUCCEED (source170, target_direct31, target_clear51) but NECESSARY-INSERTION GATE FAILS because direct push succeeds; strong TAMP NOT_RUN",
+    "m1": "M1A assets PASS, M1B1 official Pick 3/3, M1B2 actual same-goal Source/Direct/Clear all succeed but central blocker insertion contrast FAILS. New M1B3 4-way geometry-constrained corridor code COMMITTED, physical NOT_RUN; stronger fair TAMP NOT_RUN.",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   },
   "m1a_local_asset_gate": {
@@ -471,6 +471,28 @@
         "status": "PILOT_INCONCLUSIVE_OR_FAILED",
         "provenance": "operator-provided terminal output; local raw H5/video and status JSON not copied to GitHub"
       }
+    },
+    "m1b3_corridor": {
+      "stage": "CODE_COMMITTED_NOT_EXECUTED",
+      "reason": "M1B2 real same-goal Pick/Direct/Clear all succeeded; direct 31 steps proves blocker-clearing not necessary in old scene",
+      "new_scene": "AGCOFLM1B3Corridor-v0 (custom, separate from M1B2)",
+      "geometry": "rigid perimeter corridor with 70mm side door and 50mm size-selective throat; task 40mm fits, blocker 58mm does not; parking y=125mm",
+      "preflight": "2D static-blocker C-space BFS predicted blocked disconnected/open connected; PHYSICS NOT_RUN",
+      "cases": [
+        "blocked_source",
+        "blocked_direct",
+        "blocked_clear",
+        "open_direct"
+      ],
+      "runner": "scripts/run_m1b3_corridor_once.sh",
+      "module": "agcofl/m1b3_corridor_physics.py",
+      "validator": "scripts/m1b3_validate_corridor.py",
+      "unittest": "tests/test_m1b3_corridor_physics.py",
+      "seed": 120,
+      "physical_runs": 0,
+      "equal_info_tamp": "NOT_RUN",
+      "source_video_value": "NOT_MEASURED",
+      "caveats": "Stationary blocker Cspace does not rule out all dynamic alternatives; manually scripted clearance not TAMP, no new learned method"
     }
   }
 }
