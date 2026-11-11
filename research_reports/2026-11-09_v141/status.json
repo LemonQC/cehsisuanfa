@@ -350,11 +350,30 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "M0 DONE. Pull main; run stdlib python -m unittest discover -s tests -p 'test_m1a_inventory_real_assets.py' -q and python -m scripts.m1a_inventory_real_assets. Next verify existing source Pick+Place actual same-final-goal possibility and target blocker insertion physical feasibility before training method.",
+  "next_operator_action": "M0 done. git pull; one corrected stdlib M1-A scanner run to establish local v120 robot_train exists (expect 2 H5 triplets if unchanged), not repeated asset audit. Then proceed M1-B: select/build same-final-goal source and target physical scenes from validated trajectory assets and evaluate capability-aware TAMP first; M1 baseline scores still NONE, no Ours.",
   "research_execution_reference": "docs/2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
     "m1": "M1-A asset scanner COMMITTED NOT_EXECUTED; M1-B same-goal physical scene + strong controls NOT_RUN",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
+  },
+  "m1a_local_asset_gate": {
+    "server_report_observed": true,
+    "test_suite": "3 unittest cases passed in 0.002 s",
+    "m0_verified": true,
+    "historical_real_robot_h5_valid": 2,
+    "local_robot_action_demos_reported_0_by_buggy_scanner": 0,
+    "local_push_human_train_mp4": 6,
+    "local_pick_human_train_mp4": 0,
+    "matched_goal_pick_source_verified": false,
+    "target_only_blocker_insertion_physical_evidence": false,
+    "actual_download_root_used_by_v120": "outputs/v120_baselines/robot_train",
+    "scanner_initial_wrong_roots": [
+      "outputs/v110_baselines/official_dataset",
+      "outputs/v120_baselines/official_dataset"
+    ],
+    "fix": "v1.6.4 scanner now includes v120/robot_train and protects train-only paths",
+    "fixed_scanner_not_yet_run": true,
+    "interpretation": "0 reported local H5 from wrong root is NOT evidence of missing previously validated real robot TRAIN actions; current presence needs corrected scan"
   }
 }
