@@ -110,10 +110,11 @@ case "$MODE" in
     python -m agcofl.v141_pi05_assets --variant uniform --extract-features --feature-process-mode isolated
     ;;
   prepare-uniform)
-    # Original selective ND checkpoint then only 20 EVAL SigLIP features.
-    # Either stage may be resumed independently after resolving its own dependency.
+    # Legacy combined path: also use isolated SigLIP process per demo.
+    # Do NOT re-download released Uniform if it is already present; prefer
+    # the dedicated prepare-features mode for the remaining EVAL demos.
     python -m agcofl.v141_pi05_assets --variant uniform --download-checkpoint
-    python -m agcofl.v141_pi05_assets --variant uniform --extract-features
+    python -m agcofl.v141_pi05_assets --variant uniform --extract-features --feature-process-mode isolated
     ;;
   evaluate-uniform)
     # Only the API-free original Uniform model and its cached SigLIP features.
