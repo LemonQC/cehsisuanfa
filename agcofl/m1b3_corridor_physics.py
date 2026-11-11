@@ -227,10 +227,16 @@ def run_paired_source(env):
         and p["task_cube"][2]>WALL_HEIGHT+TASK_HALF+.005
         for p in trace)
     error=float(np.linalg.norm(_pose(b.obj)[:2]-np1(b.goal_pos)[:2]))
+    source_blocker_shift=float(np.linalg.norm(
+        _pose(b.blocker)[:2]-initial_blocker[:2]))
+    # Source's overflight must NOT secretly clear the blocker. Otherwise
+    # the source and target would share the same required intervention.
     valid=bool(result["gate"]["valid"] and
                over_new_throat and error<GOAL_RADIUS
-               and _actual_satisfied(b))
+               and _actual_satisfied(b)
+               and source_blocker_shift<.025)
     result["gate"]["valid"]=valid
+    result["gate"]["source_blocker_displacement_m"]=source_blocker_shift
     result["gate"]["m1b3_over_throat"]=over_new_throat
     result["gate"]["m1b3_goal_error_m"]=error
     result["gate"]["m1b3_sim_success"]=_actual_satisfied(b)
@@ -282,12 +288,17 @@ def run_target(env,mode,max_steps):
     goal_error=float(np.linalg.norm(final_cube[:2]-goal[:2]))
     peak=float(max((x["task_cube"][2] for x in steps),
                    default=start_cube[2])-start_cube[2])
+    blocker_peak=float(max(
+        (x["blocker"][2] for x in steps),default=blocker_start[2]))
+    blocker_grounded=bool(blocker_peak-BLOCKER_HALF<.015
+                          and abs(final_blocker[2]-BLOCKER_HALF)<.012)
     gripper_never_closed=all(r["gripper_action"]<=0 for r in steps)
     never_grasped=all(not r["is_grasping_task"] for r in steps)
     grounded=abs(final_cube[2]-TASK_HALF)<.009
     actual_success=bool(_actual_satisfied(b) and
                         goal_error<GOAL_RADIUS and peak<.015
-                        and grounded and gripper_never_closed and never_grasped
+                        and grounded and blocker_grounded
+                        and gripper_never_closed and never_grasped
                         and bool(steps))
     clear_observed=(mode=="blocked_clear" and
                     final_blocker[1]>PARKING_Y-.035
@@ -303,7 +314,9 @@ def run_target(env,mode,max_steps):
         "gate":{
             "valid":success,"task_goal_success":actual_success,
             "goal_error_m":goal_error,"grounded":grounded,
-            "peak_lift_m":peak,"gripper_never_closed":gripper_never_closed,
+            "peak_lift_m":peak,"blocker_peak_z_m":blocker_peak,
+            "blocker_grounded":blocker_grounded,
+            "gripper_never_closed":gripper_never_closed,
             "never_grasped":never_grasped,
             "blocker_moved_m":float(np.linalg.norm(
                 final_blocker[:2]-blocker_start[:2])),
