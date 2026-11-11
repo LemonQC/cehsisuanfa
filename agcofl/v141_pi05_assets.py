@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -72,6 +73,57 @@ def prepare_features(official_root, data_root, demo_ids):
     return completed
 
 
+def prepare_features_isolated(official_root, assets, demo_ids):
+    """Run EXACT author's extractor for ONE missing video per fresh process.
+
+    The previous shared JAX process survived 0080..0086 but was killed
+    before 0087, plausibly by accumulated JAX/XLA or host RAM use. A fresh
+    process releases those allocations and ensures ffmpeg MP4 decode
+    happens BEFORE JAX initialization. This is NOT a new feature method:
+    the child calls the existing prepare_features() with the pinned
+    author's _PersistentEncoder and original bundle output schema.
+    """
+    assets = Path(assets).resolve()
+    data_root = assets / "official_eval_data"
+    completed = []
+    for demo_id in demo_ids:
+        video, feature, _ = asset_paths(data_root, demo_id)
+        if not video.is_file():
+            raise FileNotFoundError(video)
+        if feature.is_file() and feature.stat().st_size > 0:
+            print("PI05_SIGLIP_SKIP_EXISTING", f"{demo_id:04d}", flush=True)
+            continue
+        env = os.environ.copy()
+        # Do not reserve most VRAM for each fresh JAX subprocess.
+        env["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+        cmd = [
+            sys.executable, "-u", "-m", "agcofl.v141_pi05_assets",
+            "--variant", "uniform",
+            "--official-root", str(Path(official_root).resolve()),
+            "--assets", str(assets),
+            "--extract-features", "--single-feature-id", str(demo_id),
+        ]
+        print("PI05_SIGLIP_ISOLATED_START", f"{demo_id:04d}", flush=True)
+        result = subprocess.run(cmd, env=env, check=False)
+        if result.returncode != 0:
+            label = (f"signal {-result.returncode}" if result.returncode < 0
+                     else f"exit status {result.returncode}")
+            raise RuntimeError(
+                f"Official SigLIP worker for {demo_id:04d} failed ({label}); "
+                "saved bundles are preserved. A SIGKILL (-9) is consistent "
+                "with OOM but not independently conclusive. Inspect "
+                "dmesg/journalctl and memory before changing the source "
+                "preprocessor. Re-run prepare-features to resume only missing IDs."
+            )
+        if not feature.is_file() or feature.stat().st_size <= 0:
+            raise RuntimeError(
+                f"Worker {demo_id:04d} exited zero without writing {feature}")
+        completed.append(demo_id)
+        print("PI05_SIGLIP_ISOLATED_DONE", f"{demo_id:04d}",
+              feature.stat().st_size, "bytes", flush=True)
+    return completed
+
+
 def download_checkpoint(official_root, assets, variant):
     root = Path(official_root).resolve()
     entry = root / "scripts/download_checkpoints.py"
@@ -96,12 +148,21 @@ def main(argv=None):
                         help="Opt-in author's SigLIP on only EVAL 0080..0099")
     parser.add_argument("--max-feature-demos", type=int, default=None,
                         help="Process first N missing EVAL demos for a one-video JAX/SigLIP smoke test")
+    parser.add_argument("--feature-process-mode", choices=("shared", "isolated"),
+                        default="shared", help="Isolated mode runs original author encoder in a fresh process per demo")
+    parser.add_argument("--single-feature-id", type=int, default=None,
+                        help="INTERNAL worker: exact one EVAL demo ID; requires --extract-features")
     parser.add_argument("--require-ready", action="store_true",
                         help="Exit 2 if any official checkpoint/features/protocol prerequisite is missing")
     args = parser.parse_args(argv)
     if args.max_feature_demos is not None:
         if args.max_feature_demos < 1 or not args.extract_features:
             parser.error("--max-feature-demos requires --extract-features and a positive N")
+    if args.single_feature_id is not None:
+        if (not args.extract_features or args.single_feature_id not in IDS
+                or args.feature_process_mode != "shared"
+                or args.max_feature_demos is not None):
+            parser.error("--single-feature-id requires original shared extraction for exactly one held-out ID")
     root, assets = Path(args.official_root).resolve(), Path(args.assets).resolve()
     data_root = assets / "official_eval_data"
     if any((args.download_checkpoint, args.extract_features)):
@@ -113,7 +174,16 @@ def main(argv=None):
     if args.download_checkpoint:
         download_checkpoint(root, assets, args.variant)
     if args.extract_features:
-        prepare_features(root, data_root, before["feature"][:args.max_feature_demos])
+        if args.single_feature_id is not None:
+            selected = ([args.single_feature_id]
+                        if args.single_feature_id in before["feature"] else [])
+            prepare_features(root, data_root, selected)
+        else:
+            selected = before["feature"][:args.max_feature_demos]
+            if args.feature_process_mode == "isolated":
+                prepare_features_isolated(root, assets, selected)
+            else:
+                prepare_features(root, data_root, selected)
     after = pending(data_root, args.variant)
     check = preflight(args.variant, root, assets)
     out = Path(args.out or f"outputs/v141_pi05_{args.variant}")
@@ -121,7 +191,9 @@ def main(argv=None):
         "type": "PI05_SELECTIVE_ASSETS_ONLY_NO_PHYSICS",
         "variant": args.variant,
         "executed_flags": dict(download_checkpoint=args.download_checkpoint,
-                               extract_features=args.extract_features),
+                               extract_features=args.extract_features,
+                               feature_process_mode=args.feature_process_mode,
+                               single_feature_id=args.single_feature_id),
         "before": before, "after": after,
         "official_preflight": check,
         "physics_executed": False, "trained": False,
