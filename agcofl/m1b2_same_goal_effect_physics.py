@@ -36,7 +36,18 @@ MAX_STEPS = 450
 
 
 def _pose(actor):
-    return np1(actor.pose.p)[:3].astype(float)
+    """Read actual ManiSkill Actor.pose.p OR Panda tcp_pose.p.
+
+    The unwrapped robot's agent.tcp_pose is already a Pose object;
+    an actor has .pose.p. This helper MUST NOT assume both are actors.
+    """
+    pose = getattr(actor, "pose", actor)
+    if not hasattr(pose, "p"):
+        raise TypeError("Expected ManiSkill actor.pose.p or tcp_pose.p")
+    xyz = np1(pose.p)
+    if xyz.size < 3:
+        raise ValueError(f"Expected three physical coordinates, got {xyz.size}")
+    return xyz[:3].astype(float)
 
 
 def _bounded_summary(v):
@@ -168,7 +179,15 @@ def actual_gate(trace, initial, final, goal, source):
     """Evidence thresholds use OBSERVED cube states, not planned waypoints."""
     if not trace:
         return {"valid":False,"reason":"no_physx_actions"}
-    xyz=np.asarray([q["task_cube"] for q in trace],float)
+    xyz=np.asarray([q["task_cube"] for q in trace],dtype=float)
+    initial=np.asarray(initial,dtype=float).reshape(-1)
+    final=np.asarray(final,dtype=float).reshape(-1)
+    goal=np.asarray(goal,dtype=float).reshape(-1)
+    if (xyz.ndim!=2 or xyz.shape[1]!=3
+            or any(v.size!=3 for v in (initial,final,goal))
+            or not np.isfinite(xyz).all()
+            or not all(np.isfinite(v).all() for v in (initial,final,goal))):
+        raise ValueError("Invalid or non-finite measured PhysX Cartesian state")
     goal_error=float(np.linalg.norm(final[:2]-goal[:2]))
     peak_lift=float(xyz[:,2].max()-initial[2])
     grasped=any(q["is_grasping_task"] for q in trace)
