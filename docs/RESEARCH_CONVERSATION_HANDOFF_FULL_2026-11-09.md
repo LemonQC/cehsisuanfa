@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-A 真实资产二次核验通过，M1-B 启动官方 Pick 物理专家
+
+用户服务器再次运行修复版 `m1a_inventory_real_assets`，确认 `m0_verified=true`、`local_robot_action_demos=2`（真正位于 `outputs/v120_baselines/robot_train`）、`local_source_push_train_videos=6`、`local_source_pick_train_videos=0`；同目标 Pick→Push 物理配对与 blocker insertion 仍未验证。M0 π0.5 Uniform 46/60 三个 seed 的原始 60 条 CSV/JSON/MD 已归档 GitHub `d5de864`，不再重跑。下一步 M1-B1 不再手写 Pick 控制器：提交 `scripts/m1b_run_official_pick_reference.py`，调用 ManiSkill 原版 `mani_skill.examples.motionplanning.panda.run -e PickCube-v1`，最多 3 次真实 PhysX 专家尝试，保存原作者 H5/JSON/MP4 到 `outputs/m1b_official_pick_reference`，逐 episode 验证 H5 action 及 JSON 成功标记；`python -m scripts.m1b_run_official_pick_reference` 为执行入口，附标准库 unittest，无 pytest、无模型下载。**原版 PickCube 目标≠我们同目标 Pick→Push 的目标，因此只能验证可靠抓取专家；绝不作为 M1 同目标成功结果。** M1-B2 必须在自定义同终态场景中复用可靠专家完成真实 Pick+Place、完成 Push-only 先挪 blocker 再推 cube 的物理行为，再将强 TAMP/Goal-only/Raw Flow/Geometry 等同信息 Baseline 跑完，之后才进入新算法。详见 [M1-B 真实实验计划](2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md)。B1 新代码尚未在用户服务器执行。
+
+---
+
 ## 2026-11-11 — M1-A 本地资产门槛首次执行：扫描脚本路径漏报已修复
 
 服务器输出：`3 tests in 0.002s OK`；`M1A_LOCAL_EVIDENCE_GATE` 为 `m0_verified=true`、`historical_robot_h5_valid=2`、`local_robot_action_demos=0`、`local_source_pick_train_videos=0`、`local_source_push_train_videos=6`、`same_goal_pair_verified=false`、`target_insert_verified=false`。经阅读 **真实已执行下载脚本** `scripts/run_v120_real_robot_and_official_baseline.sh`，可证明其 H5 和两路机器人视频原本存放于 `outputs/v120_baselines/robot_train`；而最初的 `scripts/m1a_inventory_real_assets.py` 错查 `official_dataset`，导致本地 H5 假零。已修正扫描目录并新增回归测试；用户机器仍需要一次实际运行才能确认文件目前是否在原处，不能把历史验证记录等同于当前仍有文件。无需重下。M1 原始同目标源 Pick 视频和 target-only blocker insertion 尚未验证，任何 M1 baseline 实绩仍为 NOT_RUN。M0 GitHub d5de864 真实 46/60 关闭；下一项真正研究任务是复用可信 Pick 专家操作源，重新执行并记录相同最终目标的源视频与 target Push 清障仿真，比较等信息强 TAMP/Goal-only/flow，不以旧手写教师或单纯几何图替代。记录见 [M1-A 后续](2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。
