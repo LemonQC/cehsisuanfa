@@ -145,11 +145,17 @@ available. The research object is causal effect adaptation.
 
 ## 5. Next server commands
 
+**2026-11-11 runtime correction:** the user confirmed `python -m pytest` is unavailable in `pi05`, and direct `python scripts/archive_pi05_uniform_m0.py` failed because Python searched only the `scripts/` package path. Neither error touches the existing M0 46/60 results. This archiver has no pytest runtime dependency; use module invocation. To run its optional pytest tests, use an environment where pytest is installed, without changing the official pi05 env.
+
+
     cd /mnt/4Tdata/LemonData/cehsisuanfa
     git pull --ff-only origin main
     conda activate pi05
-    python -m pytest -q tests/test_archive_pi05_uniform_m0.py
-    python scripts/archive_pi05_uniform_m0.py
+    # pytest is NOT installed in the pinned pi05 runtime and is NOT
+    # required for this standard-library-only archive operation.
+    python -m scripts.archive_pi05_uniform_m0
+    # Direct python scripts/archive_pi05_uniform_m0.py also works after
+    # the package import-path fix, but -m is preferred.
     # Verify small report directory; don't add models or outputs.
     git add research_reports/2026-11-11_m0_pi05_uniform
     git commit -m "results: archive original π0.5 Uniform 46-of-60 trials"
