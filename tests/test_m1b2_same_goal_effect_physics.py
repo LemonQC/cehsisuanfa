@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from agcofl.m1b2_same_goal_effect_physics import (
-    actual_gate, BLOCKER_X_OFFSET_M, MAX_STEPS, TracedEnv)
+    actual_gate, BLOCKER_X_OFFSET_M, MAX_STEPS, TracedEnv, _pose)
 from scripts.m1b2_validate_paired_physics import summarize
 
 
@@ -53,6 +53,37 @@ class PhysxEvidenceTests(unittest.TestCase):
         self.assertFalse(actual_gate(not_released,start,[.15,0,.02],goal,True)["valid"])
         not_goal=actual_gate(good,start,[.02,0,.02],goal,True)
         self.assertFalse(not_goal["valid"])
+
+
+    def test_actual_gate_accepts_list_and_numpy_inputs_equivalently(self):
+        """Regression for genuine list-vs-list subtraction in unit gate."""
+        import numpy as np
+        trace=[
+            {"task_cube":[0.0,0.0,0.02],"is_grasping_task":False},
+            {"task_cube":[BLOCKER_X_OFFSET_M,0.0,0.15],
+             "is_grasping_task":True},
+            {"task_cube":[0.15,0.0,0.02],"is_grasping_task":False},
+        ]
+        as_lists=actual_gate(
+            trace,[0.,0.,.02],[.15,0.,.02],[.15,0.,.001],True)
+        as_arrays=actual_gate(
+            trace,np.array([0.,0.,.02]),np.array([.15,0.,.02]),
+            np.array([.15,0.,.001]),True)
+        self.assertEqual(as_lists,as_arrays)
+        self.assertTrue(as_lists["valid"])
+        with self.assertRaisesRegex(ValueError,"non-finite"):
+            actual_gate(trace,[0.,0.,float("nan")],
+                        [.15,0.,.02],[.15,0.,.001],True)
+
+    def test_pose_reader_supports_actual_maniskill_tcp_pose_and_actor_pose(self):
+        import numpy as np
+        from types import SimpleNamespace as NS
+        tcp_pose=NS(p=np.asarray([[0.2,0.1,0.3]]))
+        actor=NS(pose=NS(p=np.asarray([[0.2,0.1,0.3]])))
+        self.assertEqual(_pose(tcp_pose).tolist(),[0.2,0.1,0.3])
+        self.assertEqual(_pose(actor).tolist(),[0.2,0.1,0.3])
+        with self.assertRaisesRegex(TypeError,"Expected ManiSkill"):
+            _pose(NS(unrelated=True))
 
     def test_physics_aggregator_requires_matched_goals_and_real_three_cases(self):
         with tempfile.TemporaryDirectory() as d:
