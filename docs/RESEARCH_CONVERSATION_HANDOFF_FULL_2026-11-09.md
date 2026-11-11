@@ -1,3 +1,9 @@
+## 2026-11-11 — M1-A 本地资产门槛首次执行：扫描脚本路径漏报已修复
+
+服务器输出：`3 tests in 0.002s OK`；`M1A_LOCAL_EVIDENCE_GATE` 为 `m0_verified=true`、`historical_robot_h5_valid=2`、`local_robot_action_demos=0`、`local_source_pick_train_videos=0`、`local_source_push_train_videos=6`、`same_goal_pair_verified=false`、`target_insert_verified=false`。经阅读 **真实已执行下载脚本** `scripts/run_v120_real_robot_and_official_baseline.sh`，可证明其 H5 和两路机器人视频原本存放于 `outputs/v120_baselines/robot_train`；而最初的 `scripts/m1a_inventory_real_assets.py` 错查 `official_dataset`，导致本地 H5 假零。已修正扫描目录并新增回归测试；用户机器仍需要一次实际运行才能确认文件目前是否在原处，不能把历史验证记录等同于当前仍有文件。无需重下。M1 原始同目标源 Pick 视频和 target-only blocker insertion 尚未验证，任何 M1 baseline 实绩仍为 NOT_RUN。M0 GitHub d5de864 真实 46/60 关闭；下一项真正研究任务是复用可信 Pick 专家操作源，重新执行并记录相同最终目标的源视频与 target Push 清障仿真，比较等信息强 TAMP/Goal-only/flow，不以旧手写教师或单纯几何图替代。记录见 [M1-A 后续](2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。
+
+---
+
 ## ★ 2026-11-11 — M0 真实结果全部归档（d5de864），下一步执行 M1-A 数据/配对可行性门槛
 
 GitHub 已核验 `research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json` 和 `per_trial_60.csv`：RoboReel 官方 π0.5 Uniform ND PushCube **46/60 = 76.67%**，逐 seed 分别为 `14/20`、`13/20`、`19/20`，原作者 commit `79a0fb0099e73c5560114753a8706276f93aefc2`。M0 关闭、不再下载/跑官方 π0.5；旧 Vid2Robot 3/60 保留。当前重心转向 M1：此前真实 H5 审核有 2 条 RoboReel PushCube TRAIN 动作轨迹、260 个 TRAIN 人类 PushCube 前视视频远程候选（实际只下载 6 个），**尚无验证通过的源 Pick→目标 Push 同一最终目标配对**。新标准库脚本 `python -m scripts.m1a_inventory_real_assets` 仅核对用户机器上真实文件，排除官方 EVAL，报告 M1 缺口；测试命令用 Python 自带 unittest，不需要 pytest。科学首个任务锁定为：源端 Pick 越障达成同一物体目标，目标 Push-only 需先清理可移动 blocker 再推目标物体；先跑与 Goal-only、Raw Flow、Geometry 以及强 TAMP 的等信息物理对照，**这些 M1 Baseline 仍 NOT_RUN**。详见 [M1-A 数据门槛与首个实验](2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。研究方法 M2 尚未启动。
