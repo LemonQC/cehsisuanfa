@@ -39,6 +39,31 @@ class M1AssetInventoryTests(unittest.TestCase):
             self.assertEqual(len(found),1)
             self.assertEqual(found[0]["demo"],"0000")
 
+
+    def test_v120_executed_robot_train_dir_not_official_eval_dir(self):
+        """Regression: actual v120 run stored TRAIN H5 in robot_train/."""
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            manifest=root/"outputs/v120_baselines/robot_data_manifest.json"
+            manifest.parent.mkdir(parents=True)
+            records=[]
+            for i in (0,1):
+                paths=[f"robot_trajectories/no_distraction/push_cube/000{i}/{name}"
+                       for name in ("raw.h5","base_camera.mp4","hand_camera.mp4")]
+                records.append({"demo":f"000{i}",
+                                "files":[{"relative_path":p} for p in paths]})
+                for item in paths:
+                    full=root/"outputs/v120_baselines/robot_train"/item
+                    full.parent.mkdir(parents=True,exist_ok=True)
+                    full.write_bytes(b"raw data stub")
+            manifest.write_text(json.dumps({"status":"REAL_ROBOT_TRAIN_DATA_ACQUIRED",
+                                            "downloaded":records}))
+            candidates=local_robot_actions(root)
+            self.assertEqual(len(candidates),2)
+            self.assertEqual({v["demo"] for v in candidates},{"0000","0001"})
+            self.assertTrue(all(v["data_root"]=="outputs/v120_baselines/robot_train"
+                                for v in candidates))
+
     def test_m0_success_does_not_fabricate_m1_same_goal_pair(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
