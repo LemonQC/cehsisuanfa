@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M0 真实结果全部归档（d5de864），下一步执行 M1-A 数据/配对可行性门槛
+
+GitHub 已核验 `research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json` 和 `per_trial_60.csv`：RoboReel 官方 π0.5 Uniform ND PushCube **46/60 = 76.67%**，逐 seed 分别为 `14/20`、`13/20`、`19/20`，原作者 commit `79a0fb0099e73c5560114753a8706276f93aefc2`。M0 关闭、不再下载/跑官方 π0.5；旧 Vid2Robot 3/60 保留。当前重心转向 M1：此前真实 H5 审核有 2 条 RoboReel PushCube TRAIN 动作轨迹、260 个 TRAIN 人类 PushCube 前视视频远程候选（实际只下载 6 个），**尚无验证通过的源 Pick→目标 Push 同一最终目标配对**。新标准库脚本 `python -m scripts.m1a_inventory_real_assets` 仅核对用户机器上真实文件，排除官方 EVAL，报告 M1 缺口；测试命令用 Python 自带 unittest，不需要 pytest。科学首个任务锁定为：源端 Pick 越障达成同一物体目标，目标 Push-only 需先清理可移动 blocker 再推目标物体；先跑与 Goal-only、Raw Flow、Geometry 以及强 TAMP 的等信息物理对照，**这些 M1 Baseline 仍 NOT_RUN**。详见 [M1-A 数据门槛与首个实验](docs/2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。研究方法 M2 尚未启动。
+
+---
+
 ## ★ 2026-11-11 — M0 正式完成：官方 π0.5 Uniform ND PushCube 46/60，下一步 M1 强 Baseline 与科学必要性
 
 **用户 RTX4090 服务器真实实测**：原版 RoboReel π0.5 Base SigLIP 已成功生成 `siglip_params.pkl`；0080–0099 共 20/20 段官方 EVAL `front.npy` 已全部提取，`PI05_SELECTIVE_ASSET_GATE ready=true`，`PI05_RUNTIME_CHECK ready_for_next_gate=true`，原版 3×20 物理仿真正式输出 `ACTUAL_PI05_PHYSICS_VERIFIED {"variant":"uniform","k":46,"n":60}`，成功率 **76.67%**。旧 Vid2Robot 官方 ND PushCube **3/60=5.00%** 保持不重跑。π0.5 的强基线跑通不等于我们的跨行为创新成立。已新增 `scripts/archive_pi05_uniform_m0.py`：读取服务器实际 `outputs/v140_pi05_uniform/seed_offset_*/summary.json`、官方聚合结果和 config，复核 60 条成功标签并生成带 SHA256 的小型 Markdown/CSV/JSON，后续仅需一次运行并 Git push 归档原始结果。**此原始报告还未由服务器归档到 GitHub**，不得虚构文件已存在。后续 M1 按 [固定协议](docs/2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md) 核对真实同目标源 Pick→目标 Push 数据与 robot TRAIN action，先执行 Goal-only、Raw Flow、Waypoint/Geometry、能力约束 TAMP（外加相关 flow 方法有验证的 port），证明非平凡 target-only blocker clearance 必要性，再开始 M2 训练；绝不把 M0 官方 PushCube 结果混为同目标 M1 结果。
