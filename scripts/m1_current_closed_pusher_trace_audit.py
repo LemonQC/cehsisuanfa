@@ -180,9 +180,24 @@ def analyse(case,reference):
     post=trace[boundary:]
     if not all(r["gripper_action"]<0 for r in trace):
         raise ValueError("Closed-tool experimental factor changed mid-run")
-    if any(bool(r.get("is_grasping_task")) or
-           bool(r.get("is_grasping_blocker")) for r in trace):
+    for k,r in enumerate(trace):
+        if (type(r.get("is_grasping_task")) is not bool
+                or type(r.get("is_grasping_blocker")) is not bool):
+            raise ValueError(f"Closed-tool missing real two-object grasp flags at {k}")
+        finger=r.get("finger_joint_qpos_m")
+        if (not isinstance(finger,list) or len(finger)!=2
+                or any(type(v) not in (int,float) or
+                       not math.isfinite(v) for v in finger)):
+            raise ValueError(f"Closed-tool missing actual measured finger qpos at {k}")
+    if any(r["is_grasping_task"] or r["is_grasping_blocker"] for r in trace):
         raise ValueError("Object physically grasped in claimed push-only trial")
+    if (dxy(xyz(status.get("cube_final"),"recorded final cube"),
+            trace[-1]["task_cube"])>.001 or
+            dxy(xyz(status.get("blocker_final"),"recorded final blocker"),
+                trace[-1]["blocker"])>.001 or
+            abs(dxy(trace[-1]["task_cube"],goal) -
+                float(status.get("task_goal_error_m",float("nan"))))>.001):
+        raise ValueError("Saved closed-case final physical states contradict trace")
 
     prior=trace[boundary-1]
     post_metric=stage(post,goal,pre_cube=prior["task_cube"],
