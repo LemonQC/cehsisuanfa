@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M0 真实结果全部归档（d5de864），下一步执行 M1-A 数据/配对可行性门槛
+
+GitHub 已核验 `research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json` 和 `per_trial_60.csv`：RoboReel 官方 π0.5 Uniform ND PushCube **46/60 = 76.67%**，逐 seed 分别为 `14/20`、`13/20`、`19/20`，原作者 commit `79a0fb0099e73c5560114753a8706276f93aefc2`。M0 关闭、不再下载/跑官方 π0.5；旧 Vid2Robot 3/60 保留。当前重心转向 M1：此前真实 H5 审核有 2 条 RoboReel PushCube TRAIN 动作轨迹、260 个 TRAIN 人类 PushCube 前视视频远程候选（实际只下载 6 个），**尚无验证通过的源 Pick→目标 Push 同一最终目标配对**。新标准库脚本 `python -m scripts.m1a_inventory_real_assets` 仅核对用户机器上真实文件，排除官方 EVAL，报告 M1 缺口；测试命令用 Python 自带 unittest，不需要 pytest。科学首个任务锁定为：源端 Pick 越障达成同一物体目标，目标 Push-only 需先清理可移动 blocker 再推目标物体；先跑与 Goal-only、Raw Flow、Geometry 以及强 TAMP 的等信息物理对照，**这些 M1 Baseline 仍 NOT_RUN**。详见 [M1-A 数据门槛与首个实验](2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。研究方法 M2 尚未启动。
+
+---
+
 ## 2026-11-11 — M0 归档命令兼容性修复（不影响正式评测）
 
 真实服务器执行 M0 离线归档时，`pi05` 环境中没有 `pytest`（`No module named pytest`），直接 `python scripts/archive_pi05_uniform_m0.py` 时 Python 模块搜索路径不包含仓库根目录（`No module named agcofl`）。这两项只影响额外测试与结果导出，**原版 RoboReel π0.5 Uniform 46/60 的正式评测仍成功**。已将归档脚本更正为同时支持项目根目录下 `python -m scripts.archive_pi05_uniform_m0` 和直接 `python scripts/archive_pi05_uniform_m0.py`，无需安装 pytest、修改 Conda 或重跑物理实验。后续服务器只执行前者，输出 `M0_PI05_UNIFORM_ARCHIVED` 后提交 `research_reports/2026-11-11_m0_pi05_uniform` 的小型 CSV/JSON/MD 至 GitHub。已修复的归档仍**尚未在服务器成功执行**，不要视原始记录已提交。
