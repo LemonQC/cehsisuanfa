@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "No more current M1 custom scene or M2. Optional separate RoboReel baseline continuation: pull main, conda activate pi05, run stdlib 5-test test_prepare_b01_robot_train.py, then python -m scripts.prepare_b01_robot_train --download (genuine bounded 64 official TRAIN H5+dual-camera demos <=300MB, reuse prior 2), obtain real 51/13 split, and THEN implement/validate robot-only BC policy with fair action interface; do not treat as scientific rescue.",
-  "research_execution_reference": "docs/2026-11-11_M1B4_ACTUAL_REAL_NO_GO_AND_RESEARCH_HARD_STOP.md",
+  "next_operator_action": "Do NOT run/copy B01 or M1C scripts; deleted unsolicited code. Work on current M1 experiment only. First compare existing successful source Pick H5/video object-effect goal with frozen M1B3 x=.21 target without re-running physics; do not accept old M1B2 .15 as matched. Then replace failed custom low-level target DiagnosticPushTeacher execution with existing original Panda PushCube MPLib planner interface in same geometry; only one focused smoke after objective source-goal match and interface checks. No M0/M1B1/M1B2/M1B3 reruns, no new environment/task or model training.",
+  "research_execution_reference": "docs/2026-11-11_SCOPE_CORRECTION_REPLACE_CURRENT_EXECUTOR_NOT_RESTART_RESEARCH.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
-    "m1": "HARD_NO_GO FOR CUSTOM SAME-GOAL PICK_TO_PUSH MANDATORY BLOCKER INSERTION. M1B2 source/direct/clear all success but no necessary insertion; M1B3 source & blocked clear fail; REAL M1B4 original source grasp=0 lift=0 -> strict abort before new simulator. Same-goal baseline TAMP/Goal-only/Raw Flow NOT_RUN.",
+    "m1": "Current M1 problem NOT ABANDONED on user's correction. Custom M1B3 grasp adapter failed real source grasp (0 steps) so stop that exact adapter; keep original same-goal blocker-clearance task. Current goal: replace source input with genuinely successful existing Pick video after object-effect/goal verification; target execution with published Panda PushCube MPLib low-level push adapter; no full reruns, no scientific novelty claims before fair TAMP.",
     "m2": "NOT_STARTED_AND_NOT_AUTHORIZED on failed M1 hypothesis; no method trained"
   },
   "m1a_local_asset_gate": {
@@ -626,21 +626,21 @@
       }
     }
   },
-  "next_separate_workstream": {
-    "name": "B01 ROBOT-ONLY PushCube (independent official-benchmark baseline foundation, not M1 rescue)",
-    "stage": "64 authentic TRAIN demo download/audit and fixed 51/13 split CODE_COMMITTED_NOT_EXECUTED",
-    "tool": "scripts/prepare_b01_robot_train.py",
-    "tests": "tests/test_prepare_b01_robot_train.py",
-    "robot_data_root": "outputs/v120_baselines/robot_train",
-    "manifest_root": "outputs/b01_robot_only",
-    "training_budget_max_mb": 300,
-    "train_h5_target": 64,
-    "train_val_split": [
-      51,
-      13
+  "next_separate_workstream": null,
+  "user_corrected_scope_20261111": {
+    "request": "Find substitutes for failed components in existing M1 same-goal Pick-source -> Push-only blocker-clearance physics experiment, NOT start a new research project/task, not another full benchmark campaign.",
+    "unsolicited_pivots_cancelled": [
+      "M1C long-horizon RoboReel task",
+      "B01 64-demo robot-only BC data download as immediate next step"
     ],
-    "policy_training": "NOT_STARTED",
-    "real_robot_only_policy_rollouts": "NOT_RUN",
-    "note": "Training on 64 demos is not pretrained pi05 data-budget matched, and does not establish new T-RO novelty"
+    "replacement_source": "Reuse already genuinely successful original ManiSkill Pick 3/3 H5/video or old M1B2 source Pick video, but require the specific recorded object effect and goal to match M1B3 target goal (old M1B2 x=.15 vs M1B3 x=.21 NOT matched). No fake label.",
+    "replacement_target": "Integrate original published mani_skill/examples/motionplanning/panda/solutions/push_cube.py low-level Panda MPLib executor into the existing blocker->cube push, adapting object targets; not claim official two-pose solver alone is a multi-stage method.",
+    "frozen_m1b3_real_source_grasp_zero": true,
+    "old_failed_source_adapter_must_not_relaunch": true,
+    "physics_experiments_to_repeat": 0,
+    "new_task_envs": 0,
+    "strong_tamp": "NOT_RUN",
+    "method": "NOT_STARTED",
+    "source_target_goal_verified": "NOT_YET"
   }
 }
