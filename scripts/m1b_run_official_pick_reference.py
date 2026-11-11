@@ -99,6 +99,7 @@ def validate_record(base:Path, required_attempts:int):
         "json":str(json_path),
         "rgb_video_candidates":[str(p) for p in videos],
         "at_least_one_rgb_video_saved":bool(videos),
+        "usable_successful_pick_reference":bool(videos) and any(r["success"] for r in rows),
         "physically_executed_original_pick_task":True,
         "same_goal_pick_push_pair_validated":False,
         "is_human_source_video":False,
@@ -163,6 +164,7 @@ def run(out:Path, attempts:int=3, timeout_seconds:int=480):
         "attempts":result["attempts"],
         "successes":result["successful_reference_episodes"],
         "any_video":result["at_least_one_rgb_video_saved"],
+        "usable_reference":result["usable_successful_pick_reference"],
         "same_goal_pair_validated":False,
         "out":str(report_path)}),flush=True)
     return result
