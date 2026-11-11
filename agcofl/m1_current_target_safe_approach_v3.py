@@ -22,8 +22,9 @@ from .m1b3_corridor_physics import (
     MAX_STEPS, SEED, THROAT_X, _actual_satisfied, geometry_preflight,
 )
 from .m1_current_closed_pusher_ablation import (
-    ContactTracer, make_joint_push_env, observed_push_only,
+    ContactTracer, observed_push_only,
 )
+from .m1b3_corridor_physics import register_env
 from .m1_current_executor_swap import get_planner
 from .roboreel_bridge import np1
 
@@ -115,6 +116,27 @@ def direction_contract():
         "learned_method":False,
         "equal_info_tamp":False,
     }
+
+
+def make_v3_env(official_root,out):
+    """Same original M1B3 simulator settings with an accurately named NEW video/H5."""
+    import gymnasium as gym
+    import mani_skill.envs  # noqa: F401
+    from mani_skill.utils.wrappers.record import RecordEpisode
+
+    eid=register_env(official_root)
+    raw=gym.make(
+        eid,obs_mode="state",robot_uids="panda",num_envs=1,
+        control_mode="pd_joint_pos",render_mode="rgb_array",
+        sim_backend="physx_cpu",distract=False,
+        max_episode_steps=MAX_STEPS)
+    episode=RecordEpisode(
+        raw,output_dir=str(out),trajectory_name=CASE,
+        save_video=True,save_on_reset=False,record_reward=False,
+        source_type="privileged_diagnostic",
+        source_desc="Original M1B3 geometry, v3 guarded target rear approach; NOT TAMP")
+    episode.reset(seed=SEED,options={"m1b3_open":False})
+    return episode
 
 
 class SafeTargetTracer(ContactTracer):
@@ -281,9 +303,8 @@ def run_once(root,official_root):
     artifact_error=None
     try:
         # Same old seed/scene/control_mode and 450-action budget.
-        # The RecordEpisode filename inside a NEW output folder is
-        # historical v2, but the result itself is explicitly v3.
-        env=make_joint_push_env(official_root,case)
+        # v3 raw video/H5 gets its own truthful filename.
+        env=make_v3_env(official_root,case)
         data=execute(env)
     except Exception as exc:
         data={
