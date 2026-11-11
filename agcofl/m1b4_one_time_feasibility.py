@@ -180,9 +180,18 @@ def run_source_once(env):
 
 
 def pre_throat_lateral_alignment_needed(cube_xyz):
-    """A cube fits the 50mm throat only if its center is within +/-5mm."""
-    x,y = float(cube_xyz[0]), float(cube_xyz[1])
-    if x > THROAT_X - .012 - TASK_HALF + .003 and abs(y) > PRE_THROAT_Y_TOL:
+    """Classify cube lateral alignment just before the original 50mm throat.
+
+    The throat's upstream wall front is at THROAT_X - 0.012, so an
+    axis-aligned 40mm cube contacts it at center x=THROAT_X-.012-TASK_HALF
+    (0.126m). Flag misalignment within 3mm BEFORE that face; the old
+    '+.003' only flagged cubes already 3mm BEYOND the collision limit.
+    Keep this as a geometry preflight helper, not physics/contact proof.
+    """
+    x, y = float(cube_xyz[0]), float(cube_xyz[1])
+    wall_front_cube_center_limit = THROAT_X - .012 - TASK_HALF
+    if (x >= wall_front_cube_center_limit - .003
+            and abs(y) > PRE_THROAT_Y_TOL):
         return "MISALIGNED_AT_WALL_FRONT"
     return abs(y) > PRE_THROAT_Y_TOL
 
