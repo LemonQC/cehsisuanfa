@@ -223,7 +223,7 @@ def install_original_cache(params: Path, cache: Path) -> str:
     def all_hardlinked(destination: Path) -> bool:
         if not destination.is_dir() or destination.is_symlink():
             return False
-        originals=[p for p in params.rglob("*") if p.is_file()]
+        originals=[p for p in params.rglob("*") if p.is_file() and not p.name.endswith(".part")]
         return (bool(originals)
                 and all((destination / p.relative_to(params)).is_file()
                         and os.path.samefile(p, destination / p.relative_to(params))
@@ -244,6 +244,9 @@ def install_original_cache(params: Path, cache: Path) -> str:
         raise RuntimeError(f"Unexpected staging cache path: {staging}")
     staging.mkdir(exist_ok=True)
     for source in sorted(params.rglob("*")):
+        # Partially transferred files are NOT part of the verified mirror.
+        if source.is_file() and source.name.endswith(".part"):
+            continue
         if source.is_symlink():
             raise RuntimeError(f"Refuse symlink inside original model: {source}")
         dest=staging/source.relative_to(params)
@@ -269,8 +272,16 @@ def install_original_cache(params: Path, cache: Path) -> str:
             raise RuntimeError(f"Unexpected file type inside Orbax source: {source}")
     if not all_hardlinked(staging):
         raise RuntimeError(f"Hardlink staging incomplete: {staging}")
-    # Linux atomic rename replaces our OLD directory SYMLINK with a real
-    # cache directory. Never overwrite unrelated pre-existing directories.
+    # Linux cannot replace a *symlink* with a DIRECTORY using rename
+    # (NotADirectoryError). After staging and verification are complete,
+    # unlink ONLY the already verified link to our original mirror, then
+    # rename the staged real directory into place. A crash between these
+    # operations is recoverable: staging remains and the original source
+    # directory and its files are completely untouched.
+    if expected.is_symlink():
+        if expected.resolve()!=params:
+            raise RuntimeError(f"Cache symlink changed during staging: {expected}")
+        expected.unlink()
     os.replace(staging,expected)
     if expected.is_symlink() or not all_hardlinked(expected):
         raise RuntimeError(f"OpenPI cache materialization failed: {expected}")
