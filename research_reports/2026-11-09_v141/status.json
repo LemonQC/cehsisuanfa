@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "OPENPI_BASE_HF_DOWNLOAD_REACHED_FILE5_OF20_ZERO_BYTE_ORBAX_MARKER_FIX_COMMITTED",
+    "status": "PINNED_BASE_STAGED_SIGLIP_RESTORE_BLOCKED_BY_OPENPI_RESOLVE_SYMLINK_BUG",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -181,6 +181,16 @@
       "checkpoint_fully_staged": false,
       "siglip_pickle_restored": false,
       "official_pi05_trials": 0
+    },
+    "openpi_base_cache_path_issue": {
+      "observed_from_operator": "PI05_PINNED_HF_BASE_STAGED then SigLipTokenizer crashes in maybe_download/_should_invalidate_cache before Orbax restore",
+      "actual_error": "ValueError: /.../openpi_base_hf_mirror/pi05_base/params is not in subpath of /.../openpi_cache",
+      "cause": "Original OpenPI maybe_download resolves a sibling directory symlink to outside OPENPI_DATA_HOME and requires cache-relative path",
+      "file_complete_flag_reported": true,
+      "full_model_restored": false,
+      "fix_committed": "v1.6.2 offline no-download verified hardlink real cache installation, preserves source and no duplicate 12.4GB on same filesystem",
+      "fix_operator_executed": false,
+      "gpu_physics_evaluated": false
     }
   },
   "official_pi05_keyframes": {
@@ -248,6 +258,6 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; activate pi05; run python -m pytest -q tests/test_prepare_pi05_base_from_hf.py (new zero-byte regression); then resume SAME bash scripts/run_v141_next_gate.sh prepare-pi05-base-hf. Preverified files skipped; don't delete outputs or run GCS; after staged run check-siglip-cache then smoke-one-feature.",
+  "next_operator_action": "git pull; conda activate pi05; python -m pytest -q tests/test_prepare_pi05_base_from_hf.py tests/test_check_pi05_siglip_cache.py; bash scripts/run_v141_next_gate.sh repair-pi05-cache (OFFLINE); bash scripts/run_v141_next_gate.sh smoke-one-feature; then prepare-features, require-ready, evaluate-uniform. No GCS/HF redownload needed.",
   "research_execution_reference": "docs/2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md"
 }
