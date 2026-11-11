@@ -141,3 +141,67 @@ Vid2Robot official 3/60; ManiSkill official Pick reference 3/3;
 M1B2 same-goal 3/3 physics but no required insertion;
 M1B3 four-case PhysX blocked source/direct/clear all failed
 and open direct succeeded; its raw H5 and videos remain local.
+
+## 2026-11-11 — v1.6.8 single-test failure: the apparent NO-GO was SYNTHETIC, NOT REAL
+
+The operator ran `bash scripts/run_m1b4_one_time_feasibility.sh`;
+4 unit tests ran and **one failed**:
+
+`test_unaligned_throat_guard_matches_measured_geometry` expected
+`MISALIGNED_AT_WALL_FRONT` at the previously observed coordinate
+[0.1252731, −0.0308216], but the pure helper returned `True`.
+The helper threshold wrongly required x **beyond**
+`THROAT_X - .012 - TASK_HALF + .003 = 0.129`, even though the estimated
+first-contact cube center is **x=0.126**. It now flags the wall-front
+category starting at `0.126 − 0.003 = 0.123`, with additional boundary
+regression assertions. This fixes a geometry CHECK; it does not change
+robot actions, corridor, ground truth, or M1B3 results.
+
+The user log also printed:
+
+```
+M1B4_EVIDENCE_PREFLIGHT {... "source_actual_grasp_steps":0,
+ "source_actual_max_task_z_m":0.02,
+ "source_actual_task_net_xy_m":0.04,
+ "source_actual_task_total_xy_m":1e-05, ...}
+M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN
+```
+
+**These precise values are from the temporary synthetic fixture in**
+`tests/test_m1b4_one_time_feasibility.py`'s
+`test_if_original_pick_never_lifted_then_no_more_physx`.
+In particular, the fixture's net displacement (0.04m) is physically
+inconsistent with its total (0.00001m), confirming that it is not an
+original trace-derived measurement. The test intentionally calls
+`main(--old-root <temporary synthetic directory>, --require-physical-source-evidence)`
+and expects exit code 6; previously it printed the expected marker.
+The test runner failed before it could invoke the real project's
+`outputs/m1b3_corridor_dev/diagnosis.json` evidence check. **Do not
+label the actual source as no-grasp on this basis.**
+
+Fixes committed:
+1. Boundary detection near x=0.126m corrected to begin at x=0.123m.
+2. The synthetic negative test captures its stdout using
+   `contextlib.redirect_stdout` and checks the marker internally;
+   no fake no-go enters the operator-visible log.
+3. Runner now prints
+   `M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS`
+   before the first genuine frozen-source evidence check.
+
+Next command remains:
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+conda activate pi05
+bash scripts/run_m1b4_one_time_feasibility.sh
+```
+
+If the **real** source gate prints
+`M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN`
+*after the new real-data marker*, then the evidence supports
+stopping this unchanged-scene source-planner rescue. That would be an
+actual scientific stop; preserve the original data and do not proceed
+to M1B5. If the actual gate passes, at most two fresh bounded episodes
+are allowed under the previously frozen protocol. Physical execution
+has **not yet occurred** for M1B4, and exact original-source grasp
+metrics are still unverified in this conversation.
