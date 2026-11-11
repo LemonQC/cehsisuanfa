@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "No reruns of successful clearance or failed source; git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_current_closed_pusher_trace_audit.py' -q; python -m scripts.m1_current_closed_pusher_trace_audit. Return M1_CLOSED_PUSHER_450_STEP_TRACE_DIAG and analyze actual 362-step cube/TCP trajectory before considering any bounded phase-only handoff adapter. Existing source contact offline comparator still not reported, and same-goal source remains invalid.",
-  "research_execution_reference": "docs/2026-11-11_M1_CLOSED_PUSHER_CLEARANCE_PASS_POST_CLEAR_TRACE_AUDIT.md",
+  "next_operator_action": "Current M1 same original scene only. git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_target_safe_approach_once.sh. Runner 5 stdlib tests, geometry contract, read-only original 450 step audit and SHA256 then one new v3 physically guarded rear approach with v2 82-step successful clearance unchanged; reports M1_TARGET_SAFE_APPROACH_GATE. If no progress/backwards violation, preserve and inspect rather than retune. Separately source grasp still fails; no M2/TAMP claims.",
+  "research_execution_reference": "docs/2026-11-11_M1_TARGET_SAFE_REAR_APPROACH_V3.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
@@ -779,7 +779,7 @@
     "learning_or_TAMP": "NOT_RUN",
     "current_action": "M1 current 450-step closed pusher trace AUDIT code committed, not yet run on user server; no new physics",
     "offline_audit": {
-      "stage": "CODE_COMMITTED_OPERATOR_NOT_RUN",
+      "stage": "REAL_OPERATOR_EXECUTED_5_TESTS_OK_450_STEP_EXISTING_TRACE_READ_ONLY",
       "script": "scripts/m1_current_closed_pusher_trace_audit.py",
       "tests": "tests/test_m1_current_closed_pusher_trace_audit.py",
       "report": "outputs/m1_current_closed_pusher_v2/closed_pusher_450_step_offline_audit.json",
@@ -789,7 +789,47 @@
         "remaining target cube 362 incomplete"
       ],
       "reference": "original M1B3 open_direct 35 real steps successful, not information matched",
-      "zero_physics": true
+      "zero_physics": true,
+      "operator_verified": {
+        "no_new_physics": true,
+        "clearance_steps": 82,
+        "post_clear_actions": 362,
+        "task_initial_xyz_m": [
+          -3.703731010773481e-7,
+          -7.008002285147086e-7,
+          0.019999923184514046
+        ],
+        "task_final_xyz_m": [
+          -0.050044044852256775,
+          0.0016725375317037106,
+          0.019999926909804344
+        ],
+        "cube_net_goal_progress_m": -0.050049053091708484,
+        "cube_min_goal_error_m": 0.2100003638177595,
+        "task_xy_total_motion_m": 0.07539328132635903,
+        "nearest_tcp_cube_center_m": 0.03702491995451105,
+        "last15_task_xy_motion_m": 0,
+        "diagnostic_signature": "CUBE_MOVED_FARTHER_FROM_GOAL_AFTER_CLEARANCE",
+        "existing_report": "outputs/m1_current_closed_pusher_v2/closed_pusher_450_step_offline_audit.json",
+        "provenance": "user printed actual M1_CLOSED_PUSHER_450_STEP_TRACE_DIAG after stdlib unit tests OK"
+      }
     }
+  },
+  "current_m1_target_safe_approach_v3": {
+    "stage": "SOURCE_CODE_AND_5_UNIT_TESTS_COMMITTED; USER_PHYSX_NOT_RUN",
+    "scientific_question": "UNCHANGED original same-goal Pick source -> Push-only target requiring blocker intervention, current M1B3 physical scene",
+    "code": "agcofl/m1_current_target_safe_approach_v3.py",
+    "runner": "scripts/run_m1_target_safe_approach_once.sh",
+    "tests": "tests/test_m1_current_target_safe_approach_v3.py",
+    "doc": "docs/2026-11-11_M1_TARGET_SAFE_REAR_APPROACH_V3.md",
+    "observed_trigger": "Real v2 object final x=-.050044m (goal +.210), nearly identical to previous unsafe RRT precontact x=-.050m, but actual collision timing not observed.",
+    "unchanged": "Original v2 closed-tool MPLib clear routine; original scene/seed/goal/robot/control/450 steps, no M0/M1 reruns",
+    "changed": "Retreat vertically to 160mm, overhead move to -65mm behind cube, descend, require physical TCP behind cube and no disturbed object before +X push; guarded x0.11/x0.18/x0.26 approach with per-action reverse/drift/grounding/grasp checks.",
+    "guard": "Previous user-local raw 450-step backward cube result and old open_direct task start/goal must match; one new target-only bounded physical attempt or none.",
+    "count_attempts_user_executed": 0,
+    "equal_info_tamp": "NOT_RUN",
+    "source_real_grasp": "STILL_FAIL_106_STEPS_NO_VALID_GRASP",
+    "learned_method": "NOT_STARTED",
+    "publishable_result": false
   }
 }
