@@ -55,28 +55,38 @@ def audit(project: Path, home: Path):
 
 
 def trusted_mirror_install(project: Path, home: Path) -> bool:
-    """Allow author SigLIP restore only after full pinned HF manifest staging.
+    """Verify previously staged mirror has a REAL cache path below home.
 
-    The original OpenPI maybe_download short-circuits for a pre-existing
-    local params path, so a complete local symlink avoids any GCS request.
-    This checks our *local install* record, NOT proof of equality to GCS.
+    OpenPI's maybe_download calls .resolve() and then .relative_to(cache_dir).
+    An otherwise valid directory SYMLINK pointing outside home will crash.
+    All checkpoint files therefore must be available as hardlinks inside
+    the physical cache directory (no extra 12.4GB disk copy).
     """
     manifest=project / "outputs/v120_baselines/openpi_base_hf_manifest.json"
     if not manifest.is_file():
         return False
     try:
         record=json.loads(manifest.read_text())
-        expected=(home/"openpi-assets/checkpoints/pi05_base/params")
+        expected=home/"openpi-assets/checkpoints/pi05_base/params"
+        source=Path(record["local_dir"])/"pi05_base/params"
         check=record["manifest_verification"]
-        return (record["source"]=="robotgeneralist/openpi_checkpoint_mirrors2"
+        if not (
+            record["source"]=="robotgeneralist/openpi_checkpoint_mirrors2"
             and record["revision"]=="1fda6b04e83d625eb1a55d68db32050e248cac2b"
             and Path(record["openpi_data_home"]).resolve()==home.resolve()
-            and Path(record["openpi_base_cache_link"]).resolve()==expected.resolve()
-            and expected.is_dir() and bool(check["complete"])
-            and all((expected/p).is_file() for p in (
-                "_METADATA","_CHECKPOINT_METADATA","manifest.ocdbt"))
-            and (expected/"ocdbt.process_0").is_dir()
-            and (expected/"d").is_dir())
+            and Path(record.get("openpi_base_cache_path",
+                                record["openpi_base_cache_link"])).absolute()==expected.absolute()
+            and expected.is_dir() and not expected.is_symlink()
+            and expected.resolve().is_relative_to(home.resolve())
+            and bool(check["complete"])
+            and source.is_dir()
+        ):
+            return False
+        files=[p for p in source.rglob("*") if p.is_file() and not p.name.endswith(".part")]
+        return (bool(files)
+                and all((expected/p.relative_to(source)).is_file()
+                        and os.path.samefile(p,expected/p.relative_to(source))
+                        for p in files))
     except (ValueError,KeyError,TypeError,OSError):
         return False
 
