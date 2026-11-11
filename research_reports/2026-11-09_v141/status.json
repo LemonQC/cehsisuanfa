@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "M0 done. git pull; one corrected stdlib M1-A scanner run to establish local v120 robot_train exists (expect 2 H5 triplets if unchanged), not repeated asset audit. Then proceed M1-B: select/build same-final-goal source and target physical scenes from validated trajectory assets and evaluate capability-aware TAMP first; M1 baseline scores still NONE, no Ours.",
-  "research_execution_reference": "docs/2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md",
+  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1b_official_pick_reference.py' -q; python -m scripts.m1b_run_official_pick_reference. Need original ManiSkill H5/MP4 with >=1 official successful Pick. Do not mistake original PickCube goal for same-goal pairing. Next adapt official planner on single custom same-goal obstacle scene and run target push blocker + strong equal-information TAMP.",
+  "research_execution_reference": "docs/2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1-A asset scanner COMMITTED NOT_EXECUTED; M1-B same-goal physical scene + strong controls NOT_RUN",
+    "m1": "M1-A ACTUAL 2 robot H5+dual-camera, 6 Push human MP4; M1-B official expert source capture script COMMITTED NOT_RUN; matched-goal Pick source and target-blocker physics NOT_RUN",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   },
   "m1a_local_asset_gate": {
@@ -373,7 +373,24 @@
       "outputs/v120_baselines/official_dataset"
     ],
     "fix": "v1.6.4 scanner now includes v120/robot_train and protects train-only paths",
-    "fixed_scanner_not_yet_run": true,
-    "interpretation": "0 reported local H5 from wrong root is NOT evidence of missing previously validated real robot TRAIN actions; current presence needs corrected scan"
+    "fixed_scanner_not_yet_run": false,
+    "interpretation": "0 reported local H5 from wrong root is NOT evidence of missing previously validated real robot TRAIN actions; current presence needs corrected scan",
+    "fixed_scanner_executed_on_operator": true,
+    "local_robot_action_demos_verified_current": 2,
+    "unresolved_same_goal_pair": true,
+    "status": "M1A_LOCAL_TRAIN_ASSETS_FOUND_BUT_MATCHED_SOURCE_AND_INSERTION_ABSENT"
+  },
+  "m1b_current": {
+    "stage": "B1 OFFICIAL PICK REFERENCE SCRIPT COMMITTED_NOT_RUN",
+    "script": "scripts/m1b_run_official_pick_reference.py",
+    "solver": "installed ManiSkill original panda motionplanning PickCube-v1",
+    "bounded_episodes": 3,
+    "max_duration_seconds": 480,
+    "outputs": "outputs/m1b_official_pick_reference",
+    "source_note": "original PickCube-v1 task is NOT matched goal to RoboReel PushCube-v2; needs adapted original author planner then verified same-goal source",
+    "target_blocker_insertion": "NOT_RUN",
+    "source_same_goal_valid": "NOT_RUN",
+    "same_goal_tamp": "NOT_RUN",
+    "new_method": "NOT_STARTED"
   }
 }
