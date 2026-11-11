@@ -7,7 +7,8 @@ verify() and writes a small, auditable 60-trial archive with source SHA256.
 Does not run simulation, modify weights, download anything, or train.
 
 Run after ACTUAL_PI05_PHYSICS_VERIFIED, from project root:
-  python scripts/archive_pi05_uniform_m0.py
+  python -m scripts.archive_pi05_uniform_m0
+  # Direct file invocation is also supported after the module-path fix.
 """
 from __future__ import annotations
 
@@ -18,6 +19,16 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import sys
+
+# Support both invocation forms without asking the operator to modify
+# PYTHONPATH or install any unrelated package in the pinned pi05 env.
+# python scripts/archive_pi05_uniform_m0.py otherwise puts scripts/ at
+# sys.path[0] and fails to locate the sibling agcofl/ package.
+if __package__ in (None, ""):
+    _project_root = str(Path(__file__).resolve().parents[1])
+    if _project_root not in sys.path:
+        sys.path.insert(0, _project_root)
 
 from agcofl.v140_official_pi05 import IDS, PIN, SEEDS, VARIANTS, preflight, verify, pinned_sha
 
