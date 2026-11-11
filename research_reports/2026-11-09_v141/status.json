@@ -350,7 +350,7 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b4_one_time_feasibility.sh. It first runs stdlib tests and old actual-source grip/lift/carry gate; if missing, NO physics and stop. If justified, at most 2 fresh cases under unchanged geometry and original H5/videos untouched. If fails, stop this causal-insertion scene; no M2 or unrun TAMP claims.",
+  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b4_one_time_feasibility.sh. 4 revised unittest fixtures first, synthetic no-go hidden; then M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS and genuine source grasp/lift/carry preflight. Actual no-go after that marker means hard stop before any new physical case. If actual passed, at most two frozen-geometry PhysX cases, stop-on-source-failure. No M2.",
   "research_execution_reference": "docs/2026-11-11_M1B3_ACTUAL_DIAG_AND_M1B4_FINAL_RESCUE.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
@@ -573,7 +573,7 @@
       }
     },
     "m1b4_one_time_rescue": {
-      "stage": "CODE_COMMITTED_NOT_RUN",
+      "stage": "UNITTEST_PRECHECK_FAILED_1_OF_4; FIX_PUSHED; REAL_SOURCE_EVIDENCE_GATE_NOT_YET_EXECUTED",
       "script": "agcofl/m1b4_one_time_feasibility.py",
       "runner": "scripts/run_m1b4_one_time_feasibility.sh",
       "validator": "scripts/m1b4_validate_once.py",
@@ -584,7 +584,25 @@
       "target": "Existing privileged ActorPush: physically clear side blocker, pre-throat x=.103, align y to +/- 4mm, push through exact unchanged throat and same goal",
       "geometry": "Exact original M1B3 geometry frozen",
       "novelty": "NO: this is a conventional privileged feasibility intervention, not a learned effect editor or strong TAMP",
-      "hard_stop": "If old source did not carry or one new case fails, do not iterate v1 controller parameters"
+      "hard_stop": "If old source did not carry or one new case fails, do not iterate v1 controller parameters",
+      "operator_log_20261111": {
+        "tests_executed": 4,
+        "errors": 0,
+        "failures": 1,
+        "failure": "test_unaligned_throat_guard_matches_measured_geometry: expected MISALIGNED_AT_WALL_FRONT at x=.1252731, y=-.0308216; old helper returned True",
+        "geometry_cause": "original wall center collision threshold x=.126; old helper marked near-wall misalignment only if x>.129, now x>=.123",
+        "apparent_no_go_marker": "M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN",
+        "apparent_no_go_source": "SYNTHETIC UNIT TEST FIXTURE, not operator's real M1B3 frozen trace",
+        "fixture_values": {
+          "source_actual_grasp_steps": 0,
+          "source_actual_max_task_z_m": 0.02,
+          "source_actual_task_net_xy_m": 0.04,
+          "source_actual_task_total_xy_m": 0.00001
+        },
+        "real_source_gate_executed": false,
+        "new_PhysX_cases_executed": 0,
+        "repaired": "M1B4 pure helper x threshold corrected; expected synthetic NO_GO stdout captured; runner prints explicit real-data marker after tests"
+      }
     }
   }
 }
