@@ -59,12 +59,23 @@ def measured_mechanism_gate(old_root: Path):
                      and abs(final[1]) > free_half_center_band + .010)
     if not spatial_match:
         raise ValueError("Saved stuck cube is NOT close to expected throat collision geometry")
+    source_grasp = int(source["measured"]["task_grasped_steps"])
+    source_lift = float(source["measured"]["task_max_z_m"])
+    source_motion = float(source["measured"]["task_net_xy_m"])
+    # DO NOT blindly rerun an identical original grasp controller when
+    # the old real source video shows no held/lifted/transported cube.
+    source_lower_fallback_relevant = bool(
+        source_grasp > 0
+        and source_lift > WALL_HEIGHT+TASK_HALF+.005
+        and source_motion > .08
+    )
     return {
         "old_scene": ENV_ID,
         "old_source_error": source["error"],
-        "source_actual_grasp_steps": source["measured"]["task_grasped_steps"],
-        "source_actual_max_task_z_m": source["measured"]["task_max_z_m"],
-        "source_actual_task_net_xy_m": source["measured"]["task_net_xy_m"],
+        "source_actual_grasp_steps": source_grasp,
+        "source_actual_max_task_z_m": source_lift,
+        "source_actual_task_net_xy_m": source_motion,
+        "source_lower_planner_fallback_is_justified": source_lower_fallback_relevant,
         "old_push_stall_xy_m": final,
         "wall_front_cube_center_x_limit_m": wall_front_center_limit,
         "free_cube_center_half_band_y_m": free_half_center_band,
@@ -333,16 +344,29 @@ def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mode",choices=MODES)
     p.add_argument("--offline-preflight",action="store_true")
+    p.add_argument("--require-physical-source-evidence",action="store_true",
+                   help="Preflight only; exit 6 if original trace never held/lifted/transported the source cube")
     p.add_argument("--old-root",default="outputs/m1b3_corridor_dev")
     p.add_argument("--out",default="outputs/m1b4_one_time_feasibility")
     p.add_argument("--official-root",default="third_party/roboreel_models")
     args=p.parse_args(argv)
     old=measured_mechanism_gate(Path(args.old_root))
-    if args.offline_preflight:
+    if args.offline_preflight or args.require_physical_source_evidence:
         print("M1B4_EVIDENCE_PREFLIGHT",json.dumps(old),flush=True)
+        if (args.require_physical_source_evidence
+                and not old["source_lower_planner_fallback_is_justified"]):
+            print("M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN",
+                  flush=True)
+            raise SystemExit(6)
         return
     if not args.mode:
         p.error("--mode is required unless --offline-preflight")
+    if not old["source_lower_planner_fallback_is_justified"]:
+        raise SystemExit(
+            "NO_GO: prior source lacked observed grasp/lift/translation. "
+            "A lower RRT fallback cannot rescue an object it did not carry. "
+            "Do not spend physical trials with the unchanged grasp controller."
+        )
     run_case(args.mode,args.out,args.old_root,args.official_root)
 
 
