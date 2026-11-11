@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-B3 四组真实 PhysX 执行完毕，**同目标配对门槛未通过**，仅做离线轨迹诊断
+
+用户4090实测 M1-B3 新狭窄通道：`blocked_source` **失败335步**（`official_mplib_lower_failed`，误差210.0mm）；`blocked_direct` **失败91步**（误差142.1mm，挡块仅移动17mm）；`blocked_clear` **失败450步**（挡块确实移到侧槽，但目标方块仍离终点90.2mm）；`open_direct` **成功35步**（误差14.3mm）。四组是实际物理结果，`geometry_preflight_pass=true`、`matched_task_start_and_goal=true`，但 `pilot_contrast_pass=false`、`causal_necessity_proven=false`、`strong_tamp_evaluated=false`。该场景没有得到成功的同目标源/目标配对，**不得据此声称需要新增因果效果或进入 M2**。保持完整原始 `outputs/m1b3_corridor_dev/` H5/视频/物理轨迹不改不重跑。新提交零GPU标准库 `python -m scripts.m1b3_diagnose_existing` 离线读取四组保存的 `status.json` 和 `physical_trace.json`，提取源 MPLib `planner_phases` 及 `blocked_clear` 清障后推方块分段实测、TCP和物体位移/停滞、SHA256；先用 `python -m unittest discover -s tests -p 'test_m1b3_diagnose_existing.py' -q` 验证。输出 `M1B3_OFFLINE_DIAG` 和小文件 `outputs/m1b3_corridor_dev/DIAGNOSIS.md`，**离线脚本尚未在用户服务器执行**。根据真实轨迹才决定是否值得一次明确版本化修正，否则及时停止此科学命题。详见 [真实M1-B3结果与下一关](2026-11-11_M1B3_ACTUAL_PHYSICS_NO_GO_AND_OFFLINE_DIAG.md)。
+
+---
+
 ## ★ 2026-11-11 — M1-B2 实测成功但科学对比失败，M1-B3 新物理通道反事实实验（待执行）
 
 **真实用户服务器记录**：原版 RoboReel π0.5 M0 46/60 已完整归档；原版 ManiSkill PickCube 专家 3/3；M1-B2 CUSTOM 同目标 PhysX 三组 `source=成功(170步)`、`target_direct=成功(31步)`、`target_clear=成功(51步)`，其 `pilot_contrast_pass=false`，因为**直接推动即可完成，清障没有显示必要性**。因此冻结旧场景/旧数据，不在其上训练 Method，也不重新运行原版 Baseline。新建 `AGCOFLM1B3Corridor-v0`：真实 static walls + dynamic blocker、狭窄“尺寸选择性”通道及侧向停车槽（目标 Cube 40mm 可通过 50mm 狭口、挡块 58mm 不能），用无 PhysX 的 C-space BFS 验证阻塞/开放状态连通性；然后在同一最终目标、同一 seed=120 上运行 4 个物理反事实场景：`blocked_source`（复用官方 MPLib Pick+Place）、`blocked_direct`、`blocked_clear`、`open_direct`（三种目标 Push 使用旧 privileged Push 执行器）。运行入口 `bash scripts/run_m1b3_corridor_once.sh`，自动先过 stdlib unittest 与 geometry gate，再限时真实物理并保存 H5/JSON/MP4 和逐帧物体状态；**这批代码已提交但物理未执行**，不声称必然成功。即使 blocked-clear 物理反事实成功，也需要强等信息 TAMP、动态替代路径检验和源视频独特信息验证，才能进入 M2。详见 [M1-B3 反事实物理实验与科研停止条件](2026-11-11_M1B3_CORRIDOR_COUNTERFACTUAL_PRE_REGISTERED.md)。
