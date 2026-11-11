@@ -106,3 +106,64 @@ def test_feature_smoke_slice_is_one_real_missing_demo(monkeypatch, tmp_path):
               "--out", str(tmp_path / "report"),
               "--extract-features", "--max-feature-demos", "1"])
     assert observed == [80]
+
+
+def test_isolated_original_siglip_workers_one_video_each_and_resume(tmp_path,monkeypatch):
+    """CPU-only fake child: parent selects only missing and restarts JAX each time."""
+    from types import SimpleNamespace
+    from agcofl import v141_pi05_assets as m
+    root=tmp_path/"official";root.mkdir()
+    assets=tmp_path/"assets"
+    data=assets/"official_eval_data"
+    for demo in [80,81,82]:
+        video,feature,_=m.asset_paths(data,demo)
+        video.parent.mkdir(parents=True,exist_ok=True)
+        video.write_bytes(b"video-test")
+    _,already,_=m.asset_paths(data,80)
+    already.parent.mkdir(parents=True,exist_ok=True)
+    already.write_bytes(b"author bundle already complete")
+    seen=[]
+    def fake_run(cmd,env,check):
+        assert check is False
+        assert cmd[:4] == [m.sys.executable,"-u","-m","agcofl.v141_pi05_assets"]
+        assert env["XLA_PYTHON_CLIENT_PREALLOCATE"]=="false"
+        assert "--single-feature-id" in cmd
+        assert "--feature-process-mode" not in cmd  # child runs original shared encoder
+        demo=int(cmd[cmd.index("--single-feature-id")+1])
+        seen.append(demo)
+        video,feature,_=m.asset_paths(data,demo)
+        feature.parent.mkdir(parents=True,exist_ok=True)
+        feature.write_bytes(b"atomically saved original bundle")
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(m.subprocess,"run",fake_run)
+    done=m.prepare_features_isolated(root,assets,[80,81,82])
+    assert done == [81,82]
+    assert seen == [81,82]
+    assert already.read_bytes()==b"author bundle already complete"
+
+
+def test_isolated_siglip_worker_sigkill_is_explicit_and_no_fake_bundle(
+        tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    from agcofl import v141_pi05_assets as m
+    root=tmp_path/"official";root.mkdir()
+    assets=tmp_path/"assets"
+    video,feature,_=m.asset_paths(assets/"official_eval_data",87)
+    video.parent.mkdir(parents=True,exist_ok=True)
+    video.write_bytes(b"video-test")
+    monkeypatch.setattr(m.subprocess,"run",
+                        lambda *args,**kwargs: SimpleNamespace(returncode=-9))
+    with pytest.raises(RuntimeError,match="signal 9"):
+        m.prepare_features_isolated(root,assets,[87])
+    assert not feature.exists()
+
+
+def test_single_feature_internal_id_guards():
+    from agcofl import v141_pi05_assets as m
+    with pytest.raises(SystemExit) as error:
+        m.main(["--variant","uniform","--extract-features",
+                "--single-feature-id","79"])
+    assert error.value.code==2
+    with pytest.raises(SystemExit) as error:
+        m.main(["--variant","uniform","--single-feature-id","87"])
+    assert error.value.code==2
