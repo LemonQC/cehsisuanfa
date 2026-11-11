@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-B2 实测成功但科学对比失败，M1-B3 新物理通道反事实实验（待执行）
+
+**真实用户服务器记录**：原版 RoboReel π0.5 M0 46/60 已完整归档；原版 ManiSkill PickCube 专家 3/3；M1-B2 CUSTOM 同目标 PhysX 三组 `source=成功(170步)`、`target_direct=成功(31步)`、`target_clear=成功(51步)`，其 `pilot_contrast_pass=false`，因为**直接推动即可完成，清障没有显示必要性**。因此冻结旧场景/旧数据，不在其上训练 Method，也不重新运行原版 Baseline。新建 `AGCOFLM1B3Corridor-v0`：真实 static walls + dynamic blocker、狭窄“尺寸选择性”通道及侧向停车槽（目标 Cube 40mm 可通过 50mm 狭口、挡块 58mm 不能），用无 PhysX 的 C-space BFS 验证阻塞/开放状态连通性；然后在同一最终目标、同一 seed=120 上运行 4 个物理反事实场景：`blocked_source`（复用官方 MPLib Pick+Place）、`blocked_direct`、`blocked_clear`、`open_direct`（三种目标 Push 使用旧 privileged Push 执行器）。运行入口 `bash scripts/run_m1b3_corridor_once.sh`，自动先过 stdlib unittest 与 geometry gate，再限时真实物理并保存 H5/JSON/MP4 和逐帧物体状态；**这批代码已提交但物理未执行**，不声称必然成功。即使 blocked-clear 物理反事实成功，也需要强等信息 TAMP、动态替代路径检验和源视频独特信息验证，才能进入 M2。详见 [M1-B3 反事实物理实验与科研停止条件](docs/2026-11-11_M1B3_CORRIDOR_COUNTERFACTUAL_PRE_REGISTERED.md)。
+
+---
+
 ## ★ 2026-11-11 — M1-B1 官方 Pick 3/3 实测成功，M1-B2 同目标物理对照开始
 
 **用户实际服务器证据**：`M1B_OFFICIAL_PICK_EXISTING_VERIFIED {"requested_attempts":3,"recorded_episodes":3,"successes":3,"any_video":true,"usable_reference":true,"same_goal_pair_validated":false}`；此前 RoboReel 官方 π0.5 M0 46/60（已归档）、M1-A 本地 2 条 PushCube TRAIN H5 + 6 条 Push 人类视频不变。抓取专家已经可用，**原版 PickCube 的 3/3 不能冒充同目标跨行为结果**。下一步已提交 `agcofl/m1b2_same_goal_effect_physics.py` + `scripts/run_m1b2_same_goal_once.sh` + `scripts/m1b2_validate_paired_physics.py`：同一固定 PhysX 场景/最终 Cube 目标、同一 seed=120，实际运行三个独立物理案例（复用原作者 OBB+MPLib 的 Pick+Place、直接 Push-only、先推走动态挡块再 Push-only），保留每段 H5/JSON/MP4 和逐时刻 object/contact 数据，严格判定源 Pick 是否抓起/越障/释放和目标是否真实移开挡块/不抓取地到达目标。控制器中的清障顺序是人工给定的**特权状态可行性上界**，不是学习算法、不是完整能力约束 TAMP；有限短墙场景也**尚不能证明必须先移挡块**。单次运行入口 `bash scripts/run_m1b2_same_goal_once.sh`（自带 stdlib unittest 和 3 次真实物理）已提交，但用户服务器尚未执行。下一阶段必须用强等信息 TAMP 和真实阻断拓扑测试必要性，再决定 M2。说明见 [M1-B2 首次真实 PhysX 对照](docs/2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md)。
