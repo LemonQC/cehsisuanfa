@@ -1,0 +1,459 @@
+{
+  "type": "M0_AUTHOR_PI05_UNIFORM_ND_PUSHCUBE_VERIFIED_60_TRIALS",
+  "status": "ACTUAL_OFFICIAL_EVALUATED_ARCHIVE_READY",
+  "official_protocol": {
+    "task": "push_cube",
+    "condition": "without_distraction/without_distraction",
+    "scope": "last20",
+    "model": "demo_pi05",
+    "checkpoint_variant": "vid_cond_pi05_uniform",
+    "max_rollout_steps": 800,
+    "action_chunk_size": 20,
+    "demo_ids": [
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "seed_offsets": [
+      0,
+      100000,
+      200000
+    ]
+  },
+  "source_revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "pooled_successes": 46,
+  "pooled_trials": 60,
+  "success_rate": 0.7666666666666667,
+  "per_seed": [
+    {
+      "seed_offset_base": 0,
+      "successes": 14,
+      "trials": 20,
+      "success_rate": 0.7
+    },
+    {
+      "seed_offset_base": 100000,
+      "successes": 13,
+      "trials": 20,
+      "success_rate": 0.65
+    },
+    {
+      "seed_offset_base": 200000,
+      "successes": 19,
+      "trials": 20,
+      "success_rate": 0.95
+    }
+  ],
+  "per_trial": [
+    {
+      "seed_offset_base": 0,
+      "demo_id": 80,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 81,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 82,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 83,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 84,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 85,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 86,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 87,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 88,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 89,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 90,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 91,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 92,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 93,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 94,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 95,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 96,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 97,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 98,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 0,
+      "demo_id": 99,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 80,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 81,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 82,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 83,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 84,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 85,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 86,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 87,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 88,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 89,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 90,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 91,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 92,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 93,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 94,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 95,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 96,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 97,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 98,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 100000,
+      "demo_id": 99,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 80,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 81,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 82,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 83,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 84,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 85,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 86,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 87,
+      "task": "push_cube",
+      "success": false
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 88,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 89,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 90,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 91,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 92,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 93,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 94,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 95,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 96,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 97,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 98,
+      "task": "push_cube",
+      "success": true
+    },
+    {
+      "seed_offset_base": 200000,
+      "demo_id": 99,
+      "task": "push_cube",
+      "success": true
+    }
+  ],
+  "provenance": {
+    "aggregate": {
+      "path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/official_aggregated_summary.json",
+      "sha256": "df37bcca92cfbf7c4f89400b93c92cc4c8772f04e0585f0f70a8b5aa6e0d40f9"
+    },
+    "source_code_commit": "79a0fb0099e73c5560114753a8706276f93aefc2",
+    "seed_files": [
+      {
+        "seed_offset_base": 0,
+        "summary_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/seed_offset_0/summary.json",
+        "summary_sha256": "71ac681481a2f1ba630ab0f2597d13af0d0abfb28601208b1c19ca14a2f9abed",
+        "config_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/config_seed_offset_0.json",
+        "config_sha256": "823912e36ecee8cca50e2642acad59f9179c78dad99d5cd4d67495b389616106"
+      },
+      {
+        "seed_offset_base": 100000,
+        "summary_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/seed_offset_100000/summary.json",
+        "summary_sha256": "93c8a3404ae54411d40537248bcc44a3cf3a039decbceaaf232380ff6857933b",
+        "config_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/config_seed_offset_100000.json",
+        "config_sha256": "08b89baceb2f3c3658a7b736900e92f66dc1673da6316ee497a086a47a5f86f4"
+      },
+      {
+        "seed_offset_base": 200000,
+        "summary_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/seed_offset_200000/summary.json",
+        "summary_sha256": "d9c008b8e033d0adef38bdc68e126cd1a1a923199f7705a9ba5dcdef9b59ec50",
+        "config_path": "/mnt/4Tdata/LemonData/cehsisuanfa/outputs/v140_pi05_uniform/config_seed_offset_200000.json",
+        "config_sha256": "b0c2dbd0be80445bd728542e2b7beb68ab5ab373fbba04a4324fb51957767ee8"
+      }
+    ]
+  },
+  "pi05_base_weight_source": "robotgeneralist/openpi_checkpoint_mirrors2 pinned HF third-party mirror (GCS source identity not independently proven)",
+  "not_a_cross_behavior_capability_result": true,
+  "no_simulation_or_training_in_archive_step": true
+}
