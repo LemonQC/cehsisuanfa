@@ -94,3 +94,31 @@ M1-B: matched-goal validated source, target feasibility and baseline
 physical outcomes **NOT YET AVAILABLE**.
 M2: **NOT STARTED**. Reproducibility and novel method claims must not
 be inferred from existing M0 rollout performance.
+
+
+## 2026-11-11 服务器 M1-A 首次结果与精确纠错（v1.6.4）
+
+用户原服务器运行 `unittest` **3 tests passed**，并执行了 M1-A 扫描：
+`m0_verified=true`、历史 H5 验证 `2`、本地机器人 TRAIN `0`、
+本地 Pick TRAIN 视频 `0`、本地 Push TRAIN 视频 `6`，
+`same_goal_pair_verified=false`、`target_insert_verified=false`。
+
+检查代码后确认 **本地 TRAIN=0 不能成立为数据缺失证据**：
+`scripts/run_v120_real_robot_and_official_baseline.sh` 实际将
+`official_robot_data --data-root outputs/v120_baselines/robot_train`，
+并由 `real_robot_h5_audit` 在该位置真实检验了 0000/0001 H5 和双摄像头。
+最初的 M1-A 扫描器却只检查
+`outputs/v120_baselines/official_dataset` 等目录，漏掉真实路径。
+已修复 `scripts/m1a_inventory_real_assets.py` 加入 `robot_train`，
+新增一个模拟实际 v120 保存结构的回归用例，同时不把历史数据
+必然等同于当前磁盘文件是否仍在。**修复后的扫描器尚未在用户机器执行**，
+若文件仍在应找到 2 条。
+
+本次不重新下载机器人数据，不重新跑 M0，不训练 Ours，
+不再盲调从零编写的 Pick 教师控制器。新命令仅一次：
+`python -m scripts.m1a_inventory_real_assets`。
+下一步 **M1-B** 是真正的物理 paired-task：
+先选/生成有真实成功来源的同终态 Pick 演示、再验证 target-only
+blocker insertion 的 Push 可执行性，和 capability-aware TAMP 同场比较。
+若真实物理配对不可建立，则标阻塞并更换可靠专家演示来源，不把
+`m0=46/60` 或孤立的几何 waypoint 当成 M1 结果。
