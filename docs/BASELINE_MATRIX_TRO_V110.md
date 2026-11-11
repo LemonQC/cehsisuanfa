@@ -28,15 +28,15 @@ Dataset: https://huggingface.co/datasets/LogosRoboticsLab/roboreel
 
 ## Mandatory baseline matrix (method, family, priority, reproduction status)
 
-2026-11-10 decision: no paid VLM/LLM API. Prioritize B03 Uniform with local models, official B05 remains frozen, and custom same-goal physical feasibility + learned policy. B04/B07 are deferred, NOT_RUN. No made-up keyframes.
+2026-11-11 status: M0 B03 officially evaluated 46/60; Vid2Robot B05 remains 3/60. Other methods and M1 comparisons stay NOT_RUN until actual executed. No paid VLM/LLM API. Prioritize B03 Uniform with local models, official B05 remains frozen, and custom same-goal physical feasibility + learned policy. B04/B07 are deferred, NOT_RUN. No made-up keyframes.
 
-Latest status evidence: research_reports/2026-11-09_v130/ (Vid2Robot ACTUAL) and research_reports/2026-11-09_v141/ (π0.5 and custom physics NOT_RUN); see docs/2026-11-09_V141_OFFICIAL_AUDIT_PI05_CUSTOM_GATES.md. The following table preserves frozen scientific controls but updates execution status only.
+Latest evidence: user 2026-11-11 terminal marker `ACTUAL_PI05_PHYSICS_VERIFIED {"variant":"uniform","k":46,"n":60}`; M0 compact per-trial archive awaiting execution of `scripts/archive_pi05_uniform_m0.py`; earlier failed setup records under v141 are historical, not current state. Custom Pick→Push task still fails source validity and M1 baselines have not run. See `docs/2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md`. The following table preserves frozen scientific controls but updates execution status only.
 
 | ID | Method | Family | Priority | Status / reproduction rule |
 |---|---|---|---|---|
 | B01 | Robot-only Transformer BC, RGB, no human | No-human reference | P0 | Needs target robot training trajectories; local implementation clearly REIMPLEMENTED |
 | B02 | Robot-only Diffusion Policy, RGB, no human | No-human reference | P1 | Official DP architecture preferred; inspect dependency and training protocol |
-| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | v1.4.1 OFFICIAL_PREP/EVAL_CODE_COMMITTED; GPU/physics NOT_RUN; must verify actual official checkpoint and 20x3 per-trial |
+| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | **M0 ACTUAL official ND PushCube 46/60 = 76.67%, 20x3**; operator log verified 2026-11-11; local 60-row SHA256 archive PENDING push; not an M1 same-goal result |
 | B04 | Video-conditioned pi0.5, Keyframes | RoboReel official | P2 DEFERRED | NOT_RUN; external VLM API needed for unavailable original keyframe annotations; excluded from current no-API execution, never substitute heuristic frames for official |
 | B05 | Vid2Robot | RoboReel official | P0 | v1.3 ACTUAL_60_PHYSICAL_TRIALS: PushCube ND 3/60=5.0%, 20x3; only one official cell; no rerun |
 | B06 | UniSkill policy | RoboReel official | P1 | OFFICIAL_CODE_AVAILABLE; external ISD checkpoint/24GB batch constraints |
