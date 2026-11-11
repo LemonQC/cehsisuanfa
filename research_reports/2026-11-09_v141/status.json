@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull latest main and run python -m unittest discover -s tests -p 'test_m1_current_compare_grasp_contact.py' -q; python -m scripts.m1_current_compare_grasp_contact (no physics); then bash scripts/run_m1_current_target_only_once.sh (one independent real PhysX target executor, no source replay). Report M1_SOURCE_CONTACT_ROOT_DIAG and M1_TARGET_OFFICIAL_MPLIB_INDEPENDENT_RESULT. No change to M1 scientific question or old experiments.",
-  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_SOURCE_CONTACT_FAIL_TARGET_INDEPENDENT.md",
+  "next_operator_action": "Current M1 unchanged. Pull main and run bash scripts/run_m1_target_closed_pusher_once.sh; it first verifies genuine previous -1 CLOSED 32-step clearance vs current +1 OPEN 88-step failed MPLib, then a single target-only closed-pusher MPLib PhysX ablation on same seed/scene/goal; records BOTH object grasp flags. Also run existing python -m scripts.m1_current_compare_grasp_contact OFFLINE to diagnose separate failed source. No M0/M1B1/M1B2/M1B3 reruns; no learning or M2 until physical source/target pair and strong baseline gap exist.",
+  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_TARGET_OPEN_VS_CLOSED_PUSHER_CONTROL.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current M1 problem NOT ABANDONED on user's correction. Custom M1B3 grasp adapter failed real source grasp (0 steps) so stop that exact adapter; keep original same-goal blocker-clearance task. Current goal: replace source input with genuinely successful existing Pick video after object-effect/goal verification; target execution with published Panda PushCube MPLib low-level push adapter; no full reruns, no scientific novelty claims before fair TAMP.",
@@ -645,7 +645,7 @@
   },
   "current_m1_executor_swap_v1": {
     "objective": "Replace ONLY the failed low-level execution modules in current same-goal Pick source -> Push-only blocker-clear task; no new research task, dataset, or whole baseline repeat",
-    "stage": "SOURCE_SIDE_GRASP_ACTUAL_PHYSX_FAIL_106_STEPS_ZERO_CONTACT; TARGET_ORIGINAL_MPLIB_NOT_RUN",
+    "stage": "SOURCE_SIDE_GRASP_FAILED_106_ZERO_CONTACT; TARGET_OPEN_MPLIB_FAILED_88_CLEARANCE_93MM_ERROR; TRUE_GRIPPER_SIGN_MISLABEL_DISCOVERED",
     "module": "agcofl/m1_current_executor_swap.py",
     "runner": "scripts/run_m1_current_executor_swap_once.sh",
     "unit_test": "tests/test_m1_current_executor_swap.py",
@@ -677,6 +677,62 @@
     ],
     "source_replay_authorized": false,
     "target_independent_run_authorized": true,
-    "target_actual_result": "NOT_RUN_ON_OPERATOR_SERVER"
+    "target_actual_result": {
+      "mode": "target_official_push",
+      "success": false,
+      "actual_action_steps": 88,
+      "grasp_task_steps": 0,
+      "blocked_clearance": {
+        "steps": 82,
+        "blocker_start_xy_m": [
+          0.09999964386224747,
+          -6.951020168344257e-7
+        ],
+        "blocker_target_xy_m": [
+          0.1,
+          0.125
+        ],
+        "blocker_final_xy_m": [
+          0.1073780357837677,
+          0.03197958692908287
+        ],
+        "goal_residual_m": 0.09331255360298853
+      },
+      "subsequent_cube_push": "NOT_EXECUTED",
+      "error": "RuntimeError: PHYSICS_clear_blocker_GOAL_NOT_REACHED: error 0.0933m",
+      "provenance": "user real PhysX terminal M1_CURRENT_EXECUTOR_SWAP and M1_TARGET_OFFICIAL_MPLIB_INDEPENDENT_RESULT"
+    },
+    "upstream_panda_gripper_semantics": {
+      "open_action": 1,
+      "closed_action": -1,
+      "official_original_push_cube_calls": "planner.close_gripper()",
+      "old_M1B3_successful_clearance_action": -1,
+      "old_M1B3_clearance_steps": 32,
+      "old_M1B3_clearance_actual_error_m": 0.005780176577047786,
+      "new_MPLIB_FAILED_gripper_action": 1,
+      "legacy_validation_errors": [
+        "M1B3 gripper_never_closed = all(last_action<=0), inverted with official Panda config",
+        "M1B2 saw_gripper_close = any(last_action>0), inverted with official Panda config"
+      ],
+      "keep_legacy_raw_unchanged": true,
+      "new_push_only_validation": "does not grasp either object; both stay grounded; gripper state separately labelled"
+    }
+  },
+  "current_m1_executor_swap_v2": {
+    "name": "TARGET_OPEN_VS_CLOSED_ONE_FACTOR_ABLATION_SAME_M1_SCENE",
+    "code": "agcofl/m1_current_closed_pusher_ablation.py",
+    "runner": "scripts/run_m1_target_closed_pusher_once.sh",
+    "test": "tests/test_m1_current_closed_pusher_ablation.py",
+    "protocol": "docs/2026-11-11_CURRENT_M1_TARGET_OPEN_VS_CLOSED_PUSHER_CONTROL.md",
+    "stage": "CODE_COMMITTED_NOT_RUN_ON_OPERATOR_SERVER",
+    "input_gate": "verify actual old M1B3 32-step -1 CLOSED clearance and current 88-step +1 OPEN MPLib failure before running",
+    "only_intentional_change": "MPLib t=6 first gripper cmd OPEN(+1) => CLOSED(-1), preserving previous pre/post poses and old geometry",
+    "records": "new physical trace includes Panda grasp flags for task and blocker and both actual finger joint positions",
+    "output": "outputs/m1_current_closed_pusher_v2/",
+    "physical_results": "NOT_OBSERVED",
+    "old_data_modified": false,
+    "source_grasp_106_step_trial": "DO_NOT_RERUN",
+    "source_contact_offline_comparison": "RUNNABLE_CODE_COMMITTED_USER_RESULT_NOT_SUPPLIED",
+    "learning_or_TAMP": "NOT_RUN"
   }
 }
