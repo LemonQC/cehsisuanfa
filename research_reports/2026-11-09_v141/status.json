@@ -350,7 +350,7 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Do not rerun official PickCube or M0. git pull --ff-only; conda activate pi05; bash scripts/run_m1b2_same_goal_once.sh. It runs 1 fixed seed on custom same-goal PhysX: original-mplib adapted Pick+Place source, direct push, clear-blocker then push. All cases store H5/JSON/video/traces. Return M1B2_PHYSICS_GATE and case errors; physics results NOT_YET_OBSERVED. This is NOT strong TAMP nor causal-necessity proof.",
+  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1b2_same_goal_effect_physics.py' -q; IF OK, bash scripts/run_m1b2_same_goal_once.sh (3 fixed actual PhysX trials, no re-run M0 or official Pick). Report M1B2_PHYSICS_GATE and case errors; no method design yet.",
   "research_execution_reference": "docs/2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
@@ -418,7 +418,7 @@
       "script": "agcofl/m1b2_same_goal_effect_physics.py",
       "runner": "scripts/run_m1b2_same_goal_once.sh",
       "result_validator": "scripts/m1b2_validate_paired_physics.py",
-      "physics_execution": "NOT_RUN_ON_OPERATOR_SERVER",
+      "physics_execution": "NOT_STARTED_BY_TEST_PRECHECK",
       "methods": [
         "source_pick_mplib_adapted",
         "target_direct_push_privileged",
@@ -428,7 +428,21 @@
       "dev_seed": 120,
       "source_reference": "Official ManiSkill PickCube 3/3, not matched task",
       "video_h5": "recorded if simulator succeeds",
-      "caveats": "Short walls do not establish necessary blocker clearing; privileged target is only a scripted pilot, NOT actual equal-info TAMP."
+      "caveats": "Short walls do not establish necessary blocker clearing; privileged target is only a scripted pilot, NOT actual equal-info TAMP.",
+      "unit_tests_operator_observed": {
+        "executed": 4,
+        "errors": 2,
+        "passed": 2,
+        "tests_failing": [
+          "test_source_needs_observed_contact_lift_release_and_grounded_goal: TypeError list-list subtraction",
+          "test_traced_env_does_not_generate_success_without_actual_step: AttributeError fake tcp Pose has .p but not .pose"
+        ],
+        "cause": "Our generic gate mixed Python list and NumPy arrays; generic _pose assumed Actor.pose and not direct tcp_pose",
+        "fix": "Normalize initial/final/goal to finite NumPy xyz before math, _pose accepts actor.pose.p or tcp_pose.p, add regression tests",
+        "fix_pushed": true,
+        "post_fix_tests_on_operator": "NOT_RUN",
+        "three_case_PhysX_status": "NOT_STARTED_TEST_PREFLIGHT_BLOCKED"
+      }
     }
   }
 }
