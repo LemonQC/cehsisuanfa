@@ -46,6 +46,7 @@ def test_local_completeness_and_idempotent_hardlink_cache(tmp_path):
     manifest.parent.mkdir(parents=True,exist_ok=True)
     manifest.write_text(json.dumps({
        "source":p.REPO,"revision":p.REVISION,
+       "local_dir":str(dest),
        "openpi_data_home":str(cache),
        "openpi_base_cache_link":link,
        "openpi_base_cache_path":link,
