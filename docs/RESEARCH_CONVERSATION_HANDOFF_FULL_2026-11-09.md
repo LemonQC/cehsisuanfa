@@ -1,3 +1,9 @@
+## 2026-11-11 — M0 归档命令兼容性修复（不影响正式评测）
+
+真实服务器执行 M0 离线归档时，`pi05` 环境中没有 `pytest`（`No module named pytest`），直接 `python scripts/archive_pi05_uniform_m0.py` 时 Python 模块搜索路径不包含仓库根目录（`No module named agcofl`）。这两项只影响额外测试与结果导出，**原版 RoboReel π0.5 Uniform 46/60 的正式评测仍成功**。已将归档脚本更正为同时支持项目根目录下 `python -m scripts.archive_pi05_uniform_m0` 和直接 `python scripts/archive_pi05_uniform_m0.py`，无需安装 pytest、修改 Conda 或重跑物理实验。后续服务器只执行前者，输出 `M0_PI05_UNIFORM_ARCHIVED` 后提交 `research_reports/2026-11-11_m0_pi05_uniform` 的小型 CSV/JSON/MD 至 GitHub。已修复的归档仍**尚未在服务器成功执行**，不要视原始记录已提交。
+
+---
+
 ## ★ 2026-11-11 — M0 正式完成：官方 π0.5 Uniform ND PushCube 46/60，下一步 M1 强 Baseline 与科学必要性
 
 **用户 RTX4090 服务器真实实测**：原版 RoboReel π0.5 Base SigLIP 已成功生成 `siglip_params.pkl`；0080–0099 共 20/20 段官方 EVAL `front.npy` 已全部提取，`PI05_SELECTIVE_ASSET_GATE ready=true`，`PI05_RUNTIME_CHECK ready_for_next_gate=true`，原版 3×20 物理仿真正式输出 `ACTUAL_PI05_PHYSICS_VERIFIED {"variant":"uniform","k":46,"n":60}`，成功率 **76.67%**。旧 Vid2Robot 官方 ND PushCube **3/60=5.00%** 保持不重跑。π0.5 的强基线跑通不等于我们的跨行为创新成立。已新增 `scripts/archive_pi05_uniform_m0.py`：读取服务器实际 `outputs/v140_pi05_uniform/seed_offset_*/summary.json`、官方聚合结果和 config，复核 60 条成功标签并生成带 SHA256 的小型 Markdown/CSV/JSON，后续仅需一次运行并 Git push 归档原始结果。**此原始报告还未由服务器归档到 GitHub**，不得虚构文件已存在。后续 M1 按 [固定协议](2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md) 核对真实同目标源 Pick→目标 Push 数据与 robot TRAIN action，先执行 Goal-only、Raw Flow、Waypoint/Geometry、能力约束 TAMP（外加相关 flow 方法有验证的 port），证明非平凡 target-only blocker clearance 必要性，再开始 M2 训练；绝不把 M0 官方 PushCube 结果混为同目标 M1 结果。
