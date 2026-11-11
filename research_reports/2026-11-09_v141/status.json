@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "DO NOT rerun M0, B1, B2, or B3 old seed. Pull main, conda activate pi05, run stdlib unit test test_m1b3_diagnose_existing.py then python -m scripts.m1b3_diagnose_existing. Use measured source planner phases and blocked_clear physical phase split to decide one evidence-backed versioned fix or stop. Keep raw H5/videos local.",
-  "research_execution_reference": "docs/2026-11-11_M1B3_ACTUAL_PHYSICS_NO_GO_AND_OFFLINE_DIAG.md",
+  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b4_one_time_feasibility.sh. It first runs stdlib tests and old actual-source grip/lift/carry gate; if missing, NO physics and stop. If justified, at most 2 fresh cases under unchanged geometry and original H5/videos untouched. If fails, stop this causal-insertion scene; no M2 or unrun TAMP claims.",
+  "research_execution_reference": "docs/2026-11-11_M1B3_ACTUAL_DIAG_AND_M1B4_FINAL_RESCUE.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1-A 2 real train robot demos and 6 Push videos; M1-B1 Pick 3/3; M1-B2 real source/direct/clear all succeed but insertion need NOT shown; M1-B3 blocked/open genuine physics: source FAIL lower MPLib, direct FAIL, clear FAIL after blocker displaced, open direct PASS, hence same-goal paired physics NOT VALID and novelty/TAMP NOT EVALUATED",
+    "m1": "M1-B3 PhysX executed: open direct success, blocked source/direct/clear fail; offline real trace shows clear succeeds 32 steps then cube stuck at throat x=.125,y=-.031 for 418 steps, source lower Screw fails; M1B4 one final CONDITIONAL rescue coded, PHYSICS NOT_RUN, requires original source physical hold/lift/carry.",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   },
   "m1a_local_asset_gate": {
@@ -527,7 +527,64 @@
         "provenance": "2026-11-11 operator terminal M1B3_PHYSICS_GATE; original H5/JSON/MP4 and traces remain local, not verified from GitHub"
       },
       "next_step": "RUN_ONCE_OFFLINE_DIAGNOSIS_ONLY, NOT physical replay: python -m scripts.m1b3_diagnose_existing",
-      "offline_diagnosis_status": "CODE_COMMITTED_NOT_EXECUTED_ON_USER_SERVER"
+      "offline_diagnosis_status": "ACTUAL_EXECUTED_NO_SIMULATOR_ON_OPERATOR_SERVER; THREE UNIT TESTS PASSED",
+      "offline_diagnosis_observed": {
+        "source": "official MPLib approach/grasp/close/lift/across planner phases report success; lower planner fails. Physical grasp and cube carried NOT established by phase success; requires existing diagnosis.json source metrics.",
+        "blocked_clear_phase1": {
+          "steps": 32,
+          "success": true,
+          "blocker_xy_before": [
+            0.10000000149011612,
+            0
+          ],
+          "blocker_xy_after": [
+            0.10254146158695221,
+            0.11980852484703064
+          ],
+          "distance_to_blocker_goal_m": 0.005780176577047786,
+          "cube_xy_net_m": 7.92652000746809e-7
+        },
+        "blocked_clear_phase2": {
+          "steps": 418,
+          "success": false,
+          "cube_final_xy_m": [
+            0.12527310848236084,
+            -0.030821576714515686
+          ],
+          "cube_goal_error_m": 0.09015882999676202,
+          "last_15_steps_cube_xy_m": 0,
+          "cube_max_z_m": 0.020176762714982033
+        },
+        "old_direct": {
+          "steps": 91,
+          "cube_final_xy_m": [
+            0.06796564161777496,
+            -0.0030737232882529497
+          ],
+          "blocker_movement_m": 0.017017562270515204
+        },
+        "old_open": {
+          "success": true,
+          "steps": 35
+        },
+        "geometric_interpretation": "2D square Cspace throat wall face begins x=.146; task half=.020, first impact around task x=.126 when y outside center +/- .005. Observed stop x=.125273,y=-.030822 is consistent with wall front contact but is not measured force or unique mechanism.",
+        "strong_tamp": "NOT_RUN",
+        "provenance": "operator terminal output M1B3_OFFLINE_DIAG 2026-11-11; local diagnosis.json not uploaded"
+      }
+    },
+    "m1b4_one_time_rescue": {
+      "stage": "CODE_COMMITTED_NOT_RUN",
+      "script": "agcofl/m1b4_one_time_feasibility.py",
+      "runner": "scripts/run_m1b4_one_time_feasibility.sh",
+      "validator": "scripts/m1b4_validate_once.py",
+      "tests": "tests/test_m1b4_one_time_feasibility.py",
+      "prereq": "Existing original source physically grasped, lifted above wall and transported task cube; if not, stop BEFORE new physics",
+      "new_physics_cases_max": 2,
+      "source": "Official OBB/MPLib physical grasp checkpoint and one RRTConnect fallback for original lower stage failure",
+      "target": "Existing privileged ActorPush: physically clear side blocker, pre-throat x=.103, align y to +/- 4mm, push through exact unchanged throat and same goal",
+      "geometry": "Exact original M1B3 geometry frozen",
+      "novelty": "NO: this is a conventional privileged feasibility intervention, not a learned effect editor or strong TAMP",
+      "hard_stop": "If old source did not carry or one new case fails, do not iterate v1 controller parameters"
     }
   }
 }
