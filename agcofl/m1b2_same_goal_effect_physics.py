@@ -148,6 +148,8 @@ class TracedEnv:
         self.action_space=env.action_space
         self.trace=[]
     def step(self,action):
+        if len(self.trace)>=MAX_STEPS:
+            raise RuntimeError("M1B2_STEP_BUDGET_EXCEEDED: no unbounded expert planning")
         obs,reward,terminated,truncated,info=self.env.step(action)
         b=self.unwrapped
         gripper=float(np.asarray(action).reshape(-1)[-1])
