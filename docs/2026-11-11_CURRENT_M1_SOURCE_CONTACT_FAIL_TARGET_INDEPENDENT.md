@@ -105,3 +105,33 @@ established; neither source-video information advantage
 nor strong equal-information TAMP nor M2 learned method
 has been run. No unrelated long-horizon pivot or B01
 training/dataset download.
+
+
+## Upstream Panda grasp semantics and narrow-tool geometry caveat
+
+Original ManiSkill `mani_skill/agents/robots/panda/panda.py`
+implements `is_grasping(object)` by checking BOTH
+`panda_leftfinger` and `panda_rightfinger` contact forces
+(each at least 0.5N) and the respective contact directions
+(under 85°). Therefore `actual_grasp_steps=0` means **no
+valid two-finger grasp was detected**, NOT literally proof of
+zero unilateral contact or of no finger/wall collision.
+
+The same Panda config has two open finger joint values of
+0.04m each, i.e. ~0.08m nominal total opening. The old M1B3
+throat is 0.05m wide. If the gripper opening axis projects
+onto the throat's lateral width while it enters the opening,
+tool clearance may fail even though the 0.04m cube fits.
+This is a **conditional geometry warning**, not proof that
+the robot cannot accomplish this target, since the original
+M1B3 `open_direct` already did reach the goal in 35 actions.
+An actual gripper orientation and relative link/obstacle
+contact check is needed before drawing a universal hardware
+feasibility conclusion. Do not use object-only C-space
+connectivity as a robot end-effector feasibility guarantee.
+
+The offline comparison's TCP/center distance is only an
+initial diagnostic: it cannot by itself identify bilateral
+finger contact, qpos limits, or collision forces. Only
+actual measured contact data or a faithful contact replay
+could settle which of these caused the observed false grasp.
