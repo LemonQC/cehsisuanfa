@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — 用户纠偏：当前 M1 实验难题**替换失效执行模块**，不换研究问题、不重开实验
+
+用户明确指出“我说的是当前实验遇到的难题，不是再重新做实验啊”。因此取消我擅自提出的长序列任务 M1C 和独立 B01 64 条 BC 数据下载作为下一步：它们的未执行脚本和测试已从仓库删除。继续当前**同目标 Pick 源端 → Push-only 目标端，需要清障插入的跨行为任务**。真实失败来自 M1B3 自写的官方 Panda 抓取移植在狭窄障碍布局下，方块真实抓取次数0、未抬升、总XY位移仅约4.7微米；这只证明**这个抓取移植失效**，不能自动否定整个方法科学问题。已有可信替换源是原版 ManiSkill PickCube 专家3/3的 H5/视频、原M1B2成功 Pick 的 H5/视频，但必须核对目标物体终态效果，尤其原M1B2目标x=.15m、现M1B3目标x=.21m，**不能直接冒充同终态配对**。目标低层执行器替换优先选择 ManiSkill 官方 `mani_skill/examples/motionplanning/panda/solutions/push_cube.py` 中真实 Panda MPLib 运动规划和推动接口，保留同一障碍/目标/Push-only 判据、原始四组轨迹不改，不再使用不可靠的 `DiagnosticPushTeacher` 重复盲调。原版官方 PushCube 仅是低层推动专家，并非已经解决复杂清障序列；强 TAMP 和视频增益仍未评估，不擅自宣称创新。详见 [针对现有技术问题替换模块的执行边界](2026-11-11_SCOPE_CORRECTION_REPLACE_CURRENT_EXECUTOR_NOT_RESTART_RESEARCH.md)。
+
+---
+
 ## ★ 2026-11-11 — M1-B4 **真实**源演示 NO-GO（硬停止）：旧物体始终未抓取、未抬升、未搬运；转入独立 B01 官方训练数据基线
 
 用户执行修复后的4项 unittest **OK**；出现专门的真实数据标记 `M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS` 后，实际只读旧 M1-B3 轨迹得到 `source_actual_grasp_steps=0`、`source_actual_max_task_z_m=0.01999999955m`、`source_actual_task_total_xy_m=4.67618855549e-06m`，因此真实输出 `M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN`。这次**不是临时 unittest 假负样本**；旧源端从未物理搬运 cube，调整 `lower` 的 RRTConnect 没有作用，按冻结规则直接终止，不执行任何 M1-B4 新 PhysX。**停止当前同目标 Pick→Push 必须清障场景，不继续 M1-B5、不改控制器、不训练 M2；之前的官方 π0.5 46/60、Vid2Robot 3/60、官方 Pick 3/3 均冻结归档。** 已更新 [正式科研停止决定](2026-11-11_M1B4_ACTUAL_REAL_NO_GO_AND_RESEARCH_HARD_STOP.md)。已有 Baseline 并未全部完成：B01/B02 等仍 NOT_RUN，且即使完成也不能挽救已失败的同目标科学问题。为后续**独立** RoboReel Benchmark 研究准备真正 B01 robot-only 数据，新增 `scripts/prepare_b01_robot_train.py`，限制真实 PushCube TRAIN 64 条 H5+双摄像头（≤300MB，复用原来的2条）、不可使用 EVAL0080–0099、固定51/13 train/val split、H5 action 维度8内容验证。命令 `python -m unittest discover -s tests -p 'test_prepare_b01_robot_train.py' -q`；明确同意实际下载时 `python -m scripts.prepare_b01_robot_train --download`。此 B01 下载和训练**均尚未由用户服务器执行**，不得虚构任何 BC 成绩。后续必须重新锁定新的科学问题，才能开展 Method。
