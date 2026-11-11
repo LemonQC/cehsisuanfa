@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — 当前 M1 场景执行器直接替换已编码，不换任务、不重跑旧实验
+
+用户明确要求解决**当前**同目标 Pick 源端→Push-only 目标端清障操作里的失效执行模块，不能擅自换成新论文。旧 M1B3 真实轨迹源抓取步数为0、物体无升降、XY总位移约4.7微米；目标端清障32步真实完成，但旧 `DiagnosticPushTeacher` 将目标方块推至狭口前 x≈.125m、y≈−.031m 卡住。已提交直接替换 `agcofl/m1_current_executor_swap.py`：保持原始 `AGCOFLM1B3Corridor-v0`、seed120、goal x=.210、50mm狭口/动态挡块、同一 Panda，不动任何已保存 H5/视频。源端用 ManiSkill 官方 Panda OBB + MPLib 规划接口**从机器人所在的−X侧向接近抓取**，关夹爪后马上验证真实 `is_grasping`，否则停止抬升/搬运；目标端替换手写比例 Push 为 ManiSkill 官方 `panda/solutions/push_cube.py` 同款 MPLib 关节空间规划接口，分别控制清障和推方块，夹爪继续保持 open。均为**有明确适配差异的现成接口组合**，不是原版未修改算法、训练策略或 TAMP。新入口 `bash scripts/run_m1_current_executor_swap_once.sh`：先4项纯 Python unittest、原几何检查、只做一次源执行冒烟；实际抓取/抬升/落点在相同目标中通过后，才启动最多一次目标执行冒烟；否则立刻停，不重跑已有4组基线或调参循环。新代码已提交但用户GPU机器**尚未验证**。科学门槛（同目标源视频、等信息强 TAMP、非平凡方法必要性）仍未通过。详见 [当前实验的执行模块替换操作](docs/2026-11-11_CURRENT_M1_OFFICIAL_EXECUTOR_SWAP_SMOKE.md)。
+
+---
+
 ## ★ 2026-11-11 — 用户纠偏：当前 M1 实验难题**替换失效执行模块**，不换研究问题、不重开实验
 
 用户明确指出“我说的是当前实验遇到的难题，不是再重新做实验啊”。因此取消我擅自提出的长序列任务 M1C 和独立 B01 64 条 BC 数据下载作为下一步：它们的未执行脚本和测试已从仓库删除。继续当前**同目标 Pick 源端 → Push-only 目标端，需要清障插入的跨行为任务**。真实失败来自 M1B3 自写的官方 Panda 抓取移植在狭窄障碍布局下，方块真实抓取次数0、未抬升、总XY位移仅约4.7微米；这只证明**这个抓取移植失效**，不能自动否定整个方法科学问题。已有可信替换源是原版 ManiSkill PickCube 专家3/3的 H5/视频、原M1B2成功 Pick 的 H5/视频，但必须核对目标物体终态效果，尤其原M1B2目标x=.15m、现M1B3目标x=.21m，**不能直接冒充同终态配对**。目标低层执行器替换优先选择 ManiSkill 官方 `mani_skill/examples/motionplanning/panda/solutions/push_cube.py` 中真实 Panda MPLib 运动规划和推动接口，保留同一障碍/目标/Push-only 判据、原始四组轨迹不改，不再使用不可靠的 `DiagnosticPushTeacher` 重复盲调。原版官方 PushCube 仅是低层推动专家，并非已经解决复杂清障序列；强 TAMP 和视频增益仍未评估，不擅自宣称创新。详见 [针对现有技术问题替换模块的执行边界](docs/2026-11-11_SCOPE_CORRECTION_REPLACE_CURRENT_EXECUTOR_NOT_RESTART_RESEARCH.md)。
