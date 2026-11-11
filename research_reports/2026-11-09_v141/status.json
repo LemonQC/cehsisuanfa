@@ -273,7 +273,17 @@
       "checkpoint_provenance_note": "OpenPI pi05_base image SigLIP restored from pinned third-party HF GCS mirror, original direct-GCS binary identity not independently verified"
     },
     "m0_prior_failures_are_historical": true,
-    "m0_archive_status": "script committed; operator must run scripts/archive_pi05_uniform_m0.py to export actual per-trial rows and SHA256 into GitHub"
+    "m0_archive_status": "ACTUAL_60_TRIAL_ARCHIVE_VERIFIED_AND_PUSHED_GITHUB_MAIN_D5DE864",
+    "m0_archive_files": [
+      "research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json",
+      "research_reports/2026-11-11_m0_pi05_uniform/per_trial_60.csv",
+      "research_reports/2026-11-11_m0_pi05_uniform/SUMMARY.md"
+    ],
+    "m0_per_seed_success": {
+      "0": 14,
+      "100000": 13,
+      "200000": 19
+    }
   },
   "official_pi05_keyframes": {
     "status": "DEFERRED_VLM_API_DEPENDENCY_BY_USER_DECISION",
@@ -340,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull; conda activate pi05; python -m pytest -q tests/test_archive_pi05_uniform_m0.py; python scripts/archive_pi05_uniform_m0.py; commit/push only research_reports/2026-11-11_m0_pi05_uniform. Next M1 inventory validated same-goal source demonstrations and TRAIN robot action trajectories and implement/execute equal-information goal-only, raw-flow, geometry and TAMP controls before new method.",
-  "research_execution_reference": "docs/2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md",
+  "next_operator_action": "M0 DONE. Pull main; run stdlib python -m unittest discover -s tests -p 'test_m1a_inventory_real_assets.py' -q and python -m scripts.m1a_inventory_real_assets. Next verify existing source Pick+Place actual same-final-goal possibility and target blocker insertion physical feasibility before training method.",
+  "research_execution_reference": "docs/2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md",
   "m0_m1_m2_current": {
-    "m0": "PASS (official pi05 Uniform 46/60, Vid2Robot 3/60), compact pi05 per-trial archive PENDING",
-    "m1": "NOT_RUN same-goal capability conflict physics and fair controls; frozen task protocol written",
-    "m2": "NOT_STARTED learned effect editor, conditional on M1 gates"
+    "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
+    "m1": "M1-A asset scanner COMMITTED NOT_EXECUTED; M1-B same-goal physical scene + strong controls NOT_RUN",
+    "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   }
 }
