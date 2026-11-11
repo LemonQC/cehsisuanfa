@@ -62,12 +62,13 @@ def measured_mechanism_gate(old_root: Path):
     source_grasp = int(source["measured"]["task_grasped_steps"])
     source_lift = float(source["measured"]["task_max_z_m"])
     source_motion = float(source["measured"]["task_net_xy_m"])
+    source_total_motion = float(source["measured"]["task_total_xy_m"])
     # DO NOT blindly rerun an identical original grasp controller when
     # the old real source video shows no held/lifted/transported cube.
     source_lower_fallback_relevant = bool(
         source_grasp > 0
         and source_lift > WALL_HEIGHT+TASK_HALF+.005
-        and source_motion > .08
+        and source_total_motion > .08
     )
     return {
         "old_scene": ENV_ID,
@@ -75,6 +76,7 @@ def measured_mechanism_gate(old_root: Path):
         "source_actual_grasp_steps": source_grasp,
         "source_actual_max_task_z_m": source_lift,
         "source_actual_task_net_xy_m": source_motion,
+        "source_actual_task_total_xy_m": source_total_motion,
         "source_lower_planner_fallback_is_justified": source_lower_fallback_relevant,
         "old_push_stall_xy_m": final,
         "wall_front_cube_center_x_limit_m": wall_front_center_limit,
