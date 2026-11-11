@@ -47,7 +47,13 @@ def local_videos(project: Path, kind: str) -> list[dict]:
 
 def local_robot_actions(project: Path) -> list[dict]:
     """Review real downloaded TRAIN robot H5+camera triples, no fake labels."""
+    # Source-of-truth: run_v120_real_robot_and_official_baseline.sh
+    # called official_robot_data with --data-root outputs/v120_baselines/robot_train.
+    # The original v1 M1 scanner incorrectly looked only under
+    # official_dataset (human EVAL storage), so it reported 0 despite
+    # the independent v120 H5 audit validating demos 0000 and 0001.
     roots = [
+        project/"outputs/v120_baselines/robot_train",
         project/"outputs/v110_baselines/official_dataset",
         project/"outputs/v120_baselines/official_dataset",
     ]
@@ -65,7 +71,13 @@ def local_robot_actions(project: Path) -> list[dict]:
                 continue
             file_infos=entry.get("files",[])
             names=[x.get("relative_path","") for x in file_infos if isinstance(x,dict)]
-            if not any(name.endswith(".h5") for name in names):
+            # Only the published TRAIN PushCube subset; never EVAL/test
+            # or an unrelated task. Do not treat one H5 as an action
+            # dataset until its two camera files are also present.
+            if (not names or any(".." in Path(n).parts or Path(n).is_absolute()
+                                 or not n.startswith("robot_trajectories/no_distraction/push_cube/")
+                                 for n in names)
+                    or not any(name.endswith(".h5") for name in names)):
                 continue
             for root in roots:
                 paths=[root/name for name in names]
@@ -81,7 +93,7 @@ def local_robot_actions(project: Path) -> list[dict]:
                     "demo":str(entry["demo"]), "data_root":str(root.relative_to(project)),
                     "files":[str(p.relative_to(project)) for p in paths],
                     "source_manifest":str(manifest.relative_to(project)),
-                    "status":"ACTUAL_LOCAL_TRAIN_H5_AND_CAMERAS_PRESENT",
+                    "status":"ACTUAL_LOCAL_TRAIN_H5_AND_CAMERAS_PRESENT_PRIOR_V120_CONTENT_AUDIT",
                 }
     return [found[k] for k in sorted(found)]
 
@@ -108,6 +120,8 @@ def audit(project: Path):
         "m0_pi05_46_of_60_is_not_m1_same_goal_evidence":True,
         "historical_real_robot_h5_audit_validated":historical_valid,
         "historical_real_robot_h5_valid_demos":historical.get("valid_demos"),
+        "historical_robot_audit_not_equal_local_disk":True,
+        "actual_v120_robot_train_data_root":"outputs/v120_baselines/robot_train",
         "local_train_push_robot_demos_with_h5_and_two_cameras":robot,
         "local_train_pick_human_front_mp4":human_pick,
         "local_train_push_human_front_mp4":human_push,
