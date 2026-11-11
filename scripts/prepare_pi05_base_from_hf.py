@@ -5,7 +5,7 @@ The pinned RoboReel SigLipTokenizer needs the original pi05_base
 PaliGemma.img subtree, not the RoboReel ND Uniform fine-tuned checkpoint.
 This command downloads only that base params subtree (roughly 12.4 GB),
 checks the complete Hugging Face manifest against local files, and
-symlinks the complete directory to OpenPI's normal GCS cache pathname.
+hardlinks complete files into OpenPI's normal GCS cache pathname.
 
 Default: metadata-only, NO download. --download: explicit large transfer.
 No GCS credentials, no paid model inference API, no modification of
@@ -20,6 +20,7 @@ import argparse
 import hashlib
 import json
 import os
+import errno
 from pathlib import Path
 import re
 import sys
@@ -200,18 +201,84 @@ def local_manifest_check(selected, root):
             "complete":not missing and not bad_size and all(structural.values())}
 
 
-def link_original_cache(params, cache):
+def install_original_cache(params: Path, cache: Path) -> str:
+    """Populate a REAL OpenPI cache directory via same-filesystem hardlinks.
+
+    The original OpenPI maybe_download() invokes Path.resolve() on the
+    cache path, then checks its path relative_to(OPENPI_DATA_HOME). A
+    directory symlink pointing to a sibling mirror resolves outside the
+    cache root and crashes before checkpoint loading. Hardlinks preserve
+    real cache paths without duplicating ~12.4GB of Orbax payloads.
+
+    Never silently copy a 12GB model. On EXDEV, explicitly fail.
+    Existing only-our-own symlink is atomically replaced after staging.
+    """
+    params=params.expanduser().resolve(strict=True)
+    cache=cache.expanduser().resolve()
     expected=cache/"openpi-assets/checkpoints/pi05_base/params"
     expected.parent.mkdir(parents=True,exist_ok=True)
+    if not params.is_dir():
+        raise NotADirectoryError(f"Original base Orbax directory missing: {params}")
+
+    def all_hardlinked(destination: Path) -> bool:
+        if not destination.is_dir() or destination.is_symlink():
+            return False
+        originals=[p for p in params.rglob("*") if p.is_file()]
+        return (bool(originals)
+                and all((destination / p.relative_to(params)).is_file()
+                        and os.path.samefile(p, destination / p.relative_to(params))
+                        for p in originals))
+
+    if all_hardlinked(expected):
+        return str(expected)
     if expected.is_symlink():
-        if expected.resolve()!=params.resolve():
-            raise RuntimeError(f"Existing OpenPI cache link points elsewhere: {expected}")
+        if expected.resolve()!=params:
+            raise RuntimeError(f"Existing OpenPI symlink points elsewhere: {expected}")
     elif expected.exists():
-        if expected.resolve()!=params.resolve():
-            raise RuntimeError(f"Existing OpenPI cache is a different directory: {expected}")
-    else:
-        expected.symlink_to(params.resolve(),target_is_directory=True)
+        raise RuntimeError(f"Existing OpenPI cache is not our hardlink tree: {expected}")
+
+    # Stage in-place inside the destination parent; stable name allows
+    # idempotent recovery if a previous process crashed mid-install.
+    staging=expected.with_name(".params-hardlink-staging")
+    if staging.is_symlink() or (staging.exists() and not staging.is_dir()):
+        raise RuntimeError(f"Unexpected staging cache path: {staging}")
+    staging.mkdir(exist_ok=True)
+    for source in sorted(params.rglob("*")):
+        if source.is_symlink():
+            raise RuntimeError(f"Refuse symlink inside original model: {source}")
+        dest=staging/source.relative_to(params)
+        if source.is_dir():
+            dest.mkdir(parents=True,exist_ok=True)
+        elif source.is_file():
+            dest.parent.mkdir(parents=True,exist_ok=True)
+            if dest.exists() or dest.is_symlink():
+                if not dest.is_file() or not os.path.samefile(source,dest):
+                    raise RuntimeError(f"Conflicting cached model shard: {dest}")
+            else:
+                try:
+                    os.link(source,dest,follow_symlinks=False)
+                except OSError as exc:
+                    if exc.errno==errno.EXDEV:
+                        raise RuntimeError(
+                            "Source and OPENPI_DATA_HOME are on different filesystems; "
+                            "cannot hardlink without copying ~12.4GB. Set both "
+                            "locations to the same filesystem, then rerun."
+                        ) from exc
+                    raise
+        else:
+            raise RuntimeError(f"Unexpected file type inside Orbax source: {source}")
+    if not all_hardlinked(staging):
+        raise RuntimeError(f"Hardlink staging incomplete: {staging}")
+    # Linux atomic rename replaces our OLD directory SYMLINK with a real
+    # cache directory. Never overwrite unrelated pre-existing directories.
+    os.replace(staging,expected)
+    if expected.is_symlink() or not all_hardlinked(expected):
+        raise RuntimeError(f"OpenPI cache materialization failed: {expected}")
     return str(expected)
+
+# Legacy import name kept for older scripts; behavior is now a real
+# hardlinked cache installation, NOT a symlink.
+link_original_cache=install_original_cache
 
 
 def main(argv=None):
@@ -279,13 +346,15 @@ def main(argv=None):
     if not check["complete"]:
         print("OPENPI_BASE_MIRROR_INCOMPLETE",json.dumps(check),flush=True)
         raise RuntimeError("Missing/wrong-size Orbax shards; no OpenPI cache link created")
-    cache_link=link_original_cache((root/PREFIX).resolve(),cache)
+    cache_path=install_original_cache((root/PREFIX).resolve(),cache)
     out=PROJECT/"outputs/v120_baselines/openpi_base_hf_manifest.json"
     out.parent.mkdir(parents=True,exist_ok=True)
     record={
         "source":REPO,"revision":REVISION,"endpoint":args.endpoint,
         "local_dir":str(root),"openpi_data_home":str(cache),
-        "openpi_base_cache_link":cache_link,
+        "openpi_base_cache_link":cache_path,  # Legacy field retained for audits.
+        "openpi_base_cache_path":cache_path,
+        "cache_install_type":"verified_same_filesystem_hardlinks_no_symlinks",
         "manifest_verification":check,
         "hash_note":"Manifest SHA256/Git blob IDs verified when published; otherwise size-only. Original GCS identity is NOT independently established",
         "siglip_pickle_exported":False,"official_pi05_rollouts":0,
