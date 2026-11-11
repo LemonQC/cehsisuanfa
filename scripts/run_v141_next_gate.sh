@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v1.6.2, installed OpenPI cached BASE must be a real hardlink dir, not a symlink.
+# v1.6.3, independent original SigLIP workers: one video per process, memory released between demos.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-gate}"
@@ -96,7 +96,7 @@ case "$MODE" in
     else
       python scripts/check_pi05_siglip_cache.py
     fi
-    python -m agcofl.v141_pi05_assets --variant uniform --extract-features --max-feature-demos 1
+    python -m agcofl.v141_pi05_assets --variant uniform --extract-features --max-feature-demos 1 --feature-process-mode isolated
     ;;
   prepare-features)
     # Local authors' SigLIP extraction of the 20 existing official EVAL videos.
@@ -107,7 +107,7 @@ case "$MODE" in
     else
       python scripts/check_pi05_siglip_cache.py
     fi
-    python -m agcofl.v141_pi05_assets --variant uniform --extract-features
+    python -m agcofl.v141_pi05_assets --variant uniform --extract-features --feature-process-mode isolated
     ;;
   prepare-uniform)
     # Original selective ND checkpoint then only 20 EVAL SigLIP features.
