@@ -109,9 +109,10 @@ bash scripts/run_m1b4_one_time_feasibility.sh
 ```
 
 The runner automatically runs four standard-library unit tests,
-then the *no-physics* old-evidence preflight, then zero or two
-bounded actual PhysX cases depending on the old source's physically
-validated lift/carry evidence.
+then the *no-physics* old-evidence preflight, then zero, one, or two
+bounded actual PhysX cases: zero if the saved source never physically
+carried the cube, one if the new source rescue fails (target is then skipped),
+or two only if the rescued source succeeds.
 
 The positive case outputs
 `M1B4_FEASIBILITY_GATE` and local
