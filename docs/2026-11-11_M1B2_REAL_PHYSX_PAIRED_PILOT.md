@@ -139,3 +139,43 @@ Paper readiness: M0 complete; M1-B1 3/3 successful source *reference*
 only; M1-B2 and B3 still require **actual measured results**; M2 not
 started. Do not confuse robot RGB motionplanning reference with human
 source video or original RoboReel cross-behavior benchmark.
+
+
+## 2026-11-11 — v1.6.7 UNIT-TEST FIX BEFORE ANY M1-B2 PHYSICS
+
+The operator ran `scripts/run_m1b2_same_goal_once.sh`, which
+correctly stopped at stdlib unit tests before source/target PhysX.
+4 tests executed, 2 errors:
+
+1. `actual_gate` directly subtracted `final[:2]-goal[:2]`
+   when the tests passed Python lists, producing `TypeError`.
+   It now converts all measured initial/final/goal states to
+   checked 3-vectors, rejects non-finite values, and supports
+   both list and NumPy array inputs.
+2. `_pose` assumed every object is an actor exposing
+   `actor.pose.p`. The real `agent.tcp_pose` is already
+   a ManiSkill Pose exposing `tcp_pose.p`. `TracedEnv` therefore
+   needs to accept both actor pose and direct Pose. The test
+   mock was a correct example of the latter. This has been
+   fixed and given a regression test.
+
+No PhysX source or target episode was launched by this failed
+preflight, and there is no M1-B2 result to invalidate. No checkpoint
+download or original PickCube retest is required.
+
+Execute only the stdlib regression suite, then the existing
+one-seed/three-case runner:
+
+    cd /mnt/4Tdata/LemonData/cehsisuanfa
+    git pull --ff-only origin main
+    conda activate pi05
+    python -m unittest discover -s tests \
+      -p 'test_m1b2_same_goal_effect_physics.py' -q
+    # Only after this test reports OK:
+    bash scripts/run_m1b2_same_goal_once.sh
+
+The source/target same-goal PhysX experiment is still NOT_RUN
+at the point of this commit. Passing tests does not claim
+the adapted original MPLib source or custom push primitives
+will succeed in physics. A physical result must show
+`M1B2_PHYSICS_GATE`, individual result JSON and actual traces.
