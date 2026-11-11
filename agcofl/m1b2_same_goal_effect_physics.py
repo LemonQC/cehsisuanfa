@@ -29,6 +29,7 @@ GOAL_DISPLACEMENT_M = 0.15
 BLOCKER_X_OFFSET_M = 0.077
 BLOCKER_HALF_SIZE_M = 0.025
 BARRIER_HALF_SIZE_M = 0.027
+BARRIER_X_OFFSET_M = 0.14
 BARRIER_Y_OFFSETS_M = (-0.083, 0.083)
 BLOCKER_CLEARANCE_Y_M = 0.115
 MAX_STEPS = 450
@@ -99,7 +100,10 @@ def build_scene(official_root):
             self.blocker.set_pose(Pose.create_from_pq(
                 p=blocker[None,:],q=[1,0,0,0]))
             for actor,offset in zip(self.corridor_walls,BARRIER_Y_OFFSETS_M):
-                xyz=np.array([[blocker[0],start[1]+offset,
+                # Walls near goal leave the lateral blocker parking motion
+                # unobstructed. This is still a topology PILOT, not proof
+                # that a push-around plan is impossible.
+                xyz=np.array([[start[0]+BARRIER_X_OFFSET_M,start[1]+offset,
                               BARRIER_HALF_SIZE_M]],dtype=np.float32)
                 actor.set_pose(Pose.create_from_pq(p=xyz,q=[1,0,0,0]))
 
@@ -141,6 +145,7 @@ class TracedEnv:
     def __init__(self, env):
         self.env=env
         self.unwrapped=env.unwrapped
+        self.action_space=env.action_space
         self.trace=[]
     def step(self,action):
         obs,reward,terminated,truncated,info=self.env.step(action)
@@ -319,6 +324,8 @@ def run_push(env,mode,max_steps):
                 final=task_final.tolist(),
                 task_gate=task,
                 push_only_success=target_physically_valid,
+                clear_and_push_success=bool(target_physically_valid and inserted)
+                    if mode=="target_clear" else False,
                 blocker_displacement_m=clearance,
                 blocker_effect_physically_inserted=inserted,
                 observed_source_free_flow_copied=False,
@@ -346,7 +353,18 @@ def run_case(official_root,seed,mode,out,max_steps):
                     status="M1B2_EXECUTION_ERROR_NOT_VALID_EVIDENCE")
     finally:
         if env is not None:
-            env.close()
+            # RecordEpisode(save_on_reset=False) NEVER flushes on close:
+            # this must explicitly save original real action H5 & RGB MP4.
+            # Preserve the true PhysX status even if video encoding fails.
+            try:
+                env.flush_trajectory()
+                env.flush_video()
+            except Exception as artifact_error:
+                if "error" not in result:
+                    result["artifact_error"]=(
+                        type(artifact_error).__name__+": "+str(artifact_error)[:400])
+            finally:
+                env.close()
     trace=result.pop("trace",[])
     (root/"physical_trace.json").write_text(
         json.dumps(trace,indent=2,default=_bounded_summary)+"\n")
@@ -354,7 +372,9 @@ def run_case(official_root,seed,mode,out,max_steps):
                   same_final_goal_config=True,
                   physically_verified_matched_success=(
                       bool(result.get("gate",{}).get("valid")) if mode=="source"
-                      else bool(result.get("push_only_success",False))),
+                      else (bool(result.get("clear_and_push_success",False))
+                            if mode=="target_clear"
+                            else bool(result.get("push_only_success",False)))),
                   not_learned_method=True, paper_ready=False)
     (root/"status.json").write_text(
         json.dumps(result,indent=2,default=_bounded_summary)+"\n")
