@@ -1,5 +1,7 @@
 """CPU-only gate tests for one and only M1B4 rescue, no PhysX."""
 import json
+import io
+import contextlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -61,10 +63,19 @@ class OneTimeFeasibilityGate(unittest.TestCase):
             report=v1.measured_mechanism_gate(root)
             self.assertFalse(report["source_lower_planner_fallback_is_justified"])
             # No programmatically launched robot in this negative condition.
-            with self.assertRaises(SystemExit) as error:
-                v1.main(["--old-root",str(root),
-                         "--require-physical-source-evidence"])
+            # The following NO_GO marker uses SYNTHETIC TEST DATA.
+            # Capture stdout so it cannot be mistaken for a genuine
+            # server-side M1B3 source-video no-go in the operator log.
+            captured=io.StringIO()
+            with contextlib.redirect_stdout(captured):
+                with self.assertRaises(SystemExit) as error:
+                    v1.main(["--old-root",str(root),
+                             "--require-physical-source-evidence"])
             self.assertEqual(error.exception.code,6)
+            self.assertIn(
+                "M1B4_NO_GO_SOURCE_DID_NOT_PHYSICALLY_CARRY_CUBE_IN_FROZEN_RUN",
+                captured.getvalue())
+            self.assertIn('"source_actual_grasp_steps": 0',captured.getvalue())
 
     def test_unmatched_throat_stall_refuses_controller_rescue(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -80,6 +91,12 @@ class OneTimeFeasibilityGate(unittest.TestCase):
             [.105,.002,.02]))
         self.assertTrue(v1.pre_throat_lateral_alignment_needed(
             [.105,.015,.02]))
+        # The estimated contact location x=0.126 must be classified
+        # as out-of-band BEFORE (rather than after) penetration.
+        self.assertEqual(v1.pre_throat_lateral_alignment_needed(
+            [.1231,-.010,.02]),"MISALIGNED_AT_WALL_FRONT")
+        self.assertTrue(v1.pre_throat_lateral_alignment_needed(
+            [.1220,-.010,.02]))
 
 
 if __name__=="__main__":
