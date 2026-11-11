@@ -1,3 +1,9 @@
+## ★ v1.6.3 — 2026-11-11 原版 SigLIP 权重恢复成功、7/20 视频特征完成、余下 13 段独立进程提取
+
+用户服务器实测：`pi05` 环境 JAX CUDA `gpu:0`、NumPy 1.26.4 均正常；原版 OpenPI Base SigLIP `siglip_params.pkl` 已生成，大小 **1,659,216,368 bytes**；RoboReel 官方 EVAL 视频特征 **0080–0086 共 7/20** 已写入。旧共享 JAX 进程连续处理时出现 `os.fork()`/JAX 多线程警告，随后被系统以 Killed 终止，尚不能仅据此确定 OOM；`0087–0099` 仍缺失，因此 `--require-ready` 正确失败，正式 π0.5 物理评测 **0/60**。新 `--feature-process-mode isolated` 在一个视频一个子进程中调用完全相同的原作者 `_PersistentEncoder`，视频解码发生在 JAX 初始化前，并将 `XLA_PYTHON_CLIENT_PREALLOCATE=false`；每个完成的子进程退出回收内存。已完成的 0080–0086 保持不变，原作者 `front.npy` 原子写入，故可中断续跑而不重新下载任何 checkpoint。主入口 `bash scripts/run_v141_next_gate.sh prepare-features` 已切至独立进程；随后需 `--require-ready` 和 `evaluate-uniform` 验证真实 60 次物理结果。回归测试已提交，服务器尚未重跑。详见 [v1.6.3 提取续跑与内存隔离记录](2026-11-11_V163_PI05_SIGLIP_7OF20_ISOLATED_RESUME.md)。
+
+---
+
 ## ★ v1.6.2 — 2026-11-11 已下载 OpenPI Base，修复软链接导致的 `relative_to` 崩溃
 
 用户真实运行原版 SigLIP 一视频 smoke，日志确认 `PI05_PINNED_HF_BASE_STAGED`，说明下载器校验整套基础权重已完成，但原版 OpenPI `maybe_download` 先对缓存软链接调用 `.resolve()`，解析到外部 `openpi_base_hf_mirror`，之后 `local_path.relative_to(cache_dir)` 报错。**不是重新下载 12.4GB 的理由。** 已增加 `bash scripts/run_v141_next_gate.sh repair-pi05-cache`：完全离线从已经核验的原始 Orbax 文件创建 OpenPI 缓存真实目录，利用同文件系统硬链接共享 inode，不重复占用 12.4GB 数据；修复前先验证原目录及旧软链接，采用临时 staging 恢复机制。更新 SigLIP 前置检查，拒绝再把外部软链接误报为“可加载”；补充缓存迁移和无网络测试。服务器尚未实际验证修复；先运行对应 pytest、`repair-pi05-cache`，成功后 `smoke-one-feature`，再进入正式 20 段特征与 60 次评测。原版模型代码不修改；完整记录见 [v1.6.2 缓存迁移修复](2026-11-11_V162_OPENPI_BASE_SYMLINK_RESOLVE_HARDLINK_FIX.md)。
