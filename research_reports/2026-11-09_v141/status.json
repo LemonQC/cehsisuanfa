@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Current M1 unchanged. Pull main and run bash scripts/run_m1_target_closed_pusher_once.sh; it first verifies genuine previous -1 CLOSED 32-step clearance vs current +1 OPEN 88-step failed MPLib, then a single target-only closed-pusher MPLib PhysX ablation on same seed/scene/goal; records BOTH object grasp flags. Also run existing python -m scripts.m1_current_compare_grasp_contact OFFLINE to diagnose separate failed source. No M0/M1B1/M1B2/M1B3 reruns; no learning or M2 until physical source/target pair and strong baseline gap exist.",
-  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_TARGET_OPEN_VS_CLOSED_PUSHER_CONTROL.md",
+  "next_operator_action": "No reruns of successful clearance or failed source; git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_current_closed_pusher_trace_audit.py' -q; python -m scripts.m1_current_closed_pusher_trace_audit. Return M1_CLOSED_PUSHER_450_STEP_TRACE_DIAG and analyze actual 362-step cube/TCP trajectory before considering any bounded phase-only handoff adapter. Existing source contact offline comparator still not reported, and same-goal source remains invalid.",
+  "research_execution_reference": "docs/2026-11-11_M1_CLOSED_PUSHER_CLEARANCE_PASS_POST_CLEAR_TRACE_AUDIT.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
-    "m1": "Current M1 problem NOT ABANDONED on user's correction. Custom M1B3 grasp adapter failed real source grasp (0 steps) so stop that exact adapter; keep original same-goal blocker-clearance task. Current goal: replace source input with genuinely successful existing Pick video after object-effect/goal verification; target execution with published Panda PushCube MPLib low-level push adapter; no full reruns, no scientific novelty claims before fair TAMP.",
+    "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
     "m2": "NOT_STARTED_AND_NOT_AUTHORIZED on failed M1 hypothesis; no method trained"
   },
   "m1a_local_asset_gate": {
@@ -724,15 +724,72 @@
     "runner": "scripts/run_m1_target_closed_pusher_once.sh",
     "test": "tests/test_m1_current_closed_pusher_ablation.py",
     "protocol": "docs/2026-11-11_CURRENT_M1_TARGET_OPEN_VS_CLOSED_PUSHER_CONTROL.md",
-    "stage": "CODE_COMMITTED_NOT_RUN_ON_OPERATOR_SERVER",
+    "stage": "CLOSED_PANDA_MPLIB_REAL_PHYSICS_CLEARANCE_SUCCESS_82_STEPS_BUT_450_TOTAL_BUDGET_EXCEEDED_DURING_TASK_CUBE_STAGE",
     "input_gate": "verify actual old M1B3 32-step -1 CLOSED clearance and current 88-step +1 OPEN MPLib failure before running",
     "only_intentional_change": "MPLib t=6 first gripper cmd OPEN(+1) => CLOSED(-1), preserving previous pre/post poses and old geometry",
     "records": "new physical trace includes Panda grasp flags for task and blocker and both actual finger joint positions",
     "output": "outputs/m1_current_closed_pusher_v2/",
-    "physical_results": "NOT_OBSERVED",
+    "physical_results": {
+      "source": "Actual 450-step operator-saved result, reused by last script (did not rerun PhysX)",
+      "success": false,
+      "steps": 450,
+      "error": "RuntimeError: M1B2_STEP_BUDGET_EXCEEDED: no unbounded expert planning",
+      "gripper_closed_command_steps": 450,
+      "gripper_open_command_steps": 0,
+      "final_finger_joint_qpos_m": [
+        0,
+        0
+      ],
+      "actual_grasped_task": false,
+      "actual_grasped_blocker": false,
+      "blocker_clear": {
+        "completed": true,
+        "steps": 82,
+        "initial_xy_m": [
+          0.09999964386224747,
+          -6.951020168344257e-7
+        ],
+        "goal_xy_m": [
+          0.1,
+          0.125
+        ],
+        "measured_final_xy_m": [
+          0.10489228367805481,
+          0.12900730967521667
+        ],
+        "final_error_m": 0.0063239995587955735,
+        "source": "User M1_TARGET_CLOSED_PUSHER_RESULT logger"
+      },
+      "cube_attempt": {
+        "completed": false,
+        "actual_steps_after_clearance": 362,
+        "original_task_goal_error_m": 0.260049416909468,
+        "true_initial_goal_error_m": 0.21,
+        "raw_suffix_trace_path": "outputs/m1_current_closed_pusher_v2/target_closed_mplib/physical_trace.json",
+        "physical_failure_mechanism": "NOT_YET_CLASSIFIED; do not infer backwards motion or wall jam from scalar"
+      },
+      "source_same_goal_valid": false,
+      "fair_tamp_evaluated": false,
+      "learned_method_evaluated": false,
+      "original_raw_modified": false
+    },
     "old_data_modified": false,
     "source_grasp_106_step_trial": "DO_NOT_RERUN",
     "source_contact_offline_comparison": "RUNNABLE_CODE_COMMITTED_USER_RESULT_NOT_SUPPLIED",
-    "learning_or_TAMP": "NOT_RUN"
+    "learning_or_TAMP": "NOT_RUN",
+    "current_action": "M1 current 450-step closed pusher trace AUDIT code committed, not yet run on user server; no new physics",
+    "offline_audit": {
+      "stage": "CODE_COMMITTED_OPERATOR_NOT_RUN",
+      "script": "scripts/m1_current_closed_pusher_trace_audit.py",
+      "tests": "tests/test_m1_current_closed_pusher_trace_audit.py",
+      "report": "outputs/m1_current_closed_pusher_v2/closed_pusher_450_step_offline_audit.json",
+      "phases": [
+        "close gripper 6",
+        "clear blocker 82 successful",
+        "remaining target cube 362 incomplete"
+      ],
+      "reference": "original M1B3 open_direct 35 real steps successful, not information matched",
+      "zero_physics": true
+    }
   }
 }
