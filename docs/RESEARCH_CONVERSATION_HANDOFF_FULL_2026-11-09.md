@@ -1,3 +1,9 @@
+## 2026-11-11 — M1-B2 测试前置阻塞：坐标列表与 Pose 接口修复，物理实验尚未启动
+
+用户执行 `bash scripts/run_m1b2_same_goal_once.sh`，首先进行标准库 unittest（4 tests，2 errors）：`actual_gate` 的 Python `final[:2]-goal[:2]`（列表不能直接减）及 `TracedEnv.step` 调用 `_pose(agent.tcp_pose)` 报 `AttributeError`（TCP 已经是 Pose 类型，只有 `.p`；原 `_pose` 只支持 actor.pose.p）。已在 `agcofl/m1b2_same_goal_effect_physics.py` 对测量 XYZ 统一 NumPy 数组、三维有限数检查，并兼容 Actor.pose.p 和直接 Pose.p；在 `tests/test_m1b2_same_goal_effect_physics.py` 新增列表/数组一致性和 TCP/Actor 访问回归测试。原 runner 因 `set -e` 在测试失败后**没有运行 source/target_direct/target_clear 任何一个 PhysX 案例**。用户需要 `git pull --ff-only`，先执行 `python -m unittest discover -s tests -p 'test_m1b2_same_goal_effect_physics.py' -q`，通过后再执行 `bash scripts/run_m1b2_same_goal_once.sh`。M0 46/60、M1-B1 官方 Pick 3/3 不受影响；M1-B2 和强 TAMP 仍未得到真实结果。详见 [M1-B2 原协议及修复日志](2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md)。
+
+---
+
 ## ★ 2026-11-11 — M1-B1 官方 Pick 3/3 实测成功，M1-B2 同目标物理对照开始
 
 **用户实际服务器证据**：`M1B_OFFICIAL_PICK_EXISTING_VERIFIED {"requested_attempts":3,"recorded_episodes":3,"successes":3,"any_video":true,"usable_reference":true,"same_goal_pair_validated":false}`；此前 RoboReel 官方 π0.5 M0 46/60（已归档）、M1-A 本地 2 条 PushCube TRAIN H5 + 6 条 Push 人类视频不变。抓取专家已经可用，**原版 PickCube 的 3/3 不能冒充同目标跨行为结果**。下一步已提交 `agcofl/m1b2_same_goal_effect_physics.py` + `scripts/run_m1b2_same_goal_once.sh` + `scripts/m1b2_validate_paired_physics.py`：同一固定 PhysX 场景/最终 Cube 目标、同一 seed=120，实际运行三个独立物理案例（复用原作者 OBB+MPLib 的 Pick+Place、直接 Push-only、先推走动态挡块再 Push-only），保留每段 H5/JSON/MP4 和逐时刻 object/contact 数据，严格判定源 Pick 是否抓起/越障/释放和目标是否真实移开挡块/不抓取地到达目标。控制器中的清障顺序是人工给定的**特权状态可行性上界**，不是学习算法、不是完整能力约束 TAMP；有限短墙场景也**尚不能证明必须先移挡块**。单次运行入口 `bash scripts/run_m1b2_same_goal_once.sh`（自带 stdlib unittest 和 3 次真实物理）已提交，但用户服务器尚未执行。下一阶段必须用强等信息 TAMP 和真实阻断拓扑测试必要性，再决定 M2。说明见 [M1-B2 首次真实 PhysX 对照](2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md)。
