@@ -350,12 +350,12 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b4_one_time_feasibility.sh. 4 revised unittest fixtures first, synthetic no-go hidden; then M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS and genuine source grasp/lift/carry preflight. Actual no-go after that marker means hard stop before any new physical case. If actual passed, at most two frozen-geometry PhysX cases, stop-on-source-failure. No M2.",
-  "research_execution_reference": "docs/2026-11-11_M1B3_ACTUAL_DIAG_AND_M1B4_FINAL_RESCUE.md",
+  "next_operator_action": "No more current M1 custom scene or M2. Optional separate RoboReel baseline continuation: pull main, conda activate pi05, run stdlib 5-test test_prepare_b01_robot_train.py, then python -m scripts.prepare_b01_robot_train --download (genuine bounded 64 official TRAIN H5+dual-camera demos <=300MB, reuse prior 2), obtain real 51/13 split, and THEN implement/validate robot-only BC policy with fair action interface; do not treat as scientific rescue.",
+  "research_execution_reference": "docs/2026-11-11_M1B4_ACTUAL_REAL_NO_GO_AND_RESEARCH_HARD_STOP.md",
   "m0_m1_m2_current": {
-    "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1-B3 PhysX executed: open direct success, blocked source/direct/clear fail; offline real trace shows clear succeeds 32 steps then cube stuck at throat x=.125,y=-.031 for 418 steps, source lower Screw fails; M1B4 one final CONDITIONAL rescue coded, PHYSICS NOT_RUN, requires original source physical hold/lift/carry.",
-    "m2": "NOT_STARTED until fair M1 evidence supports novelty"
+    "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
+    "m1": "HARD_NO_GO FOR CUSTOM SAME-GOAL PICK_TO_PUSH MANDATORY BLOCKER INSERTION. M1B2 source/direct/clear all success but no necessary insertion; M1B3 source & blocked clear fail; REAL M1B4 original source grasp=0 lift=0 -> strict abort before new simulator. Same-goal baseline TAMP/Goal-only/Raw Flow NOT_RUN.",
+    "m2": "NOT_STARTED_AND_NOT_AUTHORIZED on failed M1 hypothesis; no method trained"
   },
   "m1a_local_asset_gate": {
     "server_report_observed": true,
@@ -573,7 +573,7 @@
       }
     },
     "m1b4_one_time_rescue": {
-      "stage": "UNITTEST_PRECHECK_FAILED_1_OF_4; FIX_PUSHED; REAL_SOURCE_EVIDENCE_GATE_NOT_YET_EXECUTED",
+      "stage": "REAL_OPERATOR_PHYSICAL_EVIDENCE_GATE_NO_GO; NEW_PHYSX_ZERO; CURRENT_M1_PICK_PUSH_FORMULATION_HARD_STOP",
       "script": "agcofl/m1b4_one_time_feasibility.py",
       "runner": "scripts/run_m1b4_one_time_feasibility.sh",
       "validator": "scripts/m1b4_validate_once.py",
@@ -584,7 +584,7 @@
       "target": "Existing privileged ActorPush: physically clear side blocker, pre-throat x=.103, align y to +/- 4mm, push through exact unchanged throat and same goal",
       "geometry": "Exact original M1B3 geometry frozen",
       "novelty": "NO: this is a conventional privileged feasibility intervention, not a learned effect editor or strong TAMP",
-      "hard_stop": "If old source did not carry or one new case fails, do not iterate v1 controller parameters",
+      "hard_stop": "NO_MORE_NEW_M1B5_OR_SOURCE_GRASP_GAINS_OR_CORRIDOR_TUNING; no equal-info TAMP or source-video value run, no learned method",
       "operator_log_20261111": {
         "tests_executed": 4,
         "errors": 0,
@@ -602,7 +602,45 @@
         "real_source_gate_executed": false,
         "new_PhysX_cases_executed": 0,
         "repaired": "M1B4 pure helper x threshold corrected; expected synthetic NO_GO stdout captured; runner prints explicit real-data marker after tests"
+      },
+      "real_operator_result": {
+        "unit_tests": "OK",
+        "gate_marker_before_real_data": "M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS",
+        "old_scene": "AGCOFLM1B3Corridor-v0",
+        "old_source_error": "RuntimeError: official_mplib_lower_failed",
+        "source_actual_grasp_steps": 0,
+        "source_actual_max_task_z_m": 0.019999999552965164,
+        "source_actual_task_net_xy_m": 0.00000430453004975207,
+        "source_actual_task_total_xy_m": 0.000004676188555490802,
+        "source_lower_planner_fallback_is_justified": false,
+        "stuck_task_xy_m": [
+          0.12527310848236084,
+          -0.030821576714515686
+        ],
+        "wall_front_center_collision_x_m": 0.126,
+        "allowed_center_y_half_band_m": 0.005,
+        "stopped_after_data_gate": true,
+        "new_source_physics_executed": false,
+        "new_target_physics_executed": false,
+        "origin": "user 2026-11-11 terminal; real frozen diagnostic.json consumed after unit tests, not synthetic fixture"
       }
     }
+  },
+  "next_separate_workstream": {
+    "name": "B01 ROBOT-ONLY PushCube (independent official-benchmark baseline foundation, not M1 rescue)",
+    "stage": "64 authentic TRAIN demo download/audit and fixed 51/13 split CODE_COMMITTED_NOT_EXECUTED",
+    "tool": "scripts/prepare_b01_robot_train.py",
+    "tests": "tests/test_prepare_b01_robot_train.py",
+    "robot_data_root": "outputs/v120_baselines/robot_train",
+    "manifest_root": "outputs/b01_robot_only",
+    "training_budget_max_mb": 300,
+    "train_h5_target": 64,
+    "train_val_split": [
+      51,
+      13
+    ],
+    "policy_training": "NOT_STARTED",
+    "real_robot_only_policy_rollouts": "NOT_RUN",
+    "note": "Training on 64 demos is not pretrained pi05 data-budget matched, and does not establish new T-RO novelty"
   }
 }
