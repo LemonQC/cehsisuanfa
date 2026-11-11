@@ -8,7 +8,7 @@
     "rerun_requested": false
   },
   "official_pi05_uniform": {
-    "status": "PINNED_BASE_STAGED_SIGLIP_RESTORE_BLOCKED_BY_OPENPI_RESOLVE_SYMLINK_BUG",
+    "status": "ORIGINAL_SIGLIP_RESTORED_7_OF_20_EVAL_BUNDLES_BATCH_PROCESS_KILLED",
     "preflight_executed_on_4090": true,
     "physics_executed": false,
     "successes": null,
@@ -98,8 +98,8 @@
     },
     "jax_device": "gpu:0",
     "siglip_feature_imports_ok": true,
-    "siglip_weights_restored": false,
-    "siglip_features_completed": 0,
+    "siglip_weights_restored": true,
+    "siglip_features_completed": 7,
     "installed_numpy_version_observed": "1.26.4",
     "openpi_client_numpy_requirement": ">=1.22.4,<2.0.0 (reported by pip)",
     "numpy_compatibility_fixed_on_server": false,
@@ -191,6 +191,53 @@
       "fix_committed": "v1.6.2 offline no-download verified hardlink real cache installation, preserves source and no duplicate 12.4GB on same filesystem",
       "fix_operator_executed": false,
       "gpu_physics_evaluated": false
+    },
+    "siglip_pickle_bytes_observed": 1659216368,
+    "siglip_features_completed_ids": [
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86
+    ],
+    "siglip_features_missing_ids": [
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "original_siglip_feature_extraction_observed": {
+      "runtime_python": "/home/fu/SoftWare/Anaconda/envs/pi05/bin/python",
+      "numpy_version": "1.26.4",
+      "gpu_detected": "gpu:0",
+      "feature_bundle_logged_ids": [
+        81,
+        82,
+        83,
+        84,
+        85,
+        86
+      ],
+      "previously_completed_80": true,
+      "kill": "Linux shell: killed PID 472650 during shared 20-demo extract",
+      "python_traceback": false,
+      "oom_confirmed": false,
+      "fork_warning": "os.fork() called while JAX multithreaded (imageio/ffmpeg video decode after JAX initialization)",
+      "case": "one persistent JAX encoder in 20-video loop; launched before official eval",
+      "patch": "v1.6.3 isolate original author's _PersistentEncoder in fresh subprocess per missing demo; XLA_PYTHON_CLIENT_PREALLOCATE=false; preserve already completed bundles",
+      "patch_executed_on_operator_server": false,
+      "official_eval_ready": false
     }
   },
   "official_pi05_keyframes": {
@@ -258,6 +305,6 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull; conda activate pi05; python -m pytest -q tests/test_prepare_pi05_base_from_hf.py tests/test_check_pi05_siglip_cache.py; bash scripts/run_v141_next_gate.sh repair-pi05-cache (OFFLINE); bash scripts/run_v141_next_gate.sh smoke-one-feature; then prepare-features, require-ready, evaluate-uniform. No GCS/HF redownload needed.",
+  "next_operator_action": "git pull --ff-only origin main; activate pi05; python -m pytest -q tests/test_v141_pi05_assets.py; bash scripts/run_v141_next_gate.sh prepare-features (v1.6.3 isolated one-video workers, resumable 0087-0099); python -m agcofl.v141_pi05_assets --variant uniform --require-ready; then bash scripts/run_v141_next_gate.sh evaluate-uniform. If one isolated worker still SIGKILLs inspect host OOM kill logs and per-video memory before considering chunked original-equivalent encoding.",
   "research_execution_reference": "docs/2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md"
 }
