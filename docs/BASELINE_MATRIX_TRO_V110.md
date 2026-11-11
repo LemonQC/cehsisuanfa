@@ -1,6 +1,6 @@
 # 2026-11-09 — T-RO Cross-Behavior v1.1: frozen baseline & ViT-first execution plan
 
-## Decision (NOT abandonment)
+## Decision (UPDATED 2026-11-11: original M1 formulation HARD STOP; M0 baselines preserved)
 
 Keep the expert-reviewed question: **source object effects under different embodiment/behavior capability → target-robot-executable effects**. Previous v0.9 CNN was a disposable engineering probe; its 0–0.24% train IoU does NOT refute the research idea. v1.0 learned-mask model lost to persistence (79.88% train IoU) because it resized a tiny object to approximately 2.48 foreground pixels in 32x32, among other defects. **Archive that pilot, do not optimize it.**
 
@@ -28,15 +28,15 @@ Dataset: https://huggingface.co/datasets/LogosRoboticsLab/roboreel
 
 ## Mandatory baseline matrix (method, family, priority, reproduction status)
 
-2026-11-11 status: M0 B03 officially evaluated 46/60; Vid2Robot B05 remains 3/60. Other methods and M1 comparisons stay NOT_RUN until actual executed. No paid VLM/LLM API. Prioritize B03 Uniform with local models, official B05 remains frozen, and custom same-goal physical feasibility + learned policy. B04/B07 are deferred, NOT_RUN. No made-up keyframes.
+2026-11-11 final: M0 B03 π0.5 Uniform 46/60 **official and 60 per-trial rows archived** (commit d5de864), B05 Vid2Robot 3/60 frozen. B01 robot-only BC authentic TRAIN data extension (64 H5+dual-camera samples, fixed 51/13 split) **CODE COMMITTED, DOWNLOAD/TRAIN/EVAL NOT_RUN**. The custom M1 Pick→Push blocker-insertion scene is **HARD NO-GO** based on real M1B4 source-gate: zero observed grasp/lift/object transport. No M1-B5; M2 learned method NOT_STARTED. Other baselines NOT_RUN. Do not conflate official benchmark competence with cross-behavior necessity; no paid VLM/LLM API.
 
-Latest evidence: user 2026-11-11 terminal marker `ACTUAL_PI05_PHYSICS_VERIFIED {"variant":"uniform","k":46,"n":60}`; M0 compact per-trial archive awaiting execution of `scripts/archive_pi05_uniform_m0.py`; earlier failed setup records under v141 are historical, not current state. Custom Pick→Push task still fails source validity and M1 baselines have not run. See `docs/2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md`. The following table preserves frozen scientific controls but updates execution status only.
+Latest evidence: committed M0 per-trial `research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json` and real M1B4 source NO-GO terminal after the genuine frozen-data marker (grasp steps 0, object total xy ~4.7 μm, no new PhysX). See `docs/2026-11-11_M1B4_ACTUAL_REAL_NO_GO_AND_RESEARCH_HARD_STOP.md`. Remaining B01/B02/flow/TAMP comparisons have no actual rollout outcomes.
 
 | ID | Method | Family | Priority | Status / reproduction rule |
 |---|---|---|---|---|
-| B01 | Robot-only Transformer BC, RGB, no human | No-human reference | P0 | Needs target robot training trajectories; local implementation clearly REIMPLEMENTED |
+| B01 | Robot-only Transformer BC, RGB, no human | No-human reference | P0 | 2 authentic TRAIN Panda H5 verified; separate 64-demo H5+camera acquisition and 51/13 split **CODE COMMITTED NOT RUN** via `scripts/prepare_b01_robot_train.py`; **BC model training and 60 official rollouts NOT_RUN** |
 | B02 | Robot-only Diffusion Policy, RGB, no human | No-human reference | P1 | Official DP architecture preferred; inspect dependency and training protocol |
-| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | **M0 ACTUAL official ND PushCube 46/60 = 76.67%, 20x3**; operator log verified 2026-11-11; local 60-row SHA256 archive PENDING push; not an M1 same-goal result |
+| B03 | Video-conditioned pi0.5, Uniform | RoboReel official | P0 | **M0 ACTUAL official ND PushCube 46/60 = 76.67%, 20x3**, per-trial SHA256 archive **PUSHED GitHub d5de864**; NOT M1 same-goal |
 | B04 | Video-conditioned pi0.5, Keyframes | RoboReel official | P2 DEFERRED | NOT_RUN; external VLM API needed for unavailable original keyframe annotations; excluded from current no-API execution, never substitute heuristic frames for official |
 | B05 | Vid2Robot | RoboReel official | P0 | v1.3 ACTUAL_60_PHYSICAL_TRIALS: PushCube ND 3/60=5.0%, 20x3; only one official cell; no rerun |
 | B06 | UniSkill policy | RoboReel official | P1 | OFFICIAL_CODE_AVAILABLE; external ISD checkpoint/24GB batch constraints |
