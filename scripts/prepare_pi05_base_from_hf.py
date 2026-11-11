@@ -297,6 +297,8 @@ def main(argv=None):
     p.add_argument("--endpoint",default=os.environ.get("HF_ENDPOINT","https://hf-mirror.com"))
     p.add_argument("--download",action="store_true",
                    help="EXPLICIT: download approximately 12.4GB pinned pi05_base Orbax params")
+    p.add_argument("--repair-cache-only",action="store_true",
+                   help="OFFLINE: replace old broken cache symlink with hardlinked real directory; NO download")
     p.add_argument("--workers",type=int,default=4,
                    help="Reserved for compatible CLI; downloads are sequential for safe .part resume")
     p.add_argument("--probe-only",action="store_true",
@@ -309,6 +311,37 @@ def main(argv=None):
     p.add_argument("--cache",type=Path,
         default=PROJECT/"outputs/v120_baselines/openpi_cache")
     args=p.parse_args(argv)
+    if args.download and args.repair_cache_only:
+        p.error("Choose either --download or --repair-cache-only")
+    if args.repair_cache_only:
+        root=args.dest.expanduser().resolve()
+        cache=args.cache.expanduser().resolve()
+        record_path=PROJECT/"outputs/v120_baselines/openpi_base_hf_manifest.json"
+        if not record_path.is_file():
+            raise RuntimeError("No prior VERIFIED full pinned mirror manifest: run download to completion first")
+        record=json.loads(record_path.read_text())
+        if (record.get("source")!=REPO or record.get("revision")!=REVISION
+                or Path(record.get("local_dir","/nonexistent")).resolve()!=root
+                or record.get("manifest_verification",{}).get("complete") is not True):
+            raise RuntimeError("Prior mirror manifest is mismatched or incomplete; refusing offline cache repair")
+        # Explicitly verify the local Orbax structural files without network.
+        original=root/PREFIX
+        for name in REQUIRED:
+            if not (original/name).is_file():
+                raise RuntimeError(f"Missing required local Orbax file: {name}")
+        if not (original/"d").is_dir() or not (original/"ocdbt.process_0").is_dir():
+            raise RuntimeError("Missing original local Orbax shard directories")
+        real_cache=install_original_cache(original,cache)
+        record["openpi_base_cache_link"]=real_cache  # Legacy audit field.
+        record["openpi_base_cache_path"]=real_cache
+        record["cache_install_type"]="verified_same_filesystem_hardlinks_no_symlinks"
+        record_path.write_text(json.dumps(record,indent=2)+"\n")
+        print("OPENPI_BASE_CACHE_REPAIRED_OFFLINE",json.dumps({
+            "original":str(original),"cache":real_cache,
+            "symlink":Path(real_cache).is_symlink(),
+            "same_inode_metadata":os.path.samefile(original/"_METADATA",Path(real_cache)/"_METADATA"),
+            "no_network_used":True}),flush=True)
+        return 0
     url=urlsplit(args.endpoint)
     blob_url=urlsplit(args.blob_endpoint)
     if (any(u.scheme!="https" or not u.hostname or u.username or u.password
