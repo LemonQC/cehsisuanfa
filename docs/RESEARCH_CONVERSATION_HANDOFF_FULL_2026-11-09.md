@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-B2 实测成功但科学对比失败，M1-B3 新物理通道反事实实验（待执行）
+
+**真实用户服务器记录**：原版 RoboReel π0.5 M0 46/60 已完整归档；原版 ManiSkill PickCube 专家 3/3；M1-B2 CUSTOM 同目标 PhysX 三组 `source=成功(170步)`、`target_direct=成功(31步)`、`target_clear=成功(51步)`，其 `pilot_contrast_pass=false`，因为**直接推动即可完成，清障没有显示必要性**。因此冻结旧场景/旧数据，不在其上训练 Method，也不重新运行原版 Baseline。新建 `AGCOFLM1B3Corridor-v0`：真实 static walls + dynamic blocker、狭窄“尺寸选择性”通道及侧向停车槽（目标 Cube 40mm 可通过 50mm 狭口、挡块 58mm 不能），用无 PhysX 的 C-space BFS 验证阻塞/开放状态连通性；然后在同一最终目标、同一 seed=120 上运行 4 个物理反事实场景：`blocked_source`（复用官方 MPLib Pick+Place）、`blocked_direct`、`blocked_clear`、`open_direct`（三种目标 Push 使用旧 privileged Push 执行器）。运行入口 `bash scripts/run_m1b3_corridor_once.sh`，自动先过 stdlib unittest 与 geometry gate，再限时真实物理并保存 H5/JSON/MP4 和逐帧物体状态；**这批代码已提交但物理未执行**，不声称必然成功。即使 blocked-clear 物理反事实成功，也需要强等信息 TAMP、动态替代路径检验和源视频独特信息验证，才能进入 M2。详见 [M1-B3 反事实物理实验与科研停止条件](2026-11-11_M1B3_CORRIDOR_COUNTERFACTUAL_PRE_REGISTERED.md)。
+
+---
+
 ## 2026-11-11 — M1-B2 测试前置阻塞：坐标列表与 Pose 接口修复，物理实验尚未启动
 
 用户执行 `bash scripts/run_m1b2_same_goal_once.sh`，首先进行标准库 unittest（4 tests，2 errors）：`actual_gate` 的 Python `final[:2]-goal[:2]`（列表不能直接减）及 `TracedEnv.step` 调用 `_pose(agent.tcp_pose)` 报 `AttributeError`（TCP 已经是 Pose 类型，只有 `.p`；原 `_pose` 只支持 actor.pose.p）。已在 `agcofl/m1b2_same_goal_effect_physics.py` 对测量 XYZ 统一 NumPy 数组、三维有限数检查，并兼容 Actor.pose.p 和直接 Pose.p；在 `tests/test_m1b2_same_goal_effect_physics.py` 新增列表/数组一致性和 TCP/Actor 访问回归测试。原 runner 因 `set -e` 在测试失败后**没有运行 source/target_direct/target_clear 任何一个 PhysX 案例**。用户需要 `git pull --ff-only`，先执行 `python -m unittest discover -s tests -p 'test_m1b2_same_goal_effect_physics.py' -q`，通过后再执行 `bash scripts/run_m1b2_same_goal_once.sh`。M0 46/60、M1-B1 官方 Pick 3/3 不受影响；M1-B2 和强 TAMP 仍未得到真实结果。详见 [M1-B2 原协议及修复日志](2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md)。
