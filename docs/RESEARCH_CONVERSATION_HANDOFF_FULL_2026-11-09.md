@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-B1 官方 Pick 3/3 实测成功，M1-B2 同目标物理对照开始
+
+**用户实际服务器证据**：`M1B_OFFICIAL_PICK_EXISTING_VERIFIED {"requested_attempts":3,"recorded_episodes":3,"successes":3,"any_video":true,"usable_reference":true,"same_goal_pair_validated":false}`；此前 RoboReel 官方 π0.5 M0 46/60（已归档）、M1-A 本地 2 条 PushCube TRAIN H5 + 6 条 Push 人类视频不变。抓取专家已经可用，**原版 PickCube 的 3/3 不能冒充同目标跨行为结果**。下一步已提交 `agcofl/m1b2_same_goal_effect_physics.py` + `scripts/run_m1b2_same_goal_once.sh` + `scripts/m1b2_validate_paired_physics.py`：同一固定 PhysX 场景/最终 Cube 目标、同一 seed=120，实际运行三个独立物理案例（复用原作者 OBB+MPLib 的 Pick+Place、直接 Push-only、先推走动态挡块再 Push-only），保留每段 H5/JSON/MP4 和逐时刻 object/contact 数据，严格判定源 Pick 是否抓起/越障/释放和目标是否真实移开挡块/不抓取地到达目标。控制器中的清障顺序是人工给定的**特权状态可行性上界**，不是学习算法、不是完整能力约束 TAMP；有限短墙场景也**尚不能证明必须先移挡块**。单次运行入口 `bash scripts/run_m1b2_same_goal_once.sh`（自带 stdlib unittest 和 3 次真实物理）已提交，但用户服务器尚未执行。下一阶段必须用强等信息 TAMP 和真实阻断拓扑测试必要性，再决定 M2。说明见 [M1-B2 首次真实 PhysX 对照](2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md)。
+
+---
+
 ## 2026-11-11 — M1-B1 官方 Pick 求解器已真实运行，旧校验器结构错误；仅离线复核禁止重跑
 
 用户服务器真实执行 `m1b_run_official_pick_reference.py`，单元测试报 `KeyError: usable_successful_pick_reference`（仅测试 fixture 漏字段）；正式 3 次 ManiSkill motionplanning 命令返回后，旧 `validate_record` 报 `ValueError: Not the original ManiSkill PickCube-v1 demo metadata`。对照 ManiSkill 官方 `mani_skill/utils/wrappers/record.py` 确认此前包装器误读了 JSON：真实是 `env_info.env_id`，每个 episode 的完成标签是 `episodes[i].success`，不是 `env_id` 与 `episodes[i].info.success`。官方原始 H5/JSON/MP4 应已生成，**尚未核实成功次数**，不可报告源专家成功。已修复格式、测试 fixture 与实际 H5/JSON 一致性核验，新增 `--verify-only`，只验证已有文件并生成小型报告，不调用/重跑仿真。操作：pull 后 `python -m unittest discover -s tests -p 'test_m1b_official_pick_reference.py' -q` 和 `python -m scripts.m1b_run_official_pick_reference --verify-only`，观察 `M1B_OFFICIAL_PICK_EXISTING_VERIFIED` 的 `successes`；若无成功轨迹，查原 `official_solver.log`。M0 46/60 已封存；M1 同目标源/target 插入任务仍未做，不能把原版 PickCube 结果当跨行为胜利。详见 [M1-B 冻结协议及修复](2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md)。
