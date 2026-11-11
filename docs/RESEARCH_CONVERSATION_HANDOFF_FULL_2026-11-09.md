@@ -1,3 +1,9 @@
+## ★ v1.6.2 — 2026-11-11 已下载 OpenPI Base，修复软链接导致的 `relative_to` 崩溃
+
+用户真实运行原版 SigLIP 一视频 smoke，日志确认 `PI05_PINNED_HF_BASE_STAGED`，说明下载器校验整套基础权重已完成，但原版 OpenPI `maybe_download` 先对缓存软链接调用 `.resolve()`，解析到外部 `openpi_base_hf_mirror`，之后 `local_path.relative_to(cache_dir)` 报错。**不是重新下载 12.4GB 的理由。** 已增加 `bash scripts/run_v141_next_gate.sh repair-pi05-cache`：完全离线从已经核验的原始 Orbax 文件创建 OpenPI 缓存真实目录，利用同文件系统硬链接共享 inode，不重复占用 12.4GB 数据；修复前先验证原目录及旧软链接，采用临时 staging 恢复机制。更新 SigLIP 前置检查，拒绝再把外部软链接误报为“可加载”；补充缓存迁移和无网络测试。服务器尚未实际验证修复；先运行对应 pytest、`repair-pi05-cache`，成功后 `smoke-one-feature`，再进入正式 20 段特征与 60 次评测。原版模型代码不修改；完整记录见 [v1.6.2 缓存迁移修复](2026-11-11_V162_OPENPI_BASE_SYMLINK_RESOLVE_HARDLINK_FIX.md)。
+
+---
+
 ## ★ v1.6.1 — 2026-11-10 OpenPI Base 下载已进入真实文件传输，修复 Orbax 零字节标记
 
 用户最新日志确认 `pi05_base/params/array_metadatas/process_0` 已经获得 `git-blob-verified`，并进入固定 20 文件清单的第 5 个文件 `commit_success.txt`，该文件官方 manifest 大小为 **0 字节**。下载器把尚不存在的 `.part` 的大小视作零，误判成已下载完毕，随即校验不存在的文件而报 `missing`。已修复为对空文件执行本地原子创建、验证 Git blob SHA/LFS 摘要，完全不发 HTTP；测试覆盖成功与错误哈希。只需 pull + `pytest tests/test_prepare_pi05_base_from_hf.py` + **原命令** `prepare-pi05-base-hf`，已核验文件自动跳过，禁止删除镜像目录。M0/M1/M2 验收目标不变；checkpoint 尚未全部恢复或正式物理评测。详见 [v1.6.1 零字节 Orbax 修复](2026-11-10_V161_ORBAX_ZERO_BYTE_MARKER_FIX.md)。
