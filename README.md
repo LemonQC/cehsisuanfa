@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — 当前 M1 成熟执行器替换源端真实抓取失败，目标端改为独立单次验证（同实验，不重新选题）
+
+用户当前原 M1B3 障碍场景实际跑完官方 Panda/MPLib 侧向抓取替换的一次 106步 PhysX：`M1_CURRENT_EXECUTOR_SWAP {"mode":"source_side_grasp","success":false,"steps":106,"grasp_steps":0,"error":"CONTACT_NO_GO...did not physically grasp cube"}`，`observed_lift_m=0`、最终误差0.21000036m。证明**这次侧向抓取规划成功但物理夹持失败**，不能再声称低层执行器已修复；旧runner因源NO_GO未启动新目标端 Push。保持原 M1研究问题、真实场景、障碍、终点、seed和全部已封存H5/视频。新增离线 `scripts/m1_current_compare_grasp_contact.py` 读取这次失败的106步轨迹与旧 M1B2 **实际成功**的170步抓取轨迹，对照真实夹爪 close 动作、TCP距离/位姿、抓取证据，记录原文件SHA256，**不执行任何仿真**。新增 `scripts/run_m1_current_target_only_once.sh`，允许源端NO_GO时独立测试已提交的 ManiSkill官方Panda PushCube式 MPLib 底层执行器（同 M1B3 原场景，仅一次边界物理），不修改原 source 或再跑旧四组；此处 Target 成功只能证明低层推动可行，**不能冒充已经完成同目标跨行为配对/TAMP**。执行 `python -m unittest discover -s tests -p 'test_m1_current_compare_grasp_contact.py' -q; python -m scripts.m1_current_compare_grasp_contact; bash scripts/run_m1_current_target_only_once.sh`。这两项新检查还未在用户服务器运行。详见 [当前 M1 真实抓取失败与独立目标执行验收](docs/2026-11-11_CURRENT_M1_SOURCE_CONTACT_FAIL_TARGET_INDEPENDENT.md)。
+
+---
+
 ## ★ 2026-11-11 — 当前 M1 场景执行器直接替换已编码，不换任务、不重跑旧实验
 
 用户明确要求解决**当前**同目标 Pick 源端→Push-only 目标端清障操作里的失效执行模块，不能擅自换成新论文。旧 M1B3 真实轨迹源抓取步数为0、物体无升降、XY总位移约4.7微米；目标端清障32步真实完成，但旧 `DiagnosticPushTeacher` 将目标方块推至狭口前 x≈.125m、y≈−.031m 卡住。已提交直接替换 `agcofl/m1_current_executor_swap.py`：保持原始 `AGCOFLM1B3Corridor-v0`、seed120、goal x=.210、50mm狭口/动态挡块、同一 Panda，不动任何已保存 H5/视频。源端用 ManiSkill 官方 Panda OBB + MPLib 规划接口**从机器人所在的−X侧向接近抓取**，关夹爪后马上验证真实 `is_grasping`，否则停止抬升/搬运；目标端替换手写比例 Push 为 ManiSkill 官方 `panda/solutions/push_cube.py` 同款 MPLib 关节空间规划接口，分别控制清障和推方块，夹爪继续保持 open。均为**有明确适配差异的现成接口组合**，不是原版未修改算法、训练策略或 TAMP。新入口 `bash scripts/run_m1_current_executor_swap_once.sh`：先4项纯 Python unittest、原几何检查、只做一次源执行冒烟；实际抓取/抬升/落点在相同目标中通过后，才启动最多一次目标执行冒烟；否则立刻停，不重跑已有4组基线或调参循环。新代码已提交但用户GPU机器**尚未验证**。科学门槛（同目标源视频、等信息强 TAMP、非平凡方法必要性）仍未通过。详见 [当前实验的执行模块替换操作](docs/2026-11-11_CURRENT_M1_OFFICIAL_EXECUTOR_SWAP_SMOKE.md)。
