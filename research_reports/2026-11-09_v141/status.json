@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1b2_same_goal_effect_physics.py' -q; IF OK, bash scripts/run_m1b2_same_goal_once.sh (3 fixed actual PhysX trials, no re-run M0 or official Pick). Report M1B2_PHYSICS_GATE and case errors; no method design yet.",
-  "research_execution_reference": "docs/2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md",
+  "next_operator_action": "Freeze completed M1B2 seed120 raw runs, do not repeat. Redesign actual topology with a physically unique corridor blocked by movable actor and feasible side parking; run blocked/open counterfactual then strong equal-information capability-aware TAMP. Do not train M2 yet. Operator should preserve small raw status.json and summary JSON for archival.",
+  "research_execution_reference": "docs/2026-11-11_M1B2_PHYSICS_ACTUAL_3OF3_INSERTION_GATE_FAILED.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1-A ACTUAL 2 robot H5+dual-camera, 6 Push human MP4; M1-B official expert source capture script COMMITTED NOT_RUN; matched-goal Pick source and target-blocker physics NOT_RUN",
+    "m1": "M1A PASS; M1B1 Pick reference 3/3 PASS; M1B2 real three-case simulation ALL SUCCEED (source170, target_direct31, target_clear51) but NECESSARY-INSERTION GATE FAILS because direct push succeeds; strong TAMP NOT_RUN",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   },
   "m1a_local_asset_gate": {
@@ -381,15 +381,15 @@
     "status": "M1A_LOCAL_TRAIN_ASSETS_FOUND_BUT_MATCHED_SOURCE_AND_INSERTION_ABSENT"
   },
   "m1b_current": {
-    "stage": "B1 ACTUAL_PASSED_3_OF_3; B2 SOURCE/TARGET SAME-GOAL THREE-PHYSICS-CASE CODE COMMITTED NOT_RUN",
+    "stage": "M1B1_OFFICIAL_PICK_3_OF_3_PASS; M1B2_ACTUAL_PHYSX_ALL3_SUCCEED_BUT_CAUSAL_INSERTION_CONTRAST_FAIL",
     "script": "scripts/m1b_run_official_pick_reference.py",
     "solver": "installed ManiSkill original panda motionplanning PickCube-v1",
     "bounded_episodes": 3,
     "max_duration_seconds": 480,
     "outputs": "outputs/m1b_official_pick_reference",
     "source_note": "original PickCube-v1 task is NOT matched goal to RoboReel PushCube-v2; needs adapted original author planner then verified same-goal source",
-    "target_blocker_insertion": "CODE_COMMITTED_NOT_PHYSICS_VERIFIED",
-    "source_same_goal_valid": "CODE_COMMITTED_NOT_PHYSICS_VERIFIED",
+    "target_blocker_insertion": "PHYSX_ACTUAL_INSERTION_OBSERVED_BUT_NOT_NECESSARY",
+    "source_same_goal_valid": "PHYSX_ACTUAL_PASS_SEED_120",
     "same_goal_tamp": "NOT_RUN",
     "new_method": "NOT_STARTED",
     "user_log_observed": {
@@ -418,7 +418,7 @@
       "script": "agcofl/m1b2_same_goal_effect_physics.py",
       "runner": "scripts/run_m1b2_same_goal_once.sh",
       "result_validator": "scripts/m1b2_validate_paired_physics.py",
-      "physics_execution": "NOT_STARTED_BY_TEST_PRECHECK",
+      "physics_execution": "REAL_THREE_CASE_PHYSX_EXECUTED",
       "methods": [
         "source_pick_mplib_adapted",
         "target_direct_push_privileged",
@@ -442,6 +442,34 @@
         "fix_pushed": true,
         "post_fix_tests_on_operator": "NOT_RUN",
         "three_case_PhysX_status": "NOT_STARTED_TEST_PREFLIGHT_BLOCKED"
+      },
+      "user_operator_results": {
+        "seed": 120,
+        "source": {
+          "success": true,
+          "steps": 170,
+          "error": null
+        },
+        "target_direct": {
+          "success": true,
+          "steps": 31,
+          "error": null
+        },
+        "target_clear": {
+          "success": true,
+          "steps": 51,
+          "error": null,
+          "goal_error_m": 0.04562683011663283,
+          "blocker_effect": true
+        },
+        "matched_start_and_goal": true,
+        "all_three_traces": true,
+        "pilot_contrast_pass": false,
+        "causal_necessity_proven": false,
+        "strong_tamp_evaluated": false,
+        "learned_method_evaluated": false,
+        "status": "PILOT_INCONCLUSIVE_OR_FAILED",
+        "provenance": "operator-provided terminal output; local raw H5/video and status JSON not copied to GitHub"
       }
     }
   }
