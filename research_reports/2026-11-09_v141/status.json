@@ -350,7 +350,7 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1b_official_pick_reference.py' -q; python -m scripts.m1b_run_official_pick_reference. Need original ManiSkill H5/MP4 with >=1 official successful Pick. Do not mistake original PickCube goal for same-goal pairing. Next adapt official planner on single custom same-goal obstacle scene and run target push blocker + strong equal-information TAMP.",
+  "next_operator_action": "git pull origin main; conda activate pi05; run python -m unittest discover -s tests -p 'test_m1b_official_pick_reference.py' -q and python -m scripts.m1b_run_official_pick_reference --verify-only. This MUST NOT rerun ManiSkill solver, should verify saved official H5/JSON success and report results. Source PickCube reference is still not same-goal. Then custom M1 B2 paired physics and strong TAMP.",
   "research_execution_reference": "docs/2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
@@ -381,7 +381,7 @@
     "status": "M1A_LOCAL_TRAIN_ASSETS_FOUND_BUT_MATCHED_SOURCE_AND_INSERTION_ABSENT"
   },
   "m1b_current": {
-    "stage": "B1 OFFICIAL PICK REFERENCE SCRIPT COMMITTED_NOT_RUN",
+    "stage": "B1 OFFICIAL PICK 3 EPISODE ORIGINAL SOLVER EXECUTED; VALIDATOR SCHEMA BUG FIXED; SAVED SUCCESS NOT YET VERIFIED",
     "script": "scripts/m1b_run_official_pick_reference.py",
     "solver": "installed ManiSkill original panda motionplanning PickCube-v1",
     "bounded_episodes": 3,
@@ -391,6 +391,17 @@
     "target_blocker_insertion": "NOT_RUN",
     "source_same_goal_valid": "NOT_RUN",
     "same_goal_tamp": "NOT_RUN",
-    "new_method": "NOT_STARTED"
+    "new_method": "NOT_STARTED",
+    "user_log_observed": {
+      "stdlib_unittest": "one test KeyError from incomplete mocked verification, other cases not evidence of real success",
+      "original_solver": "subprocess returned zero and wrapper reached validate_record(target,attempts)",
+      "failure": "ValueError Not the original ManiSkill PickCube-v1 demo metadata",
+      "root_cause": "Wrapper incorrectly assumed top-level env_id and episodes[i].info.success; ManiSkill official RecordEpisode stores env_info.env_id and episodes[i].success",
+      "original_output_preserved": true,
+      "user_official_episode_outcomes_not_yet_verified": true,
+      "patch": "v1.6.5 verify-only reuse existing H5/JSON and MP4, no original solver rerun"
+    },
+    "official_pick_subprocess_executed": true,
+    "official_pick_usable_reference": "UNKNOWN_UNTIL_VERIFY_ONLY"
   }
 }
