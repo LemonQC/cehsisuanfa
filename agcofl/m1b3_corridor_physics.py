@@ -376,12 +376,23 @@ def run_case(official_root,seed,mode,out,max_steps=MAX_STEPS):
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mode",choices=MODES,required=True)
+    p.add_argument("--mode",choices=MODES,
+                   help="Select one fixed PhysX case; omitted with --preflight-only")
+    p.add_argument("--preflight-only",action="store_true",
+                   help="NO physics, no ManiSkill import: verify geometric necessity candidate")
     p.add_argument("--seed",type=int,default=SEED)
     p.add_argument("--max-steps",type=int,default=MAX_STEPS)
     p.add_argument("--official-root",default="third_party/roboreel_models")
     p.add_argument("--out",default="outputs/m1b3_corridor_dev")
     args=p.parse_args(argv)
+    if args.preflight_only:
+        report=geometry_preflight()
+        print("M1B3_GEOMETRY_PREFLIGHT",json.dumps(report),flush=True)
+        if not report["pass"]:
+            raise SystemExit(4)
+        return
+    if args.mode is None:
+        p.error("--mode is required unless --preflight-only is set")
     run_case(args.official_root,args.seed,args.mode,args.out,args.max_steps)
 
 
