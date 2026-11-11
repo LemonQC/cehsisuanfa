@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M1-A 真实资产二次核验通过，M1-B 启动官方 Pick 物理专家
+
+用户服务器再次运行修复版 `m1a_inventory_real_assets`，确认 `m0_verified=true`、`local_robot_action_demos=2`（真正位于 `outputs/v120_baselines/robot_train`）、`local_source_push_train_videos=6`、`local_source_pick_train_videos=0`；同目标 Pick→Push 物理配对与 blocker insertion 仍未验证。M0 π0.5 Uniform 46/60 三个 seed 的原始 60 条 CSV/JSON/MD 已归档 GitHub `d5de864`，不再重跑。下一步 M1-B1 不再手写 Pick 控制器：提交 `scripts/m1b_run_official_pick_reference.py`，调用 ManiSkill 原版 `mani_skill.examples.motionplanning.panda.run -e PickCube-v1`，最多 3 次真实 PhysX 专家尝试，保存原作者 H5/JSON/MP4 到 `outputs/m1b_official_pick_reference`，逐 episode 验证 H5 action 及 JSON 成功标记；`python -m scripts.m1b_run_official_pick_reference` 为执行入口，附标准库 unittest，无 pytest、无模型下载。**原版 PickCube 目标≠我们同目标 Pick→Push 的目标，因此只能验证可靠抓取专家；绝不作为 M1 同目标成功结果。** M1-B2 必须在自定义同终态场景中复用可靠专家完成真实 Pick+Place、完成 Push-only 先挪 blocker 再推 cube 的物理行为，再将强 TAMP/Goal-only/Raw Flow/Geometry 等同信息 Baseline 跑完，之后才进入新算法。详见 [M1-B 真实实验计划](docs/2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md)。B1 新代码尚未在用户服务器执行。
+
+---
+
 ## ★ 2026-11-11 — M0 真实结果全部归档（d5de864），下一步执行 M1-A 数据/配对可行性门槛
 
 GitHub 已核验 `research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json` 和 `per_trial_60.csv`：RoboReel 官方 π0.5 Uniform ND PushCube **46/60 = 76.67%**，逐 seed 分别为 `14/20`、`13/20`、`19/20`，原作者 commit `79a0fb0099e73c5560114753a8706276f93aefc2`。M0 关闭、不再下载/跑官方 π0.5；旧 Vid2Robot 3/60 保留。当前重心转向 M1：此前真实 H5 审核有 2 条 RoboReel PushCube TRAIN 动作轨迹、260 个 TRAIN 人类 PushCube 前视视频远程候选（实际只下载 6 个），**尚无验证通过的源 Pick→目标 Push 同一最终目标配对**。新标准库脚本 `python -m scripts.m1a_inventory_real_assets` 仅核对用户机器上真实文件，排除官方 EVAL，报告 M1 缺口；测试命令用 Python 自带 unittest，不需要 pytest。科学首个任务锁定为：源端 Pick 越障达成同一物体目标，目标 Push-only 需先清理可移动 blocker 再推目标物体；先跑与 Goal-only、Raw Flow、Geometry 以及强 TAMP 的等信息物理对照，**这些 M1 Baseline 仍 NOT_RUN**。详见 [M1-A 数据门槛与首个实验](docs/2026-11-11_M1A_REAL_DATA_AUDIT_NEXT_ACTION.md)。研究方法 M2 尚未启动。
