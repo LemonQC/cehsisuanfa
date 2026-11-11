@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1b3_corridor_once.sh (CPU geometry preflight first, then four PhysX DEV cases). No M0 or M1B1 or old M1B2 reruns. Return M1B3_PHYSICS_GATE and case errors; do not start M2.",
-  "research_execution_reference": "docs/2026-11-11_M1B3_CORRIDOR_COUNTERFACTUAL_PRE_REGISTERED.md",
+  "next_operator_action": "DO NOT rerun M0, B1, B2, or B3 old seed. Pull main, conda activate pi05, run stdlib unit test test_m1b3_diagnose_existing.py then python -m scripts.m1b3_diagnose_existing. Use measured source planner phases and blocked_clear physical phase split to decide one evidence-backed versioned fix or stop. Keep raw H5/videos local.",
+  "research_execution_reference": "docs/2026-11-11_M1B3_ACTUAL_PHYSICS_NO_GO_AND_OFFLINE_DIAG.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
-    "m1": "M1A assets PASS, M1B1 official Pick 3/3, M1B2 actual same-goal Source/Direct/Clear all succeed but central blocker insertion contrast FAILS. New M1B3 4-way geometry-constrained corridor code COMMITTED, physical NOT_RUN; stronger fair TAMP NOT_RUN.",
+    "m1": "M1-A 2 real train robot demos and 6 Push videos; M1-B1 Pick 3/3; M1-B2 real source/direct/clear all succeed but insertion need NOT shown; M1-B3 blocked/open genuine physics: source FAIL lower MPLib, direct FAIL, clear FAIL after blocker displaced, open direct PASS, hence same-goal paired physics NOT VALID and novelty/TAMP NOT EVALUATED",
     "m2": "NOT_STARTED until fair M1 evidence supports novelty"
   },
   "m1a_local_asset_gate": {
@@ -473,7 +473,7 @@
       }
     },
     "m1b3_corridor": {
-      "stage": "CODE_COMMITTED_NOT_EXECUTED",
+      "stage": "ACTUAL_4_CASE_PHYSX_EXECUTED; PAIRED_FEASIBILITY_FAILED; PILOT_CONTRAST_FALSE",
       "reason": "M1B2 real same-goal Pick/Direct/Clear all succeeded; direct 31 steps proves blocker-clearing not necessary in old scene",
       "new_scene": "AGCOFLM1B3Corridor-v0 (custom, separate from M1B2)",
       "geometry": "rigid perimeter corridor with 70mm side door and 50mm size-selective throat; task 40mm fits, blocker 58mm does not; parking y=125mm",
@@ -489,10 +489,45 @@
       "validator": "scripts/m1b3_validate_corridor.py",
       "unittest": "tests/test_m1b3_corridor_physics.py",
       "seed": 120,
-      "physical_runs": 0,
+      "physical_runs": 4,
       "equal_info_tamp": "NOT_RUN",
       "source_video_value": "NOT_MEASURED",
-      "caveats": "Stationary blocker Cspace does not rule out all dynamic alternatives; manually scripted clearance not TAMP, no new learned method"
+      "caveats": "Stationary blocker Cspace does not rule out all dynamic alternatives; manually scripted clearance not TAMP, no new learned method",
+      "real_user_log": {
+        "blocked_source": {
+          "success": false,
+          "steps": 335,
+          "goal_error_m": 0.21000231128795568,
+          "error": "RuntimeError: official_mplib_lower_failed"
+        },
+        "blocked_direct": {
+          "success": false,
+          "steps": 91,
+          "goal_error_m": 0.14206760669978039,
+          "blocker_displacement_m": 0.017017562270515204
+        },
+        "blocked_clear": {
+          "success": false,
+          "steps": 450,
+          "goal_error_m": 0.09015882999676202,
+          "clear_side_pocket_observed": true
+        },
+        "open_direct": {
+          "success": true,
+          "steps": 35,
+          "goal_error_m": 0.014314427295988688
+        },
+        "geometry_preflight_pass": true,
+        "matched_task_start_and_goal": true,
+        "pilot_contrast_pass": false,
+        "causal_necessity_proven": false,
+        "strong_tamp_evaluated": false,
+        "source_video_information_value_measured": false,
+        "paper_ready": false,
+        "provenance": "2026-11-11 operator terminal M1B3_PHYSICS_GATE; original H5/JSON/MP4 and traces remain local, not verified from GitHub"
+      },
+      "next_step": "RUN_ONCE_OFFLINE_DIAGNOSIS_ONLY, NOT physical replay: python -m scripts.m1b3_diagnose_existing",
+      "offline_diagnosis_status": "CODE_COMMITTED_NOT_EXECUTED_ON_USER_SERVER"
     }
   }
 }
