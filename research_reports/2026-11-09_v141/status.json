@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "git pull origin main; conda activate pi05; run python -m unittest discover -s tests -p 'test_m1b_official_pick_reference.py' -q and python -m scripts.m1b_run_official_pick_reference --verify-only. This MUST NOT rerun ManiSkill solver, should verify saved official H5/JSON success and report results. Source PickCube reference is still not same-goal. Then custom M1 B2 paired physics and strong TAMP.",
-  "research_execution_reference": "docs/2026-11-11_M1B_EXECUTION_EXPERT_PICK_THEN_BLOCKER_TAMP.md",
+  "next_operator_action": "Do not rerun official PickCube or M0. git pull --ff-only; conda activate pi05; bash scripts/run_m1b2_same_goal_once.sh. It runs 1 fixed seed on custom same-goal PhysX: original-mplib adapted Pick+Place source, direct push, clear-blocker then push. All cases store H5/JSON/video/traces. Return M1B2_PHYSICS_GATE and case errors; physics results NOT_YET_OBSERVED. This is NOT strong TAMP nor causal-necessity proof.",
+  "research_execution_reference": "docs/2026-11-11_M1B2_REAL_PHYSX_PAIRED_PILOT.md",
   "m0_m1_m2_current": {
     "m0": "PASS_AND_GITHUB_ARCHIVED (official pi05 Uniform 46/60; Vid2Robot 3/60)",
     "m1": "M1-A ACTUAL 2 robot H5+dual-camera, 6 Push human MP4; M1-B official expert source capture script COMMITTED NOT_RUN; matched-goal Pick source and target-blocker physics NOT_RUN",
@@ -381,15 +381,15 @@
     "status": "M1A_LOCAL_TRAIN_ASSETS_FOUND_BUT_MATCHED_SOURCE_AND_INSERTION_ABSENT"
   },
   "m1b_current": {
-    "stage": "B1 OFFICIAL PICK 3 EPISODE ORIGINAL SOLVER EXECUTED; VALIDATOR SCHEMA BUG FIXED; SAVED SUCCESS NOT YET VERIFIED",
+    "stage": "B1 ACTUAL_PASSED_3_OF_3; B2 SOURCE/TARGET SAME-GOAL THREE-PHYSICS-CASE CODE COMMITTED NOT_RUN",
     "script": "scripts/m1b_run_official_pick_reference.py",
     "solver": "installed ManiSkill original panda motionplanning PickCube-v1",
     "bounded_episodes": 3,
     "max_duration_seconds": 480,
     "outputs": "outputs/m1b_official_pick_reference",
     "source_note": "original PickCube-v1 task is NOT matched goal to RoboReel PushCube-v2; needs adapted original author planner then verified same-goal source",
-    "target_blocker_insertion": "NOT_RUN",
-    "source_same_goal_valid": "NOT_RUN",
+    "target_blocker_insertion": "CODE_COMMITTED_NOT_PHYSICS_VERIFIED",
+    "source_same_goal_valid": "CODE_COMMITTED_NOT_PHYSICS_VERIFIED",
     "same_goal_tamp": "NOT_RUN",
     "new_method": "NOT_STARTED",
     "user_log_observed": {
@@ -402,6 +402,33 @@
       "patch": "v1.6.5 verify-only reuse existing H5/JSON and MP4, no original solver rerun"
     },
     "official_pick_subprocess_executed": true,
-    "official_pick_usable_reference": "UNKNOWN_UNTIL_VERIFY_ONLY"
+    "official_pick_usable_reference": true,
+    "official_pick_actual_result": {
+      "user_marker": "M1B_OFFICIAL_PICK_EXISTING_VERIFIED",
+      "requested_attempts": 3,
+      "recorded_episodes": 3,
+      "successes": 3,
+      "any_video": true,
+      "usable_reference": true,
+      "same_goal_pair_validated": false,
+      "original_data_dir": "outputs/m1b_official_pick_reference",
+      "server_evidence_date": "2026-11-11"
+    },
+    "m1b2_dev": {
+      "script": "agcofl/m1b2_same_goal_effect_physics.py",
+      "runner": "scripts/run_m1b2_same_goal_once.sh",
+      "result_validator": "scripts/m1b2_validate_paired_physics.py",
+      "physics_execution": "NOT_RUN_ON_OPERATOR_SERVER",
+      "methods": [
+        "source_pick_mplib_adapted",
+        "target_direct_push_privileged",
+        "target_clear_then_push_privileged"
+      ],
+      "scene": "AGCOFLM1B2SameGoal-v0",
+      "dev_seed": 120,
+      "source_reference": "Official ManiSkill PickCube 3/3, not matched task",
+      "video_h5": "recorded if simulator succeeds",
+      "caveats": "Short walls do not establish necessary blocker clearing; privileged target is only a scripted pilot, NOT actual equal-info TAMP."
+    }
   }
 }
