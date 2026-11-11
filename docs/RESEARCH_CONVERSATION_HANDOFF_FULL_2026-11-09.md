@@ -1,3 +1,9 @@
+## ★ 2026-11-11 — M0 正式完成：官方 π0.5 Uniform ND PushCube 46/60，下一步 M1 强 Baseline 与科学必要性
+
+**用户 RTX4090 服务器真实实测**：原版 RoboReel π0.5 Base SigLIP 已成功生成 `siglip_params.pkl`；0080–0099 共 20/20 段官方 EVAL `front.npy` 已全部提取，`PI05_SELECTIVE_ASSET_GATE ready=true`，`PI05_RUNTIME_CHECK ready_for_next_gate=true`，原版 3×20 物理仿真正式输出 `ACTUAL_PI05_PHYSICS_VERIFIED {"variant":"uniform","k":46,"n":60}`，成功率 **76.67%**。旧 Vid2Robot 官方 ND PushCube **3/60=5.00%** 保持不重跑。π0.5 的强基线跑通不等于我们的跨行为创新成立。已新增 `scripts/archive_pi05_uniform_m0.py`：读取服务器实际 `outputs/v140_pi05_uniform/seed_offset_*/summary.json`、官方聚合结果和 config，复核 60 条成功标签并生成带 SHA256 的小型 Markdown/CSV/JSON，后续仅需一次运行并 Git push 归档原始结果。**此原始报告还未由服务器归档到 GitHub**，不得虚构文件已存在。后续 M1 按 [固定协议](2026-11-11_M0_DONE_M1_FROZEN_PREMETHOD_PROTOCOL.md) 核对真实同目标源 Pick→目标 Push 数据与 robot TRAIN action，先执行 Goal-only、Raw Flow、Waypoint/Geometry、能力约束 TAMP（外加相关 flow 方法有验证的 port），证明非平凡 target-only blocker clearance 必要性，再开始 M2 训练；绝不把 M0 官方 PushCube 结果混为同目标 M1 结果。
+
+---
+
 ## ★ v1.6.3 — 2026-11-11 原版 SigLIP 权重恢复成功、7/20 视频特征完成、余下 13 段独立进程提取
 
 用户服务器实测：`pi05` 环境 JAX CUDA `gpu:0`、NumPy 1.26.4 均正常；原版 OpenPI Base SigLIP `siglip_params.pkl` 已生成，大小 **1,659,216,368 bytes**；RoboReel 官方 EVAL 视频特征 **0080–0086 共 7/20** 已写入。旧共享 JAX 进程连续处理时出现 `os.fork()`/JAX 多线程警告，随后被系统以 Killed 终止，尚不能仅据此确定 OOM；`0087–0099` 仍缺失，因此 `--require-ready` 正确失败，正式 π0.5 物理评测 **0/60**。新 `--feature-process-mode isolated` 在一个视频一个子进程中调用完全相同的原作者 `_PersistentEncoder`，视频解码发生在 JAX 初始化前，并将 `XLA_PYTHON_CLIENT_PREALLOCATE=false`；每个完成的子进程退出回收内存。已完成的 0080–0086 保持不变，原作者 `front.npy` 原子写入，故可中断续跑而不重新下载任何 checkpoint。主入口 `bash scripts/run_v141_next_gate.sh prepare-features` 已切至独立进程；随后需 `--require-ready` 和 `evaluate-uniform` 验证真实 60 次物理结果。回归测试已提交，服务器尚未重跑。详见 [v1.6.3 提取续跑与内存隔离记录](2026-11-11_V163_PI05_SIGLIP_7OF20_ISOLATED_RESUME.md)。
