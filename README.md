@@ -1,3 +1,9 @@
+## ★ v1.6.2 — 2026-11-11 已下载 OpenPI Base，修复软链接导致的 `relative_to` 崩溃
+
+用户真实运行原版 SigLIP 一视频 smoke，日志确认 `PI05_PINNED_HF_BASE_STAGED`，说明下载器校验整套基础权重已完成，但原版 OpenPI `maybe_download` 先对缓存软链接调用 `.resolve()`，解析到外部 `openpi_base_hf_mirror`，之后 `local_path.relative_to(cache_dir)` 报错。**不是重新下载 12.4GB 的理由。** 已增加 `bash scripts/run_v141_next_gate.sh repair-pi05-cache`：完全离线从已经核验的原始 Orbax 文件创建 OpenPI 缓存真实目录，利用同文件系统硬链接共享 inode，不重复占用 12.4GB 数据；修复前先验证原目录及旧软链接，采用临时 staging 恢复机制。更新 SigLIP 前置检查，拒绝再把外部软链接误报为“可加载”；补充缓存迁移和无网络测试。服务器尚未实际验证修复；先运行对应 pytest、`repair-pi05-cache`，成功后 `smoke-one-feature`，再进入正式 20 段特征与 60 次评测。原版模型代码不修改；完整记录见 [v1.6.2 缓存迁移修复](docs/2026-11-11_V162_OPENPI_BASE_SYMLINK_RESOLVE_HARDLINK_FIX.md)。
+
+---
+
 ## ★ v1.6.0 — 2026-11-10 π0.5 Base 下载阻塞修复（M0 目标不变）
 
 用户执行 `prepare-pi05-base-hf` 时，已获取镜像清单但在**第一个极小的** `pi05_base/params/_METADATA` 上遭遇 Hugging Face `FileMetadataError` / `LocalEntryNotFoundError`，尚未下载大权重。原 `hf_hub_download` 的 HEAD/镜像重定向校验不兼容；已改为固定仓库 revision + 公开镜像清单 + 官方 `https://huggingface.co/...` 的 **requests HTTPS GET**（使用用户已配置的 HTTPS_PROXY/VPN），逐文件 `.part`、HTTP Range 断点续传、manifest size/已公布 SHA 校验，失败不覆盖既有完成文件。新增 `probe-pi05-base-hf` 仅验证小文件网络，成功后再运行 `prepare-pi05-base-hf` 下载约12.4GB 原版权重；之后是 `check-siglip-cache` → `smoke-one-feature` → `prepare-features` → `--require-ready` → `evaluate-uniform` 60 次官方评测。此修复尚未在用户 RTX4090 上验证。完整说明见 [v1.6.0 下载恢复步骤](docs/2026-11-10_V160_PI05_BASE_HF_GET_PROXY_RESUME_FIX.md)；科学目标仍按 [M0/M1/M2 冻结协议](docs/2026-11-10_V159_LOCKED_M0_M1_M2_AND_PI05_BASE_MIRROR.md)。
