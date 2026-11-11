@@ -13,10 +13,13 @@ out="outputs/m1b4_one_time_feasibility"
 mkdir -p "$out"
 
 python -m unittest discover -s tests -p 'test_m1b4_one_time_feasibility.py' -q
+echo "M1B4_UNIT_TESTS_PASSED_NOW_READING_REAL_FROZEN_M1B3_DIAGNOSIS"
 
-# Important: uses only saved M1B3 diagnosis. Exit 6 means NO-GO,
-# so NO NEW physical experiment is scheduled.
+# This is the FIRST genuine user-local evidence check. Unit tests only
+# use temporary synthetic fixtures whose NO_GO marker is not displayed.
+# Exit 6 means NO-GO and MUST stop before any PhysX execution.
 python -m agcofl.m1b4_one_time_feasibility \
+  --old-root outputs/m1b3_corridor_dev \
   --require-physical-source-evidence \
   | tee "$out/frozen_evidence_preflight.log"
 
