@@ -72,7 +72,7 @@ class PickReferenceTests(unittest.TestCase):
             # archive cannot be reused and must fail safely.
             with mock.patch.object(m.subprocess,"run",side_effect=AssertionError("rerun")):
                 with mock.patch.object(m,"validate_record",return_value=evidence):
-                    with self.assertRaises(FileNotFoundError):
+                    with self.assertRaises(RuntimeError):
                         m.run(root,3,480,verify_only=True)
 
 
