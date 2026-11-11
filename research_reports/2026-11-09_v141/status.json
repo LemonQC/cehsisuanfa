@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Do NOT run/copy B01 or M1C scripts; deleted unsolicited code. Work on current M1 experiment only. First compare existing successful source Pick H5/video object-effect goal with frozen M1B3 x=.21 target without re-running physics; do not accept old M1B2 .15 as matched. Then replace failed custom low-level target DiagnosticPushTeacher execution with existing original Panda PushCube MPLib planner interface in same geometry; only one focused smoke after objective source-goal match and interface checks. No M0/M1B1/M1B2/M1B3 reruns, no new environment/task or model training.",
-  "research_execution_reference": "docs/2026-11-11_SCOPE_CORRECTION_REPLACE_CURRENT_EXECUTOR_NOT_RESTART_RESEARCH.md",
+  "next_operator_action": "Current M1 only: git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_current_executor_swap_once.sh. Runs 4 stdlib unit tests, frozen geometry preflight, one physically contact-verified Panda/MPLib side-grasp source on exact old corridor. If source success -> one original PushCube jointspace MPLib clear + push executor smoke. If source fails -> stop target and inspect real contact. Never rerun M0/M1B1/M1B2/M1B3; no B01/M1C.",
+  "research_execution_reference": "docs/2026-11-11_CURRENT_M1_OFFICIAL_EXECUTOR_SWAP_SMOKE.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current M1 problem NOT ABANDONED on user's correction. Custom M1B3 grasp adapter failed real source grasp (0 steps) so stop that exact adapter; keep original same-goal blocker-clearance task. Current goal: replace source input with genuinely successful existing Pick video after object-effect/goal verification; target execution with published Panda PushCube MPLib low-level push adapter; no full reruns, no scientific novelty claims before fair TAMP.",
@@ -642,5 +642,23 @@
     "strong_tamp": "NOT_RUN",
     "method": "NOT_STARTED",
     "source_target_goal_verified": "NOT_YET"
+  },
+  "current_m1_executor_swap_v1": {
+    "objective": "Replace ONLY the failed low-level execution modules in current same-goal Pick source -> Push-only blocker-clear task; no new research task, dataset, or whole baseline repeat",
+    "stage": "CODE_COMMITTED_UNIT_AND_PHYSICS_NOT_EXECUTED_ON_USER_SERVER",
+    "module": "agcofl/m1_current_executor_swap.py",
+    "runner": "scripts/run_m1_current_executor_swap_once.sh",
+    "unit_test": "tests/test_m1_current_executor_swap.py",
+    "protocol": "docs/2026-11-11_CURRENT_M1_OFFICIAL_EXECUTOR_SWAP_SMOKE.md",
+    "same_frozen_scene": "AGCOFLM1B3Corridor-v0",
+    "same_seed": 120,
+    "same_goal_x_m": 0.21,
+    "source": "published Panda OBB/MPLib approach from -X, actual gripper contact check immediately after close; RRTConnect, physical lift/cross/place/release",
+    "target": "published Panda PushCube MPLib pd_joint_pos upstream planner adapted to clear existing dynamic blocker then push same cube to old goal, gripper forcibly open; NOT original unmodified algorithm",
+    "stopping_rule": "If new source physically fails, do not run target. All existing source/video/target/M0/M1B3 outputs immutable. At most one bounded smoke per replacement.",
+    "physical_outcomes": "NOT_YET_OBSERVED",
+    "new_method": "NOT_STARTED",
+    "match_source_goal_to_target": "Only a truly verified successful in-scene x=.21 effect would count. Original Pick reference 3/3 and M1B2 x=.15 are not silently matched.",
+    "caution": "Replacing local controller does not establish source video need, novel effect insertion or strong TAMP baseline."
   }
 }
