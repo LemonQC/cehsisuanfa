@@ -27,7 +27,7 @@ def test_fail_missing_orbax_metadata():
         p.selection([NS(rfilename=p.PREFIX+"d/data",size=1)])
 
 
-def test_local_completeness_and_idempotent_symlink(tmp_path):
+def test_local_completeness_and_idempotent_hardlink_cache(tmp_path):
     dest=tmp_path/"download"
     for item in _siblings():
         path=dest/item.rfilename
@@ -36,9 +36,11 @@ def test_local_completeness_and_idempotent_symlink(tmp_path):
     result=p.local_manifest_check(_siblings(),dest)
     assert result["complete"]
     cache=tmp_path/"openpi"
-    link=p.link_original_cache((dest/p.PREFIX).resolve(),cache)
-    assert Path(link).is_symlink()
-    assert p.link_original_cache((dest/p.PREFIX).resolve(),cache)==link
+    link=p.install_original_cache((dest/p.PREFIX).resolve(),cache)
+    assert Path(link).is_dir() and not Path(link).is_symlink()
+    assert (Path(link).resolve()).is_relative_to(cache.resolve())
+    assert p.install_original_cache((dest/p.PREFIX).resolve(),cache)==link
+    assert (Path(link)/"_METADATA").samefile(dest/p.PREFIX/"_METADATA")
     project=tmp_path/"project"
     manifest=project/"outputs/v120_baselines/openpi_base_hf_manifest.json"
     manifest.parent.mkdir(parents=True,exist_ok=True)
@@ -46,6 +48,7 @@ def test_local_completeness_and_idempotent_symlink(tmp_path):
        "source":p.REPO,"revision":p.REVISION,
        "openpi_data_home":str(cache),
        "openpi_base_cache_link":link,
+       "openpi_base_cache_path":link,
        "manifest_verification":result}))
     assert c.trusted_mirror_install(project,cache)
     (dest/p.PREFIX/"d/data").unlink()
@@ -162,3 +165,80 @@ def test_zero_byte_orbax_marker_rejects_wrong_hash_without_network(
     with pytest.raises(RuntimeError, match="bad hash"):
         p.download_one(item, tmp_path, "https://huggingface.co", 0)
     assert not (tmp_path/item.rfilename).exists()
+
+
+def test_old_symlink_migrates_to_hardlinks_and_openpi_resolve_stays_in_cache(tmp_path):
+    """Reproduce exact server ValueError and verify no payload byte-copy."""
+    import os
+    src=tmp_path/"mirror/pi05_base/params"
+    (src/"d").mkdir(parents=True)
+    (src/"d/shard").write_bytes(b"ORIGINAL large shard stand-in")
+    (src/"_METADATA").write_text("{}")
+    cache=tmp_path/"openpi_cache"
+    dest=cache/"openpi-assets/checkpoints/pi05_base/params"
+    dest.parent.mkdir(parents=True)
+    dest.symlink_to(src,target_is_directory=True)
+    assert not dest.resolve().is_relative_to(cache.resolve())  # original bug
+    restored=p.install_original_cache(src,cache)
+    assert restored==str(dest)
+    assert not dest.is_symlink()
+    assert dest.resolve().is_relative_to(cache.resolve())
+    assert os.stat(dest/"d/shard").st_ino==os.stat(src/"d/shard").st_ino
+    assert os.stat(dest/"d/shard").st_dev==os.stat(src/"d/shard").st_dev
+    assert p.install_original_cache(src,cache)==str(dest)
+    assert (src/"d/shard").read_bytes()==b"ORIGINAL large shard stand-in"
+
+
+def test_offline_repair_uses_local_verified_manifest_without_hf_network(tmp_path,monkeypatch):
+    import os
+    import json
+    src=tmp_path/"outputs/v120_baselines/openpi_base_hf_mirror/pi05_base/params"
+    (src/"d").mkdir(parents=True)
+    (src/"ocdbt.process_0").mkdir()
+    for name in ("_METADATA","_CHECKPOINT_METADATA","manifest.ocdbt","d/shard",
+                 "ocdbt.process_0/shard"):
+        (src/name).write_bytes(b"checked")
+    cache=tmp_path/"outputs/v120_baselines/openpi_cache"
+    dest=cache/"openpi-assets/checkpoints/pi05_base/params"
+    dest.parent.mkdir(parents=True)
+    dest.symlink_to(src,target_is_directory=True)
+    record_path=tmp_path/"outputs/v120_baselines/openpi_base_hf_manifest.json"
+    record_path.write_text(json.dumps({
+       "source":p.REPO, "revision":p.REVISION,
+       "local_dir":str(src.parent.parent.parent),
+       "openpi_data_home":str(cache),
+       "openpi_base_cache_link":str(dest),
+       "manifest_verification":{"complete":True}}))
+    # local_dir must be project outputs/v120_baselines/openpi_base_hf_mirror
+    record=json.loads(record_path.read_text())
+    record["local_dir"]=str(tmp_path/"outputs/v120_baselines/openpi_base_hf_mirror")
+    record_path.write_text(json.dumps(record))
+    monkeypatch.setattr(p,"PROJECT",tmp_path)
+    def deny_network(*args,**kwargs):
+        raise AssertionError("offline repair must not access network")
+    monkeypatch.setattr(p.requests,"get",deny_network)
+    assert p.main(["--repair-cache-only","--dest",record["local_dir"],
+                   "--cache",str(cache)])==0
+    assert not dest.is_symlink()
+    assert (dest/"_METADATA").samefile(src/"_METADATA")
+    assert c.trusted_mirror_install(tmp_path,cache)
+
+
+def test_old_symlink_is_rejected_by_siglip_cache_gate(tmp_path):
+    import json
+    src=tmp_path/"download/pi05_base/params"
+    src.mkdir(parents=True)
+    (src/"_METADATA").write_text("data")
+    cache=tmp_path/"cache"
+    dest=cache/"openpi-assets/checkpoints/pi05_base/params"
+    dest.parent.mkdir(parents=True)
+    dest.symlink_to(src,target_is_directory=True)
+    manifest=tmp_path/"outputs/v120_baselines/openpi_base_hf_manifest.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({
+        "source":p.REPO,"revision":p.REVISION,
+        "local_dir":str(tmp_path/"download"),
+        "openpi_data_home":str(cache),
+        "openpi_base_cache_link":str(dest),
+        "manifest_verification":{"complete":True}}))
+    assert not c.trusted_mirror_install(tmp_path,cache)
