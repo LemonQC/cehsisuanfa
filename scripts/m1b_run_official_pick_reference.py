@@ -147,7 +147,7 @@ def run(out:Path, attempts:int=3, timeout_seconds:int=480,
                     "Existing reference verification differs; preserve original "
                     "record and investigate before overwriting")
         else:
-            report_path.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\\n")
+            report_path.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\n")
         print("M1B_OFFICIAL_PICK_EXISTING_VERIFIED",json.dumps({
             "requested_attempts":attempts,
             "recorded_episodes":result["saved_nonempty_episodes"],
@@ -197,7 +197,7 @@ def run(out:Path, attempts:int=3, timeout_seconds:int=480,
             f"Official motionplanner exited {completed.returncode}; "
             "see official_solver.log. No matched-goal result is claimed.")
     result=validate_record(target,attempts)
-    report_path.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\\n")
+    report_path.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\n")
     print("M1B_OFFICIAL_PICK_REFERENCE_VERIFIED",json.dumps({
         "requested_attempts":attempts,
         "recorded_episodes":result["saved_nonempty_episodes"],
