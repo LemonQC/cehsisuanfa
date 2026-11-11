@@ -112,9 +112,15 @@ def download_one(task,assets):
         raise RuntimeError(f"Existing suspicious zero/short video: {video}")
     endpoint=os.environ.get("HF_ENDPOINT","https://hf-mirror.com")
     api=HfApi(endpoint=endpoint)
-    info=api.repo_info(SOURCE_DATASET,repo_type="dataset",files_metadata=True)
+    # Only dataset revision metadata + the ONE requested file's metadata.
+    # Never enumerate thousands of dataset files / the full ~104GB archive.
+    info=api.repo_info(SOURCE_DATASET,repo_type="dataset")
     name=rel_video(task)
-    entries=[x for x in info.siblings if x.rfilename==name]
+    if not isinstance(info.sha,str) or len(info.sha)!=40:
+        raise RuntimeError("Dataset commit SHA unavailable; cannot pin source")
+    entries=list(api.get_paths_info(
+        SOURCE_DATASET,paths=[name],repo_type="dataset",
+        revision=info.sha))
     if len(entries)!=1 or not isinstance(entries[0].size,int):
         raise RuntimeError(f"Exact authentic TRAIN video metadata missing: {name}")
     size=entries[0].size
