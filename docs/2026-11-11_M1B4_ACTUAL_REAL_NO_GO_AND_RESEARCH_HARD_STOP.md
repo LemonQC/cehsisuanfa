@@ -61,3 +61,49 @@ The *only* scientifically responsible next computational work, if continuing to 
 ## Operator action
 
 No need to rerun M1B4. This report records the actual result of the already executed read-only gate. Next archival step is repository-only; future baseline assets must use bounded authentic TRAIN data, exclude held-out official EVAL videos and declare any difference in training budget relative to released checkpoint baselines.
+
+
+## Separate baseline foundation: B01 authentic robot-only BC TRAIN data
+
+After this NO-GO, the official RoboReel baseline matrix remains
+incomplete. For future, **separate** research (not as a retroactive M1
+success), the next reproducible step is to prepare 64 authentic PushCube
+TRAIN robot trajectories (H5 actions plus two real camera videos per
+demo), reuse the previous 0000/0001 downloads, and reserve a fixed 51/13
+demo-level TRAIN/validation split.
+
+New `scripts/prepare_b01_robot_train.py` is a bounded wrapper
+around the already verified upstream dataset downloader
+`agcofl.official_robot_data` and real-content checker
+`agcofl.real_robot_h5_audit`. It refuses any candidate demo ID
+0080–0099, missing video/H5 triplets, files outside the authentic
+TRAIN root or more than 300 MB of planned bytes. It stores raw data
+in the existing `outputs/v120_baselines/robot_train` (no second data
+copy), only small manifest/audit/split JSON in `outputs/b01_robot_only`.
+A failed/incomplete download must be treated as BLOCKED, never trained
+on synthetic actions or claimed as a trained baseline.
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+conda activate pi05
+python -m unittest discover -s tests -p 'test_prepare_b01_robot_train.py' -q
+# Explicit opt-in to REAL bounded TRAIN-only data download:
+python -m scripts.prepare_b01_robot_train --download
+```
+
+Expected after all 64 are genuinely present and H5/cameras inspected:
+`B01_AUTHENTIC_ROBOT_TRAIN_READY` with
+`actual_demos=64`, `train=51`, `validation=13` and observed
+8D robot actions. The script itself performs **NO BC training and
+NO official rollouts**. If data selection/download is blocked, do not
+mislabel the existing two episodes as a 64-demo dataset.
+
+Next, the B01 policy implementation and official RoboReel action
+interface must be verified and trained on this exact frozen split
+before any B01 success score can be reported. B01 trained on 64
+episodes is **not training-budget matched** to a released pretrained
+π0.5 and therefore cannot alone establish that human demonstrations
+are helpful or useless. Scientific question for any NEW proposed
+paper must be selected on existing validated tasks and available
+data before inventing another effect editor.
