@@ -12,6 +12,7 @@ locally after the complete file arrives. Downloaded files stay private/local.
 from __future__ import annotations
 
 import hashlib
+import re
 import inspect
 import json
 import os
@@ -49,8 +50,17 @@ def _valid(item,repo,repo_type,endpoint):
         raise ValueError("Artifact expected bytes absent or above 10GiB hard limit")
     if repo_type=="model" and not path.startswith("nd/vid2robot/"):
         raise ValueError("Only pinned official Vid2Robot ND weights are allowed")
-    if repo_type=="dataset" and not path.startswith("human_demos/eval/no_distraction/push_cube/"):
-        raise ValueError("Only official PushCube heldout EVAL videos allowed here")
+    if repo_type=="dataset":
+        # Preserve prior official PushCube EVAL transport behavior. Narrowly
+        # permit only genuine drawer-task HUMAN TRAIN front MP4s, IDs 0000-0079.
+        # Callers still impose a separate two-video/300MiB aggregate budget.
+        drawer_train=re.fullmatch(
+            r"human_demos/train/no_distraction/toys_in_drawer/(\\d{4})/front\\.mp4",
+            path)
+        allow_drawer_train=bool(drawer_train and int(drawer_train.group(1))<80)
+        if not (path.startswith("human_demos/eval/no_distraction/push_cube/")
+                or allow_drawer_train):
+            raise ValueError("Only pinned PushCube EVAL videos or drawer TRAIN front videos are allowed")
     return n,path
 
 
