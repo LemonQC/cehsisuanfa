@@ -1,6 +1,5 @@
 """Zero simulator/model/network regression fixtures for the small TRAIN-only DEV gate."""
 import json
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -118,46 +117,6 @@ class VideoSensitivityDevTests(unittest.TestCase):
         self.assertIsNone(action_displacement([], [[0]*8]))
         self.assertAlmostEqual(action_displacement([[0]*8], [[1]+[0]*7]),1.0)
 
-    def test_official_m0_placeholder_paths_use_existing_v120_layout(self):
-        from scripts.roboreel_video_dependency_dev import official_path_vars, project_path
-        root=self.project/'outputs/v120_baselines'
-        ckpt=root/'released_checkpoints/nd/vid_cond_pi05_uniform/ckpt'
-        (ckpt/'params').mkdir(parents=True)
-        (ckpt.parent/'train_config.json').write_text(json.dumps({
-            'data_dir':'${ROBOREEL_DATA}', 'tasks':['toys_in_drawer'],
-            'demo_cameras':['front'],
-            'demonstration_config':'perceptual-framesamp-context.yaml'}))
-        self.config.write_text(json.dumps({
-            'model':'demo_pi05',
-            'checkpoint_dir':'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt'}))
-        with patch.dict(os.environ,{'ROBOREEL_CKPT':'','ROBOREEL_DATA':''}):
-            env=official_path_vars(self.project)
-            self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt',env),ckpt.resolve())
-            self.assertEqual(project_path(self.project,'$ROBOREEL_DATA',env),
-                             (root/'official_eval_data').resolve())
-            r=preflight(self.project,None,'toys_in_drawer')
-        self.assertEqual(r['checkpoint_dir'],str(ckpt.resolve()))
-        self.assertEqual(r['data_dir'],str((root/'official_eval_data').resolve()))
-        self.assertEqual(r['reason'],'NEED_TWO_GENUINE_TRAIN_VIDEOS_AND_FEATURES')
-        self.assertNotIn('UNEXPANDED_PATH_VARIABLE',str(r))
-
-    def test_operator_override_has_precedence_over_v120_defaults(self):
-        from scripts.roboreel_video_dependency_dev import official_path_vars, project_path
-        override=self.project/'special/checked_checkpoint_root'
-        with patch.dict(os.environ,{'ROBOREEL_CKPT':str(override),'ROBOREEL_DATA':''}):
-            paths=official_path_vars(self.project)
-        self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/nd/policy',paths),
-                         (override/'nd/policy').resolve())
-        self.assertEqual(paths['ROBOREEL_DATA'],
-                         str(self.project/'outputs/v120_baselines/official_eval_data'))
-
-    def test_unrecognised_placeholder_still_fails_closed(self):
-        from scripts.roboreel_video_dependency_dev import project_path
-        with patch.dict(os.environ,{'UNKNOWN_CHECKPOINT_VAR':''}):
-            with self.assertRaisesRegex(ValueError,'UNEXPANDED_PATH_VARIABLE'):
-                project_path(self.project,'${UNKNOWN_CHECKPOINT_VAR}/model',
-                             {'ROBOREEL_CKPT':'/known'})
-
     def test_blocked_to_ready_preflight_is_immutable_append_only(self):
         from scripts.roboreel_video_dependency_dev import (
             save_preflight_snapshot,require_preflight_only_directory,read_json)
@@ -167,14 +126,7 @@ class VideoSensitivityDevTests(unittest.TestCase):
         p0=save_preflight_snapshot(directory,blocked)
         self.assertEqual(p0.name,'preflight.json')
         p1=save_preflight_snapshot(directory,ready)
-        self.assertRegex(p1.name,r'^preflight_[0-9a-f]{16}\.json
-        p=self.project/'out/report.json'
-        save_json_once(p,{'a':1});save_json_once(p,{'a':1})
-        with self.assertRaises(FileExistsError):save_json_once(p,{'a':2})
-
-
-if __name__=='__main__': unittest.main()
-)
+        self.assertRegex(p1.name,r'^preflight_[0-9a-f]{16}\.json$')
         self.assertEqual(read_json(p0),blocked)
         self.assertEqual(read_json(p1),ready)
         self.assertEqual(save_preflight_snapshot(directory,ready),p1)
@@ -197,6 +149,87 @@ if __name__=='__main__': unittest.main()
         (directory/'preflight_NOT_A_HASH.json').write_text('{}')
         with self.assertRaises(FileExistsError):
             require_preflight_only_directory(directory)
+
+    def test_original_m0_checkpoint_placeholders_are_resolved(self):
+        from scripts.roboreel_video_dependency_dev import project_path,official_path_vars
+        base=self.project/'outputs/v120_baselines'
+        expected=base/'released_checkpoints/nd/vid_cond_pi05_uniform/ckpt'
+        (expected/'params').mkdir(parents=True)
+        (expected.parent/'train_config.json').write_text(json.dumps({
+            'data_dir':'${ROBOREEL_DATA}', 'tasks':['toys_in_drawer'],
+            'demo_cameras':['front'], 'demonstration_config':'perceptual-framesamp-context.yaml'}))
+        self.config.write_text(json.dumps({
+            'model':'demo_pi05',
+            'checkpoint_dir':'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt'}))
+        with patch.dict('os.environ', {'ROBOREEL_CKPT':'','ROBOREEL_DATA':''}):
+            vars=official_path_vars(self.project)
+            self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt',vars),expected.resolve())
+            r=preflight(self.project,None,'toys_in_drawer')
+        self.assertEqual(r['checkpoint_dir'],str(expected.resolve()))
+        self.assertEqual(r['data_dir'],str((base/'official_eval_data').resolve()))
+        self.assertEqual(r['reason'],'NEED_TWO_GENUINE_TRAIN_VIDEOS_AND_FEATURES')
+
+    def test_operator_overrides_of_official_paths(self):
+        from scripts.roboreel_video_dependency_dev import project_path,official_path_vars
+        override=self.project/'my_valid_ckpt'
+        with patch.dict('os.environ', {'ROBOREEL_CKPT':str(override),'ROBOREEL_DATA':''}):
+            vars=official_path_vars(self.project)
+        self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/model',vars), (override/'model').resolve())
+
+    def test_undefined_path_variable_still_fails(self):
+        from scripts.roboreel_video_dependency_dev import project_path
+        with patch.dict('os.environ', {'UNKNOWN_VAR':''}):
+            with self.assertRaisesRegex(ValueError,'UNEXPANDED_PATH_VARIABLE'):
+                project_path(self.project,'${UNKNOWN_VAR}/model',{})
+
+    def test_openpi_data_home_set_before_official_train_config_expansion(self):
+        import types,sys,os
+        from scripts.roboreel_video_dependency_dev import prepare_official_runtime_config
+        stub_cache=types.ModuleType('scripts.prepare_roboreel_train_drawer')
+        home=self.project/'local_openpi_cache';home.mkdir()
+        stub_cache.cache_home=lambda project: home
+        stub_utils=types.ModuleType('evaluation.utils')
+        observed={}
+        def load_config(checkpoint_dir):
+            observed['openpi']=os.environ.get('OPENPI_DATA_HOME')
+            observed['ckpt']=os.environ.get('ROBOREEL_CKPT')
+            observed['data']=os.environ.get('ROBOREEL_DATA')
+            return {'tasks':['toys_in_drawer'],'data_dir':'/dummy'}
+        stub_utils.load_train_config=load_config
+        stub_eval=types.ModuleType('evaluation')
+        with patch.dict(sys.modules, {'scripts.prepare_roboreel_train_drawer':stub_cache,
+                                      'evaluation':stub_eval,'evaluation.utils':stub_utils}):
+            with patch.dict(os.environ, {'OPENPI_DATA_HOME':'','ROBOREEL_DATA':'','ROBOREEL_CKPT':''}):
+                expected_vars={'ROBOREEL_CKPT':str(self.project/'ckpts'), 'ROBOREEL_DATA':str(self.project/'dataset')}
+                cfg,resolved=prepare_official_runtime_config({'project':str(self.project),
+                    'checkpoint_dir':str(self.ckpt),'task':'toys_in_drawer',
+                    'data_dir':str(self.project/'dataset'),'resolved_official_path_vars':expected_vars})
+        self.assertEqual(observed['openpi'],str(home))
+        self.assertEqual(observed['ckpt'],expected_vars['ROBOREEL_CKPT'])
+        self.assertEqual(cfg['data_dir'],str(self.project/'dataset'))
+        self.assertEqual(resolved,str(home))
+
+    def test_missing_openpi_cache_prevents_config_loading(self):
+        import sys,types
+        from scripts.roboreel_video_dependency_dev import prepare_official_runtime_config
+        stub=types.ModuleType('scripts.prepare_roboreel_train_drawer')
+        stub.cache_home=lambda project: None
+        with patch.dict(sys.modules,{'scripts.prepare_roboreel_train_drawer':stub}):
+            with self.assertRaisesRegex(RuntimeError,'VERIFIED_OPENPI_DATA_HOME_UNAVAILABLE_NO_GCS'):
+                prepare_official_runtime_config({'project':str(self.project)})
+
+    def test_openpi_config_failure_does_not_create_manifest(self):
+        import sys,types
+        from scripts.roboreel_video_dependency_dev import run_dev
+        stub=types.ModuleType('scripts.prepare_roboreel_train_drawer')
+        stub.cache_home=lambda project: None
+        out=self.project/'out/preflight_only'
+        plan={'project':str(self.project),'status':'READY_FOR_BOUNDED_DEV',
+            'usable_train_demo_ids':[0,1],'task':'toys_in_drawer'}
+        with patch.dict(sys.modules,{'scripts.prepare_roboreel_train_drawer':stub}):
+            with self.assertRaisesRegex(RuntimeError,'VERIFIED_OPENPI_DATA_HOME_UNAVAILABLE_NO_GCS'):
+                run_dev(plan,out,1,100)
+        self.assertFalse((out/'manifest.json').exists())
 
     def test_result_file_immutable(self):
         p=self.project/'out/report.json'

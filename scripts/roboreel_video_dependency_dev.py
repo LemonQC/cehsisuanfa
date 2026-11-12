@@ -39,8 +39,6 @@ def digest(path: Path) -> str:
     return h.hexdigest()
 
 
-# The existing M0 executor exported these directory roots. The saved
-# evaluator JSON uses ${ROBOREEL_CKPT}; do not rely on a prior shell export.
 VARIABLE = re.compile(r'\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))')
 
 
@@ -48,7 +46,6 @@ def official_path_vars(project: Path) -> dict[str, str]:
     base = project.resolve() / 'outputs/v120_baselines'
     defaults = {'ROBOREEL_CKPT': base / 'released_checkpoints',
                 'ROBOREEL_DATA': base / 'official_eval_data'}
-    # An explicit environment override takes precedence over project defaults.
     return {key: os.path.expanduser(os.environ.get(key) or str(path))
             for key, path in defaults.items()}
 
@@ -269,10 +266,10 @@ def save_json_once(path:Path,obj):
 
 
 def save_preflight_snapshot(directory:Path,plan:dict)->Path:
-    """Keep original preflight; append content-addressed changes.
+    """Keep the first legacy preflight and append content-addressed changes.
 
-    BLOCKED can become READY when genuine TRAIN media/features are added.
-    Previous records remain byte-for-byte immutable.
+    E.g. a BLOCKED plan must not prevent the same experiment becoming READY
+    when authentic TRAIN media/features are added. Never change old bytes.
     """
     directory=Path(directory)
     legacy=directory/'preflight.json'
@@ -289,7 +286,7 @@ def save_preflight_snapshot(directory:Path,plan:dict)->Path:
 
 
 def require_preflight_only_directory(directory:Path):
-    """Prior preflight snapshots are safe; existing rollout outputs are not."""
+    """Allow old/new immutable preflight records, never a repeated rollout."""
     directory=Path(directory)
     if not directory.exists():return
     for p in directory.iterdir():
@@ -299,32 +296,54 @@ def require_preflight_only_directory(directory:Path):
             raise FileExistsError('Never rerun/overwrite existing DEV: '+str(directory))
 
 
+def prepare_official_runtime_config(plan:dict):
+    """Resolve every original checkpoint variable before any rollout/manifest.
+
+    SigLIP asset extraction already verified this same cached OpenPI base.
+    Refuse to trigger an implicit GCS download via an unverified home.
+    """
+    from scripts.prepare_roboreel_train_drawer import cache_home
+    home=cache_home(Path(plan['project']))
+    if home is None:
+        raise RuntimeError('VERIFIED_OPENPI_DATA_HOME_UNAVAILABLE_NO_GCS')
+    for key, value in plan['resolved_official_path_vars'].items():
+        current=os.environ.get(key)
+        if current and os.path.expanduser(current)!=value:
+            raise RuntimeError('OFFICIAL_PATH_VARIABLE_CHANGED_SINCE_PREFLIGHT: '+key)
+        os.environ[key]=value
+    os.environ['OPENPI_DATA_HOME']=str(home)
+    official=Path(plan['project'])/'third_party'/'roboreel_models'
+    inject_upstream(official)
+    # Pure Python config import; does not construct env, model or JAX arrays.
+    from evaluation.utils import load_train_config
+    cfg=load_train_config(plan['checkpoint_dir'])
+    if plan['task'] not in (cfg.get('tasks') or [cfg.get('task')]):
+        raise RuntimeError('OFFICIAL_CHECKPOINT_TASK_MISMATCH')
+    cfg['data_dir']=plan['data_dir']
+    return cfg,str(home)
+
+
 def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     first,other=require_plan(plan,episodes,steps)
     out=out.resolve()
     require_preflight_only_directory(out)
-    # Keep previous BLOCKED status, add READY snapshot before the simulator.
-    # Any pre-existing manifest, actions or videos still cause hard failure.
+    # Validate all official train_config placeholders BEFORE reserving a real
+    # experiment directory. v2 failed at this exact step with zero PhysX actions.
+    original_cfg,openpi_home=prepare_official_runtime_config(plan)
+    # Preserve the first blocked/ready records, append the new verified state.
     save_preflight_snapshot(out,plan)
     # Freeze the manifest before ANY simulator initialization.
     manifest={'type':'ROBOREEL_TRAIN_VIDEO_DEV_V1', 'task':plan['task'],
               'train_video_ids':[first,other], 'episodes':episodes,
               'max_steps':steps,'output_dir':str(out), 'preflight':plan,
               'no_official_eval_demo':True, 'new_training_runs':0,
-              'no_new_model_checkpoint':True,'is_tro_novelty_evidence':False}
+              'no_new_model_checkpoint':True,'is_tro_novelty_evidence':False,
+              'openpi_data_home':openpi_home}
     save_json_once(out/'manifest.json',manifest)
     os.environ.pop('DISPLAY',None)
     os.environ.pop('WAYLAND_DISPLAY',None)
     os.environ.setdefault('MUJOCO_GL','egl')
     os.environ.setdefault('MUJOCO_EGL_DEVICE_ID','0')
-    # Reuse the same roots when the official runner loads train_config.json.
-    for key, value in plan['resolved_official_path_vars'].items():
-        current = os.environ.get(key)
-        if current and os.path.expanduser(current) != value:
-            raise RuntimeError('OFFICIAL_PATH_VARIABLE_CHANGED_SINCE_PREFLIGHT: ' + key)
-        os.environ[key] = value
-    official=Path(plan['project'])/'third_party'/'roboreel_models'
-    inject_upstream(official)
     import gymnasium as gym  # noqa: F401
     import mani_skill.envs  # noqa: F401
     import envs  # noqa: F401 -- RoboReel task registration
@@ -332,10 +351,8 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     import imageio.v2 as imageio
     import numpy as np
     from evaluation.demo_pi05_runner import DemoPi05Runner
-    from evaluation.utils import make_eval_env, load_train_config
+    from evaluation.utils import make_eval_env
 
-    original_cfg=load_train_config(plan['checkpoint_dir'])
-    original_cfg['data_dir']=plan['data_dir']
     runner=DemoPi05Runner(plan['checkpoint_dir'],original_cfg)
     if plan['task'] not in runner.tasks:
         raise RuntimeError('OFFICIAL_RUNNER_TASK_MISMATCH')
@@ -460,7 +477,7 @@ def main(argv=None):
     p.add_argument('--episodes',type=int,default=2)
     p.add_argument('--max-steps',type=int,default=800)
     p.add_argument('--no-video',action='store_true',help='DEV without mp4 output')
-    p.add_argument('--out',type=Path,default=Path('outputs/roboreel_video_dependency_dev/v1'))
+    p.add_argument('--out',type=Path,default=Path('outputs/roboreel_video_dependency_dev/v3'))
     args=p.parse_args(argv)
     plan=preflight(args.project,args.config,args.task,args.data_dir)
     if not args.run:
@@ -468,15 +485,10 @@ def main(argv=None):
             'status','task','reason','checkpoint_dir','data_dir','checkpoint_tasks',
             'train_video_demos_with_media','train_feature_demos','train_demos_usable',
             'usable_train_demo_ids','missing_example','eval_config')},ensure_ascii=False),flush=True)
-        # Report immutable preflight state transitions; never overwrite physics.
-        try:
-            require_preflight_only_directory(args.out)
-        except FileExistsError:
-            print('ROBOREEL_VIDEO_DEV_EXISTING_EXPERIMENT_PRESERVED',
-                  str(args.out),flush=True)
-            return 0
-        snapshot=save_preflight_snapshot(args.out,plan)
-        print('ROBOREEL_VIDEO_DEV_PREFLIGHT_SNAPSHOT',str(snapshot),flush=True)
+        # Append immutable state-transition evidence; never overwrite old reports.
+        # Do not claim READY as an executed experiment.
+        require_preflight_only_directory(args.out)
+        save_preflight_snapshot(args.out,plan)
         return 0
     require_plan(plan,args.episodes,args.max_steps)
     run_dev(plan,args.out,args.episodes,args.max_steps,not args.no_video)
