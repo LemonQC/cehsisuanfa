@@ -1,3 +1,14 @@
+## ★ 2026-11-12 — 同目标源Pick两次真实失败均是TCP未接近，发现原Panda手指安装座可能超出104mm围栏；唯一一次几何校正源端候选
+
+用户服务器三路真实离线诊断（4 tests OK）：原M1B3顶抓335个物理step，TCP离方块最近63.97mm、首次夹爪闭合时69.47mm（TCP z=.0871而cube z=.020），0有效抓取、0提升；现侧抓106步最近102.42mm、0抓取；早先M1B2不同目标x=.150的顶抓170步中84步真实抓住、最高提升127.83mm，不能当作当前x=.210源演示。原顶抓规划阶段approach/grasp/lift/across返回真不代表物理抓取，必须补实际TCP靠近/双指接触门槛。
+
+新核查当前M1B3原围栏内侧y=±52mm、墙高75mm，官方ManiSkill Panda实际 URDF 手指螺钉座碰撞盒local y中心18.5mm、宽15mm：当闭合轴沿世界Y且手指完全打开q=.040m，最外横向±66mm，**超出围栏14mm**；若手指部分打开q=.023m，开口46mm仍大于40mm方块，本地坐标安装座外缘49mm、名义围栏余量3mm。注意未测得旧姿态四元数或碰撞力，**这一几何差异是物理干涉假设，不是已证实历史碰撞原因或完整机器人C-space可达性证明**。
+
+已提交 **只此一次的当前源端定向补救**：原场景原seed120、最终x=.210、原Panda/PhysX/官方OBB顶抓+MPLib，闭合轴沿走廊X、接近前指尖开口46mm，原围栏及挡块表面作为确定性MPLib障碍点云并显式use_point_cloud=True；真实TCP离物体<13mm前禁止夹爪闭合，precontact总155步上限；只有真实物理is_grasping确认才执行原提升/跨越/下降/释放并以物体真实位置、穿越墙体和未移动挡块判断源成功。不替代已成功目标v6。文件 `agcofl/m1_source_geom_aligned_topdown_v1.py`、`tests/test_m1_source_geom_aligned_topdown_v1.py`、`scripts/run_m1_source_geom_aligned_topdown_once.sh`。脚本先5个CPU回归测试，核对原三条真实源轨迹和**本地已安装URDF**碰撞盒、目标端v6真实成功记录，全部通过才允许运行**最多一次**源端物理；独立输出目录 `outputs/m1_source_geom_aligned_topdown_v1/`，历史H5/video/JSON不改。**代码已提交但用户服务器尚未执行；当前同目标源-目标物理配对仍未成立，TAMP/M2未做。**
+
+[完整几何分析、真实证据与停止条件](2026-11-12_M1_SOURCE_TRUE_NONCONTACT_URDF_GEOMETRY_SINGLE_TRIAL.md)。
+
+---
 ## ★ 2026-11-12 — 源端Pick当前侧抓故障已定位为真正的**未到物体**；v6目标端成功保持冻结
 
 用户服务器纯CPU对比诊断 `M1_SOURCE_CONTACT_ROOT_DIAG`（4 tests OK）：当前原场景 M1B3 侧抓物理106步，最后6步确实下发Panda闭合−1动作，但首次闭合step100时 TCP位置[-.008148,.020153,.120973]m、方块中心≈[0,0,.020]m，**中心距离103.29mm**；全程TCP到物体最小**102.42mm**，后6步几乎不动，真实`is_grasping`次数0；**闭合参数与提升参数无法修复远离物体10cm的根本问题**。对比早先 M1B2 成功源接触：首次闭合 TCP离方块仅**2.912mm**，84个真实抓取步，但旧目标x=.150m、当前原M1B3目标x=.210m，不能冒充同目标源示范。除侧抓外，原始M1B3 **已有**`blocked_source` 顶抓失败的全部物理trace（原先回报不含闭合时TCP和手指状态）。新增零PhysX脚本 `scripts/m1_source_three_way_existing_audit.py`、4项CPU回归测试，对三条真实旧轨迹按相同目标/seed、第一闭合/最接近TCP、实际抓取步与提升、失败规划阶段全面比对；不改变原始数据并保存SHA256。执行 `python -m unittest discover -s tests -p 'test_m1_source_three_way_existing_audit.py' -q; python -m scripts.m1_source_three_way_existing_audit`，只反馈 `M1_SOURCE_THREE_WAY_REAL_TRACE_GATE`。**本代码已提交但用户尚未运行**。结果出来前不启动又一套源抓取姿态/新实验；同场景目标端v6已66步、误差8.19mm真实成功并冻结，源同目标x=.210还未成功，TAMP/Ours未验证。详见 [三路旧源端真实抓取证据审计](2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md)。
