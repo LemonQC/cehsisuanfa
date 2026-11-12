@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Target original M1B3 v6 FROZEN physically success. Three-way source real offline: original B3 topdown 335 steps 0 grasp, closest TCP63.97mm; B3 side106 steps 0 grasp, closest102.42mm; older B2 source goal x.15 physically grasped84 steps. New source contact geometry candidate: pull main and run bash scripts/run_m1_source_geom_aligned_topdown_once.sh, first five CPU tests+local panda URDF collision box+all 3 saved source traces+frozen actual target v6 preflight (zero PhysX on mismatch), then at most ONE original M1B3 blocked-source physically monitored topdown aligned-X partial-open attempt. NEVER rerun target; stop if actual TCP remains >13mm, do not blindly change fingers or gains. If genuine source Pick+Place success paired x.21 target, only then evaluate strong equal-info TAMP/video gap.",
-  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_TRUE_NONCONTACT_URDF_GEOMETRY_SINGLE_TRIAL.md",
+  "next_operator_action": "No more source or target PhysX now. Source geometry topdown v1 actual 65 steps failed grasp_pose MPLib screw planner before any grasp_pose step; initial partial open q.02385 worked, pregrasp 59 actions tcp52.98mm from cube, neither cube nor blocker moved, contact force measured 65 steps but magnitude not shared. To disambiguate contact vs virtual collision and orientation, pull GitHub main, run CPU-only `python -m unittest discover -s tests -p 'test_m1_source_65_step_force_vs_planner_audit.py' -q` then `python -m scripts.m1_source_65_step_force_vs_planner_audit`. Report M1_SOURCE_65_STEP_FORCE_VS_PLANNER_DIAG, do not automatically create new source grasp version or test. Target v6 stays frozen true success66 actions. No source matched video, fair TAMP or learning claims.",
+  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_ALIGNED_65_PHYSICS_FAILURE_NEXT_FORCE_AUDIT.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Original M1B3 SAME GOAL target physics now SUCCESS v6 at fixed seed120: blocked clear 32 and Cartesian push 10, total 66 actions final goal error 8.193mm; both objects physically never grasped, Panda gripper CLOSED pusher. Original M1B3 source PICK remains NO_GO after 106 real side-grasp actions 0 valid grasp, so matched source-target pair NOT_YET established. Strong TAMP/learned method NOT_RUN.",
@@ -1243,7 +1243,7 @@
     }
   },
   "current_m1_source_geometry_aligned_v1": {
-    "stage": "CODE_COMMITTED_USER_SERVER_NOT_RUN; ONE ORIGINAL_SCENE_SOURCE_CANDIDATE",
+    "stage": "REAL_OPERATOR_PHYXS_EXECUTED_65_ACTIONS; PARTIAL_OPEN_PASS; PREGRASP_59_ACTIONS; FINAL_GRASP_POSE_SCREW_PLAN_FAIL_ZERO_ACTION; NO_GRASP_OR_LIFT",
     "code": "agcofl/m1_source_geom_aligned_topdown_v1.py",
     "tests": "tests/test_m1_source_geom_aligned_topdown_v1.py",
     "runner": "scripts/run_m1_source_geom_aligned_topdown_once.sh",
@@ -1253,12 +1253,78 @@
     "candidate_actuator": "Upstream official Panda OBB/MPLib with world-X closing, topdown approach, Panda open_gripper(gripper_state=+.32) yields 46mm aperture, sampled original walls and blocker into collision point cloud, use_point_cloud true.",
     "hard_gates": "Actual robot q measured near .023, actual TCP within 13mm cube BEFORE close, original source precontact max 155 physics actions, actual Panda bilateral grasp BEFORE any lift/carry, original 75mm rail overflight and goal x=.210/20mm, blocker displacement <25mm, original total 450 actions.",
     "native_scope": "privileged physical diagnostic adapter NOT an unchanged official solver, NO scientific new-method/TAMP result",
-    "attempt_count": 0,
+    "attempt_count": 1,
     "output": "outputs/m1_source_geom_aligned_topdown_v1/source_aligned_topdown/",
-    "physics_result": "NOT_RUN",
+    "physics_result": {
+      "actual_success": false,
+      "actual_steps": 65,
+      "original_scene": "AGCOFLM1B3Corridor-v0",
+      "original_seed": 120,
+      "original_goal_x_m": 0.21,
+      "collision_pointcloud_sample_count": 792,
+      "collision_cloud_planning_enabled": true,
+      "finger_initial_partial_open_steps": 6,
+      "finger_actual_after_partial_open_qpos_m": [
+        0.02385227009654045,
+        0.02385227382183075
+      ],
+      "pregrasp": {
+        "actual_steps": 59,
+        "planner_return_success": true,
+        "tcp_xyz_m": [
+          -0.001790609210729599,
+          -0.014053452759981155,
+          0.0710543543100357
+        ],
+        "tcp_cube_distance_m": 0.05298314897233072,
+        "actual_finger_qpos_m": [
+          0.02300095744431019,
+          0.02300083078444004
+        ],
+        "target_tcp_xyz_approx_m": [
+          0,
+          0,
+          0.08
+        ],
+        "position_residual_m_approx": 0.0168
+      },
+      "grasp_pose": {
+        "actual_steps": 0,
+        "planner_return_success": false,
+        "error": "screw plan failed"
+      },
+      "actual_bilateral_grasp": false,
+      "actual_grasp_steps": 0,
+      "actual_lift_m": 0,
+      "cube_final_xyz_m": [
+        -9.367333291265822e-7,
+        -0.0000015550407397313393,
+        0.019999919459223747
+      ],
+      "blocker_shift_xy_m": 7.803726335100881e-7,
+      "goal_error_m": 0.21000093018257568,
+      "wall_force_measured_steps": 65,
+      "wall_force_magnitude_n": "NOT_PROVIDED_YET; do not infer force present from count",
+      "error": "RuntimeError: SOURCE_UPSTREAM_grasp_pose_PLANNING_FAILED",
+      "source_pair_valid": false,
+      "target_success_v6_still_frozen": true,
+      "provenance": "operator pasted M1_SOURCE_GEOMETRY_ALIGNED_REAL_GATE and M1_SOURCE_GEOMETRY_ALIGNED_FINAL_GATE"
+    },
     "target_v6": "IMMUTABLE_SUCCESS_66STEPS_8.193MM",
     "source_pair": "NOT_ESTABLISHED",
     "equal_info_tamp": "NOT_RUN",
-    "learned_method": "NOT_STARTED"
+    "learned_method": "NOT_STARTED",
+    "next_action": {
+      "no_new_physics": true,
+      "code": "scripts/m1_source_65_step_force_vs_planner_audit.py",
+      "tests": "tests/test_m1_source_65_step_force_vs_planner_audit.py",
+      "output": "outputs/m1_source_geom_aligned_topdown_v1/real65_step_contact_audit.json",
+      "doc": "docs/2026-11-12_M1_SOURCE_ALIGNED_65_PHYSICS_FAILURE_NEXT_FORCE_AUDIT.md",
+      "goal": "Inspect 65 already logged original wall contact forces, last TCP quaternion closing axis, measured pregrasp pose target error. Distinguish virtual collision-aware planning failure from observed physical tool-wall contact; source final grasp pose had zero executed actions.",
+      "hard_stop": "Do not start any other source candidate or adjust gripper/gains/walls/steps before this read-only evidence; if no feasible actual source after geometry review, formally stop this matched-source target-pilot and reassess scientific viability.",
+      "source_same_goal_success": false,
+      "strong_tamp": "NOT_RUN",
+      "learned_method": "NOT_STARTED"
+    }
   }
 }
