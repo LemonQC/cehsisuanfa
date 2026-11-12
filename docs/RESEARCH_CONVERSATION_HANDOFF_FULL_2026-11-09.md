@@ -1,3 +1,9 @@
+## ★ 2026-11-12 — M1 v5 真实清障32步成功，但“下降到位”容差22mm错误导致接触前54步退出；v6只修这处判据
+
+用户服务器真实 `M1_V5_CARTESIAN_PHYSICS_GATE`：54个物理step，原`pd_ee_delta_pose`清障32步实际成功（停车残差5.780mm），安全垂直退7步、悬空到后方9步、下降6步结束于实测TCP[−.0592191,.000195,.05688856]m；目标TCP约[−.060,0,.038]，**三维误差18.91mm**。v5下降调用 `motion_to(... tolerance=.022)`，所以提前判为“到位”，但随后 `push_to_goal()` 对TCP要求z≤.052m，实测z=.05689m直接报错 `ORIGINAL_PUSH_CONTACT_POSE_INVALID`，**没有执行哪怕一步沿+X推送**。这是一处实际代码验收逻辑冲突，不是新的障碍物/学习问题，也不能说Cartesian推送算法已失败。新已提交 `agcofl/m1_original_scene_cartesian_pusher_v6.py`、`tests/test_m1_original_scene_cartesian_pusher_v6.py`、`scripts/run_m1_original_scene_cartesian_pusher_v6_once.sh`，只把`descend_rear`的到位容差**22mm→8mm**（接触TCP目标z38mm与独立推进前真实物理验收不变），清障、悬空、场景、seed120、goal x=.210、原`pd_ee_delta_pose`沿+X推动、15步停滞立即停和450步硬预算全保留；旧结果不覆盖。运行 `bash scripts/run_m1_original_scene_cartesian_pusher_v6_once.sh`，先4个无仿真测试、再读取原v5 54步真实轨迹与SHA256验证误差并核对原32/7/9/6步，才允许运行**最多一次**新PhysX。**代码已提交但服务器未跑，源Pick同目标仍无物理抓取，TAMP/M2均未执行。** 详细协议 [v5真实失败的精确根因与v6最小修复](2026-11-12_M1_V5_DESCENT_PREMATURE_ACCEPT_AND_V6_FIX.md)。
+
+---
+
 ## ★ 2026-11-12 — M1 v4 真实后210步已证实执行器停滞，替换为**原来35步已成功的Cartesian推动接口**，同场景v5仅一次验收
 
 用户从已保存真实 `outputs/m1_current_target_reference_height_v4/target_reference_height/physical_trace.json` 抽出 `push_3_x_0.260` 的**210步**：TCP X范围[0.130775899,0.131375283]m，整个210步变化**0.599mm**；方块X范围[0.169611618,0.169611722]m，位移**约0.0001mm**。故这是Panda关节空间/MPLib Screw**实际运动停滞**，而非仅“规划路径太长”或“加步数即可完成”。实际发生的是机械臂停在狭口附近，原因可能是手指/连杆干涉、关节控制无法跟踪，但没有接触力证据不能下确定碰撞结论。当前方块x=.1696半宽.020，实体仍与x=.146..170的50mm狭口重叠，且终点误差40.47mm未达到20mm成功门槛。**禁止再次运行v4或增加450步。**
