@@ -195,8 +195,17 @@ def verdict(ik_status, self_col, env_col, screw_status, certified_exact_pose=Fal
     return 'PLANNING_CANDIDATE_NOT_PHYSICAL_VALIDATION'
 
 
-def collision_query(planner, candidate):
-    """Use only exposed collision APIs; missing/failed checks are UNKNOWN."""
+def collision_query(planner, candidate, mplib_version):
+    """Check *candidate* qpos using the exact MPLib versioned signatures.
+
+    MPLib 0.1.1: check_for_self_collision(articulation=None, qpos=None)
+                 check_for_env_collision(articulation=None, qpos=None,
+                                         with_point_cloud=False, use_attach=False)
+    Here passing qpos as the FIRST positional argument would instead be
+    interpreted as an articulation, yielding false conclusions/exceptions.
+    Newer MPLib releases accept the qpos as the first positional argument.
+    """
+    legacy = str(mplib_version) == '0.1.1'
     out = {}
     for key, method in [('self', 'check_for_self_collision'),
                         ('environment', 'check_for_env_collision')]:
@@ -205,23 +214,43 @@ def collision_query(planner, candidate):
             out[key] = {'observed': None, 'reason': 'API_UNAVAILABLE'}
             continue
         try:
-            hits = fn(candidate)
-            if hits is None:
-                raise ValueError('Null collision response')
-            out[key] = {'observed': bool(len(hits)), 'count': len(hits),
-                        'details': [str(x)[:350] for x in hits[:8]]}
-        except Exception as e:
-            out[key] = {'observed': None, 'reason': f'{type(e).__name__}: {e}'[:350]}
+            if legacy:
+                if key == 'environment':
+                    # Original source uses a 792-pt static+blocker cloud.
+                    # By default, v0.1.1 omits that cloud from env collisions.
+                    hits = fn(qpos=candidate, with_point_cloud=True,
+                              use_attach=False)
+                else:
+                    hits = fn(qpos=candidate)
+            else:
+                hits = fn(candidate)
+            if hits is None or not hasattr(hits, '__len__'):
+                raise ValueError('Missing collision result sequence')
+            out[key] = {
+                'observed': bool(len(hits)), 'count': len(hits),
+                'details': [str(x)[:350] for x in list(hits)[:8]],
+                'api': ('mplib_0.1.1_explicit_qpos'
+                        if legacy else 'mplib_modern_positional_qpos'),
+                'with_point_cloud': key == 'environment',
+            }
+        except Exception as exc:
+            out[key] = {
+                'observed': None,
+                'reason': f'{type(exc).__name__}: {exc}'[:350],
+                'api': 'mplib_0.1.1_explicit_qpos' if legacy
+                       else 'mplib_modern_positional_qpos',
+            }
     return out
 
 
 def make_mplib_ik_pose(world_pose_xyz_wxyz):
-    """Build the pybind Pose accepted by MPLib Planner.IK, fail closed.
+    """Version-accurate input to Planner.IK, never invent a Pose type.
 
-    Some pinned MPLib builds expose Pose only under ``mplib.pymp``, not
-    ``mplib.Pose``.  The original ManiSkill screw executor accepts the flat
-    seven-vector independently; the IK method requires the MPLib Pose type.
-    Never silently substitute SAPIEN Pose or change the target frame.
+    MPLib 0.1.1 source (haosulab/MPlib tag v0.1.1, mplib/planner.py):
+        IK(goal_pose: [x,y,z,qw,qx,qy,qz], start_qpos, ...)
+        plan_screw(target_pose: same 7D array, qpos, ..., use_point_cloud)
+    It exports NO Pose class. MPLib >=0.2 instead uses a C++ Pose binding.
+    Unknown versions lacking both documented constructors fail closed.
     """
     import importlib
     import numpy as np
@@ -231,9 +260,15 @@ def make_mplib_ik_pose(world_pose_xyz_wxyz):
         raise ValueError('MPLIB_IK_POSE_EXPECTED_FINITE_7D_XYZ_WXYZ')
     if abs(float(np.linalg.norm(values[3:])) - 1.) > .02:
         raise ValueError('MPLIB_IK_POSE_QUATERNION_NOT_UNIT')
+
     import mplib
+    version = str(getattr(mplib, '__version__', 'UNKNOWN'))
+    if version == '0.1.1':
+        return values.copy(), 'mplib_0.1.1_flat_7d_xyz_wxyz'
+
+    # Keep documented 0.2+ path where Pose is a pybind type. No guesswork
+    # involving SAPIEN Pose, whose bindings may not match the planner.
     errors = []
-    # Prefer explicitly exported C++ binding; do not assume public root alias.
     for name in ('mplib.pymp', 'mplib'):
         try:
             module = importlib.import_module(name)
@@ -247,12 +282,9 @@ def make_mplib_ik_pose(world_pose_xyz_wxyz):
         try:
             return ctor(p=values[:3], q=values[3:]), f'{name}.Pose'
         except (TypeError, ValueError, RuntimeError) as exc:
-            # Older pybind versions may have a different constructor signature.
-            # Fail safely rather than passing a guessed pose representation.
             errors.append(f'{name}.Pose: {type(exc).__name__}: {str(exc)[:160]}')
     raise RuntimeError(
-        'MPLIB_IK_POSE_API_UNAVAILABLE: version='
-        + str(getattr(mplib, '__version__', 'unknown'))
+        'MPLIB_IK_POSE_API_UNAVAILABLE: version=' + version
         + ' module=' + str(getattr(mplib, '__file__', 'unknown'))
         + ' attempted=' + '; '.join(errors))
 
@@ -357,7 +389,7 @@ def planning_only(snapshot, last, official_root):
         candidate = None
         if str(ik_status) == 'Success' and candidates:
             candidate = np.asarray(candidates[0], dtype=float).reshape(-1)
-            col = collision_query(inner, candidate)
+            col = collision_query(inner, candidate, getattr(mplib, '__version__', 'UNKNOWN'))
 
         screw_raw = inner.plan_screw(pose7, q_start,
                                      time_step=b.control_timestep,
@@ -377,6 +409,9 @@ def planning_only(snapshot, last, official_root):
             'collision_points_count': int(len(pts)),
             'collision_points_not_exact_mesh': True,
             'mplib_version': getattr(mplib, '__version__', 'UNKNOWN'),
+            'mplib_api_contract': ('0.1.1_FLAT7_IK_AND_EXPLICIT_QPOS_COLLISION'
+                                  if str(getattr(mplib, '__version__', '')) == '0.1.1'
+                                  else 'MODERN_POSE_IK_COLLISION'),
             'ik_pose_factory': ik_pose_factory,
             'ik_status': str(ik_status), 'ik_solutions_returned': len(candidates),
             'first_ik_candidate': None if candidate is None else candidate.tolist(),

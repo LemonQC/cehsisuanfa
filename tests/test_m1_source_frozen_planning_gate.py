@@ -11,6 +11,60 @@ from scripts import m1_source_frozen_planning_gate as g
 
 
 class OfflinePlanningGateTests(unittest.TestCase):
+    def test_mplib_0_1_1_ik_uses_flat7_without_pose_class(self):
+        import numpy as np
+        fake_mplib = types.ModuleType('mplib')
+        fake_mplib.__path__ = []
+        fake_mplib.__version__ = '0.1.1'
+        with mock.patch.dict(sys.modules, {
+            'mplib': fake_mplib, 'mplib.pymp': None,
+        }):
+            value, contract = g.make_mplib_ik_pose([.1, .2, .3, 1, 0, 0, 0])
+        self.assertIsInstance(value, np.ndarray)
+        self.assertEqual(value.shape, (7,))
+        np.testing.assert_array_equal(value, [.1, .2, .3, 1, 0, 0, 0])
+        self.assertEqual(contract, 'mplib_0.1.1_flat_7d_xyz_wxyz')
+
+    def test_mplib_0_1_1_collision_uses_explicit_qpos_with_point_cloud(self):
+        import numpy as np
+        q = np.arange(9, dtype=float)
+        class LegacyPlanner:
+            def __init__(self):
+                self.calls=[]
+            def check_for_self_collision(self, articulation=None, qpos=None):
+                if articulation is not None:
+                    raise ValueError('Wrong articulation argument')
+                np.testing.assert_array_equal(qpos, q)
+                self.calls.append('self_qpos')
+                return []
+            def check_for_env_collision(self, articulation=None, qpos=None,
+                                        with_point_cloud=False, use_attach=False):
+                if articulation is not None:
+                    raise ValueError('Wrong articulation argument')
+                np.testing.assert_array_equal(qpos, q)
+                self.assertion = (with_point_cloud is True and use_attach is False)
+                self.calls.append('env_qpos_cloud')
+                return ['known_wall_contact']
+        planner=LegacyPlanner()
+        r=g.collision_query(planner,q,'0.1.1')
+        self.assertEqual(planner.calls,['self_qpos','env_qpos_cloud'])
+        self.assertTrue(planner.assertion)
+        self.assertEqual(r['self']['observed'],False)
+        self.assertEqual(r['environment']['observed'],True)
+        self.assertEqual(r['environment']['count'],1)
+        self.assertEqual(r['environment']['api'],'mplib_0.1.1_explicit_qpos')
+
+    def test_missing_legacy_collision_api_cannot_be_read_as_clearance(self):
+        import numpy as np
+        class Stub:
+            def check_for_self_collision(self, articulation=None, qpos=None):
+                return []
+        r=g.collision_query(Stub(),np.zeros(9),'0.1.1')
+        self.assertIsNone(r['environment']['observed'])
+        self.assertEqual(r['environment']['reason'],'API_UNAVAILABLE')
+        self.assertEqual(g.verdict('Success',False,None,'Success'),
+                         'INCONCLUSIVE_COLLISION_API')
+
     def test_mplib_ik_pose_uses_pymp_when_root_has_no_pose(self):
         import numpy as np
         fake_mplib = types.ModuleType('mplib')

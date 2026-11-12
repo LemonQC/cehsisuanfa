@@ -100,3 +100,18 @@ env -u DISPLAY -u WAYLAND_DISPLAY python -u -m scripts.m1_source_frozen_planning
 ```
 
 任何 `INCONCLUSIVE` 仍应保持原实验冻结、不追加物理动作。
+
+
+## 2026-11-12 18:49 `pi05` 真正的 MPLib 0.1.1 API 审计与终止猜测
+
+用户原服务器执行 `--plan` 后确认 `mplib.__version__ == '0.1.1'`，无 `mplib.Pose` 且无 `mplib.pymp.Pose`，因此原导入失败是诊断工具接口错误，**不是物理场景、IK 或 Screw 失败**。此前最后一次状态恢复仍然有效（65 动作、Panda 66×31；finger qpos≈0.023 m）。无新物理动作。
+
+**源代码依据（精确历史版本）**：[`haosulab/MPlib` `v0.1.1` → `mplib/planner.py`](https://github.com/haosulab/MPlib/blob/v0.1.1/mplib/planner.py) 与其 [IK 文档](https://motion-planning-lib.readthedocs.io/v0.1.1/tutorials/inverse_kinematics.html)。与 0.2.x API 不同：
+
+- `Planner.IK(goal_pose, start_qpos, mask=None, n_init_qpos=20, threshold=1e-3)`：`goal_pose` 应传入原封不动的 **7D XYZ+WXYZ NumPy 向量**，不是 `mplib.Pose`。本工具只对**明确版本 0.1.1**使用此入口；新版仍保留新版 Pose 适配。
+- `Planner.plan_screw(target_pose, qpos, ..., use_point_cloud=True, ...)` 同样接受 7D 向量，保留原先调用，不调用 `move_to_pose_with_screw`（否则可能执行轨迹）。
+- `Planner.check_for_self_collision(articulation=None, qpos=None)`：必须传 `qpos=candidate`，**不能**调用 `check_for_self_collision(candidate)`，否则候选会被当成机器人模型。
+- `Planner.check_for_env_collision(articulation=None, qpos=None, with_point_cloud=False, use_attach=False)`：必须传 `qpos=candidate, with_point_cloud=True, use_attach=False`，保证原静态墙和 blocker 点云参与检查。否则默认 `with_point_cloud=False` 会漏掉关键原障碍。
+- v0.1.1 的 `Planner.IK` 本身会执行碰撞过滤；IK 未找到解不能单独证明原目标的纯运动学不可达。
+
+本轮修复还为旧版本 `IK` 目标输入、碰撞参数、点云开启增加离线合成 Stub 测试；不得将它们冒充服务器实时规划成功。原 `status.json`、`physical_trace.json`、H5 和 v6 结果全部不可变。未执行 `--plan` 的真实 IK/Screw 结果仍标记 NOT_RUN；一旦运行，必须以实际的 `frozen_planning_audit.json` 作为依据。无结果文件时查看 `M1_SOURCE_FROZEN_PLANNING_INCONCLUSIVE`，不能猜测结果。无论诊断结果如何，`authorizes_physics=false`。
