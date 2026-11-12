@@ -23,7 +23,7 @@ import numpy as np
 
 from .m1b3_corridor_physics import (
     BLOCKER_X, BLOCKER_HALF, PARKING_Y, TASK_HALF, GOAL_RADIUS,
-    SEED, MAX_STEPS, geometry_preflight, make_env, _actual_satisfied,
+    SEED, MAX_STEPS, geometry_preflight, _actual_satisfied,
 )
 from .m1_current_closed_pusher_ablation import ContactTracer, observed_push_only
 from .m1b2_same_goal_effect_physics import ActorPush, _pose, _bounded_summary
@@ -251,6 +251,31 @@ def execute(env):
         "learned_method_evaluated":False,"paper_ready":False}
 
 
+def make_v5_env(official_root,out):
+    """Original M1B3 PhysX scene, exact pd_ee_delta_pose configuration.
+
+    New RecordEpisode identifier avoids mislabeling v5 as the old
+    2026-11-11 blocked_clear baseline; old geometry remains identical.
+    """
+    import gymnasium as gym
+    import mani_skill.envs  # noqa: F401
+    from mani_skill.utils.wrappers.record import RecordEpisode
+    from .m1b3_corridor_physics import ENV_ID, register_env
+
+    register_env(official_root)
+    raw=gym.make(ENV_ID,obs_mode="state",robot_uids="panda",
+                 num_envs=1,control_mode="pd_ee_delta_pose",
+                 render_mode="rgb_array",sim_backend="physx_cpu",
+                 distract=False,max_episode_steps=MAX_STEPS)
+    rec=RecordEpisode(
+        raw,output_dir=str(out),trajectory_name=CASE,save_video=True,
+        save_on_reset=False,record_reward=False,
+        source_type="privileged_diagnostic",
+        source_desc="same M1B3 geometry, v5 original Cartesian target executor; not learned or TAMP")
+    rec.reset(seed=SEED,options={"m1b3_open":False})
+    return rec
+
+
 def run_once(out,official_root):
     contract()
     root=Path(out).resolve()
@@ -263,7 +288,7 @@ def run_once(out,official_root):
     try:
         # Actual proven original M1B3 pd_ee_delta_pose controller,
         # original blocker scene, original actor placement, frozen seed.
-        env=make_env(official_root,SEED,case,"blocked_clear")
+        env=make_v5_env(official_root,case)
         data=execute(env)
     except Exception as exc:
         data={"version":VERSION,"mode":CASE,"scene":"AGCOFLM1B3Corridor-v0",
