@@ -1,3 +1,9 @@
+## ★ 2026-11-12 — 原 M1 v4 真实物理：清障通过、推方块至x=.1696，第三段推送耗尽450步；冻结并查看后210步
+
+用户 pi05 服务器 `M1_REFERENCE_HEIGHT_GATE`：`success=false`, `actions=450`, `clearance_valid=true`, `goal_error_m=.04047170517`, 方块最终 `[x=.1696116924,y=.00259693293,z=.0199999101]`，`guard_violation=null`，错误为 `M1B2_STEP_BUDGET_EXCEEDED`。原M1B3场景/seed/目标保持不变。阶段：闭合手爪6步、挡块清障RRT58+Screw24=82步（残差6.324mm）、安全退后18步、悬空后移38步、下降22步、+X推动第一段37步至方块x=.133579、第二段37步至方块x=.169612，合计**240步**；随后第三段目标 TCP x=.260的 Screw 动作尝试剩余**210步**，未返回完成，保存全450步轨迹。需要纠正：方块中心x=.1696但半宽.020，实体在x=.1496..1896，**尚未完全退出x=.146..170的狭口**；成功容差目标x=.210±.020也未达到。不能简单加预算或称碰撞；ManiSkill原 `BaseMotionPlanningSolver.follow_path` 按规划轨迹动作数顺序执行，没有 cube-progress 自停逻辑，异常由自定义450步保护触发。下一步**只读** `outputs/m1_current_target_reference_height_v4/target_reference_height/physical_trace.json` 里第三段 `execution_phase=push_3_x_0.260`，核对TCP X与Cube X是否停滞或接触失效，见 [完整真实结果和现成Python诊断命令](2026-11-12_M1_TARGET_V4_PUSH3_450_STEP_PARTIAL_SUCCESS.md)。旧raw、旧baseline、源端106步未抓住的失败保持冻结，强等信息TAMP与M2均未执行。
+
+---
+
 ## ★ 2026-11-12 — 同一 M1 场景：成功 Push 的真实 TCP≈37mm，旧 v3 错把 TCP 接触高度设20mm；v4 单因素修复已提交，尚未运行
 
 用户提供原场景 `open_direct` **35步真实成功**：方块在 step26 首次移动，TCP [x=−15.18mm,z=37.38mm]；实际推动期间 TCP 最低 z=36.73mm；末步方块 x=195.93mm。相比原 v3 清障成功后安全回到后方但 TCP停在 [x=−54.78mm,z=41.28mm] 且未推动，代码明确将下降和后续全段推送的 **TCP目标高度都误设为 cube中心 z=20mm**，并按 `abs(TCP_z-cube_z)<18mm` 拒绝该位姿。仅凭TCP数据无法断言实际指尖碰撞、两种控制模式同姿态：`open_direct` 使用 `pd_ee_delta_pose`，v3用 `pd_joint_pos`。已提交 `agcofl/m1_current_target_reference_height_v4.py`（只把下降和+X推送目标 TCP z=.020→**.038m**，将后方接近验收改为实测TCP绝对高度0.034–0.050m并确保实际后方/横向位置），原 M1B3 场景几何、seed120、终点 x=.210、已成功的闭合夹爪82步清障、悬空返回、方向/抬升/未抓取/狭口等保护均不变；旧H5/视频不覆盖。运行 `bash scripts/run_m1_target_reference_height_once.sh`，先4项纯CPU单测和原35步/v3 169步真实文件SHA和目标一致性检查，通过才允许**最多一次**新 PhysX；结果 `M1_REFERENCE_HEIGHT_GATE`。代码已提交并核对入口，**用户服务器尚未执行**；不能把高度修复当成目标端成功，更不能宣称源Pick（实际双指抓取0）、TAMP和新Method已经解决。详见 [v4接触高度修复与止损门槛](2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md)。
