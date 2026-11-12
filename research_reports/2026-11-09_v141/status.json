@@ -350,11 +350,11 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Original current M1 only: git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_original_scene_cartesian_pusher_v6_once.sh. Unit test and 54-step v5 real physics preflight before exactly one corrected tolerance v6 physical run. Return M1_V6_PHYSICAL_GATE. Keep original M0/M1B1/B2/B3/B4/v2/v3/v4/v5 and old source raw untouched. Do not interpret target success as source same-goal or TAMP.",
-  "research_execution_reference": "docs/2026-11-12_M1_V5_DESCENT_PREMATURE_ACCEPT_AND_V6_FIX.md",
+  "next_operator_action": "TARGET M1B3 FROZEN TRUE PASS: v6 source-target task same geometry seed120, target clear+push 66 actual steps and 8.193mm error, never physically grasped. Do NOT rerun target or create v7. NEXT OFFLINE ONLY: git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_current_compare_grasp_contact.py' -q; python -m scripts.m1_current_compare_grasp_contact. Report M1_SOURCE_CONTACT_ROOT_DIAG comparing failed M1B3 side-grasp 106 actions and actually successful M1B2 source x.15. After evidence choose one physically valid source Pick same goal x.21 without blocker relocation; source/video, TAMP and M2 remain NOT_RUN. Source must not fake goal from M1B2 x.15.",
+  "research_execution_reference": "docs/2026-11-12_M1_V6_TARGET_PHYSICS_SUCCESS_SOURCE_NEXT.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
-    "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
+    "m1": "Original M1B3 SAME GOAL target physics now SUCCESS v6 at fixed seed120: blocked clear 32 and Cartesian push 10, total 66 actions final goal error 8.193mm; both objects physically never grasped, Panda gripper CLOSED pusher. Original M1B3 source PICK remains NO_GO after 106 real side-grasp actions 0 valid grasp, so matched source-target pair NOT_YET established. Strong TAMP/learned method NOT_RUN.",
     "m2": "NOT_STARTED_AND_NOT_AUTHORIZED on failed M1 hypothesis; no method trained"
   },
   "m1a_local_asset_gate": {
@@ -1093,7 +1093,7 @@
     }
   },
   "current_m1_original_scene_cartesian_v6": {
-    "stage": "NEW_CODE_TESTS_AND_RUNNER_COMMITTED_NOT_EXECUTED_ON_USER_SERVER",
+    "stage": "REAL_OPERATOR_PHYXS_EXECUTED_66_ACTIONS_FULL_TARGET_SUCCESS_AND_PUSH_ONLY_CONFIRMED_FROZEN",
     "single_factor": "Only change descend_rear `motion_to` acceptance tolerance 0.022m => 0.008m; old control, task, geometry, physical contact target Z .038, push logic untouched",
     "code": "agcofl/m1_original_scene_cartesian_pusher_v6.py",
     "unit_tests": "tests/test_m1_original_scene_cartesian_pusher_v6.py",
@@ -1106,6 +1106,52 @@
     "source_pick_grasp_valid": false,
     "equal_info_tamp": "NOT_RUN",
     "learned_method": "NOT_STARTED",
-    "stop": "At most one PhysX run with original 450 total actions. If no actual contact or goal success, stop control tuning and inspect tool/fingertip geometry; do not begin arbitrary v7."
+    "stop": "At most one PhysX run with original 450 total actions. If no actual contact or goal success, stop control tuning and inspect tool/fingertip geometry; do not begin arbitrary v7.",
+    "operator_physical_success": {
+      "provenance": "operator user console actual M1_CARTESIAN_PUSHER_RESULT and M1_V6_PHYSICAL_GATE",
+      "actual_physx_executed": true,
+      "success": true,
+      "actions": 66,
+      "error": null,
+      "simulator_final_goal_satisfied": true,
+      "clearance_valid": true,
+      "blocker_parking": {
+        "steps": 32,
+        "goal_error_m": 0.005780176577047786,
+        "final_xyz_m": [
+          0.10254146158695221,
+          0.11980852484703064,
+          0.028997577726840973
+        ]
+      },
+      "safe_retreat_steps": 7,
+      "hover_rear_steps": 9,
+      "descend_rear_steps": 8,
+      "first_push_action_steps": 10,
+      "push_stop_reason": "SIMULATOR_EPISODE_END",
+      "final_cube_xyz_m": [
+        0.20180749893188477,
+        0.00011315263691358268,
+        0.020000118762254715
+      ],
+      "goal_error_m": 0.008193275891968195,
+      "original_goal_error_threshold_m": 0.02,
+      "target_ever_grasped": false,
+      "blocker_ever_grasped": false,
+      "closed_gripper_command_steps": 66,
+      "open_gripper_command_steps": 0,
+      "panda_finger_qpos_final_m": [
+        0,
+        0
+      ],
+      "artifact_error": null,
+      "local_status_path": "outputs/m1_original_scene_cartesian_pusher_v6/target_cartesian_contact_fixed/status.json",
+      "local_trace_path": "outputs/m1_original_scene_cartesian_pusher_v6/target_cartesian_contact_fixed/physical_trace.json",
+      "old_data_overwritten": false,
+      "result_scope": "single scenario seed 120 target privileged state executor smoke: 1 successful physical target; not training, no learned method, not paper-ready success rate"
+    },
+    "stage_now": "FROZEN_TARGET_SUCCESS_NO_V7_OR_REPEATED_SEEDS_BEFORE_SOURCE_GATE",
+    "next": "Run zero-physics prior true source comparison scripts/m1_current_compare_grasp_contact.py. Existing source physically invalid: 106 steps 0 grasp. Then select one mature source grasp tool grounded in actual contact evidence; need same-goal x.21 source to form pair. No target reruns, no M2/strong TAMP claim.",
+    "documentation": "docs/2026-11-12_M1_V6_TARGET_PHYSICS_SUCCESS_SOURCE_NEXT.md"
   }
 }
