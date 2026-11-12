@@ -1,3 +1,9 @@
+## ★ 2026-11-12 — 同一 M1 场景 v4 已确认物理TCP停滞，v5改用此前真正成功的Cartesian目标推动执行器
+
+用户服务器原v4第三段最后**210个真实PhysX step**：TCP X仅在0.13077590..0.13137528m之间（变化0.599mm），目标方块X在0.169611618..0.169611722m之间（近乎零变化）。因此不是再加物理执行预算的问题；`pd_joint_pos` + MPLib Screw执行器在原50mm狭口附近无法实现继续推动，原因属于机器人几何/控制未证实的硬停滞，不能直接声称已测量到撞墙接触力。保留已封存全部旧数据。**新提交单次控制执行器替换**：`agcofl/m1_original_scene_cartesian_pusher_v5.py`、`scripts/run_m1_original_scene_cartesian_pusher_once.sh`、`tests/test_m1_original_scene_cartesian_pusher_v5.py`。保持原M1B3环境、seed120、goal x=.210、20mm阈值、450总步数，改用原 `open_direct` 已35步物理成功的 `pd_ee_delta_pose` + `ActorPush` 底层Cartesian控制；清障继续用原已32步成功的 `ActorPush`，阶段衔接增加安全高空返回及38mm的参考接触TCP高度，最后采用原已成功的+X控制与15步真实TCP+Cube双停滞立停保护。不重复v4，不增加预算，原H5/视频只读保存SHA256。命令 `bash scripts/run_m1_original_scene_cartesian_pusher_once.sh` 会先纯CPU测试、几何检查、只读原成功/失败证据核对，再最多一次原场景 PhysX。**代码已提交但用户GPU尚未运行，不能当成已取得成功**；源端Pick真实抓取依旧未通过，强TAMP和Method均未做。详见 [v4原始轨迹与v5受控替换协议](docs/2026-11-12_M1_V4_STALLED_TCP_AND_V5_CARTESIAN_EXECUTOR_SWAP.md)。
+
+---
+
 ## ★ 2026-11-12 — 同一 M1 场景：成功 Push 的真实 TCP≈37mm，旧 v3 错把 TCP 接触高度设20mm；v4 单因素修复已提交，尚未运行
 
 用户提供原场景 `open_direct` **35步真实成功**：方块在 step26 首次移动，TCP [x=−15.18mm,z=37.38mm]；实际推动期间 TCP 最低 z=36.73mm；末步方块 x=195.93mm。相比原 v3 清障成功后安全回到后方但 TCP停在 [x=−54.78mm,z=41.28mm] 且未推动，代码明确将下降和后续全段推送的 **TCP目标高度都误设为 cube中心 z=20mm**，并按 `abs(TCP_z-cube_z)<18mm` 拒绝该位姿。仅凭TCP数据无法断言实际指尖碰撞、两种控制模式同姿态：`open_direct` 使用 `pd_ee_delta_pose`，v3用 `pd_joint_pos`。已提交 `agcofl/m1_current_target_reference_height_v4.py`（只把下降和+X推送目标 TCP z=.020→**.038m**，将后方接近验收改为实测TCP绝对高度0.034–0.050m并确保实际后方/横向位置），原 M1B3 场景几何、seed120、终点 x=.210、已成功的闭合夹爪82步清障、悬空返回、方向/抬升/未抓取/狭口等保护均不变；旧H5/视频不覆盖。运行 `bash scripts/run_m1_target_reference_height_once.sh`，先4项纯CPU单测和原35步/v3 169步真实文件SHA和目标一致性检查，通过才允许**最多一次**新 PhysX；结果 `M1_REFERENCE_HEIGHT_GATE`。代码已提交并核对入口，**用户服务器尚未执行**；不能把高度修复当成目标端成功，更不能宣称源Pick（实际双指抓取0）、TAMP和新Method已经解决。详见 [v4接触高度修复与止损门槛](docs/2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md)。
