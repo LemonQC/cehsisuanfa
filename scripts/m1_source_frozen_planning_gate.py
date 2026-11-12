@@ -53,19 +53,60 @@ def h5_inventory(path):
         return results[:150]
 
 
+# Explicitly documented ManiSkill articulation state format:
+#   root p(3), root quaternion wxyz(4), root linear vel(3), root angular vel(3),
+#   active-joint qpos(DOF), active-joint qvel(DOF).
+# Original Panda has 9 active DoF: 13 + 9 + 9 = 31.
+# See ManiSkill Articulation.get_state()/set_state(), NOT the flat obs schema.
+PACKED_PANDA_PATH = 'traj_0/env_states/articulations/panda'
+PANDA_QPOS = slice(13, 22)
+PANDA_QVEL = slice(22, 31)
+
+
 def candidate_datasets(h5):
-    """Only explicit 9-DoF qpos datasets; never infer joints from flat RGB/state."""
+    """Accept named qpos or the original ManiSkill 31D Panda state only."""
     items = []
     def visit(name, node):
-        if not hasattr(node, 'shape') or not name.lower().endswith('/qpos'):
+        if not hasattr(node, 'shape'):
             return
         shape = tuple(int(x) for x in node.shape)
-        if len(shape) == 2 and shape[0] == PHYSICAL_STEPS + 1 and shape[1] == 9:
+        if name.lower().endswith('/qpos') and (
+                shape == (PHYSICAL_STEPS + 1, 9)
+                or shape == (PHYSICAL_STEPS + 1, 1, 9)):
             items.append((name, shape))
-        elif len(shape) == 3 and shape == (PHYSICAL_STEPS + 1, 1, 9):
+        elif name == PACKED_PANDA_PATH and shape == (PHYSICAL_STEPS + 1, 31):
             items.append((name, shape))
     h5.visititems(visit)
     return items
+
+
+def decode_panda_state(packed):
+    """Verified ManiSkill articulation layout; reject wrong shape/quat/data.
+
+    This does NOT decode robot qpos from flat observations: it only accepts
+    the named env_states/articulations/panda field as recorded by ManiSkill.
+    """
+    import numpy as np
+    arr = np.asarray(packed, dtype=np.float64)
+    if arr.shape != (PHYSICAL_STEPS + 1, 31):
+        raise ValueError('PANDA_ARTICULATION_WRONG_SHAPE_NOT_66x31')
+    if not np.isfinite(arr).all():
+        raise ValueError('PANDA_ARTICULATION_NONFINITE')
+    # Quaternions in articulation get_state are root wxyz, not angles.
+    norms = np.linalg.norm(arr[:, 3:7], axis=1)
+    if not np.all(np.abs(norms - 1.0) <= 0.02):
+        raise ValueError('PANDA_ARTICULATION_ROOT_QUATERNION_NOT_UNIT')
+    joints = arr[:, PANDA_QPOS]
+    velocities = arr[:, PANDA_QVEL]
+    if joints.shape != (66, 9) or velocities.shape != (66, 9):
+        raise ValueError('PANDA_ARTICULATION_DOF_MISMATCH')
+    # Panda has 7 revolute joints and two nonnegative finger prismatic joints.
+    # Only loose sanity checks; exact joint limits come from local robot model.
+    if (np.abs(joints[:, :7]).max() > 4.0 or
+            np.any(joints[:, -2:] < -0.005) or
+            np.any(joints[:, -2:] > 0.046)):
+        raise ValueError('PANDA_ARTICULATION_JOINT_SANITY_FAILED')
+    return joints.copy(), velocities.copy()
 
 
 def extract_snapshot(case, explicit_h5=None, dataset=None):
@@ -76,28 +117,65 @@ def extract_snapshot(case, explicit_h5=None, dataset=None):
         raise ValueError('Exactly one original source H5 required; inventory and set --h5 (no guessed file)')
     path = matches[0]
     with h5py.File(path, 'r') as f:
+        # 65 physically executed control actions => 66 saved states.
+        if 'traj_0/actions' not in f or tuple(f['traj_0/actions'].shape) != (65, 8):
+            raise ValueError('SOURCE_ACTIONS_MISSING_OR_NOT_65x8')
         found = candidate_datasets(f)
         if dataset:
             if dataset not in [name for name, _ in found]:
-                raise ValueError('Selected qpos dataset absent or shape != [66,9]: ' + dataset)
+                raise ValueError('Selected dataset unavailable or not verified 66x9/66x31 Panda: '+dataset)
             chosen = dataset
         else:
             if not found:
-                raise ValueError('NO_QPOS_DATASET: saved H5 lacks explicit 66x9 robot qpos; cannot infer from flat state')
-            data = [np.asarray(f[name][-1]).reshape(-1) for name, _ in found]
-            if any(not np.allclose(data[0], x, atol=1e-5, rtol=0) for x in data[1:]):
-                raise ValueError('AMBIGUOUS_QPOS: multiple 66x9 datasets disagree; pass --dataset and investigate')
-            chosen = found[0][0]
-        raw = np.asarray(f[chosen], dtype=float).reshape(PHYSICAL_STEPS + 1, 9)
-        if not np.isfinite(raw).all():
-            raise ValueError('Non-finite saved robot qpos')
+                raise ValueError('NO_QPOS_DATASET: no verified 66x9 qpos or original 66x31 Panda articulation state')
+            chosen = (PACKED_PANDA_PATH if PACKED_PANDA_PATH in [n for n,_ in found]
+                      else found[0][0])
+        decoded = {}
+        for name, shape in found:
+            if name == PACKED_PANDA_PATH:
+                raw31 = np.asarray(f[name], dtype=np.float64)
+                qpos, qvel = decode_panda_state(raw31)
+                decoded[name] = qpos
+            else:
+                qpos = np.asarray(f[name], dtype=np.float64).reshape(PHYSICAL_STEPS+1, 9)
+                if not np.isfinite(qpos).all():
+                    raise ValueError('Non-finite saved robot qpos in '+name)
+                decoded[name] = qpos
+        if any(not np.allclose(decoded[chosen], value, atol=1e-5, rtol=0)
+               for key, value in decoded.items() if key != chosen):
+            raise ValueError('AMBIGUOUS_QPOS: named and packed state 66x9 joint trajectories disagree')
+        raw = decoded[chosen]
         q = raw[-1]
+        packed_available = PACKED_PANDA_PATH in f and (
+            tuple(f[PACKED_PANDA_PATH].shape) == (PHYSICAL_STEPS+1, 31))
+        # Even if named qpos is selected, validate and expose packed state if present.
+        full_state = (np.asarray(f[PACKED_PANDA_PATH], dtype=np.float64)
+                      if packed_available else None)
+        if full_state is not None:
+            decode_panda_state(full_state)
+        actor_snapshots = {}
+        for actor_name in ('cube', 'm1b3_dynamic_blocker'):
+            apath = 'traj_0/env_states/actors/' + actor_name
+            if apath in f:
+                actor = np.asarray(f[apath], dtype=np.float64)
+                if actor.shape != (PHYSICAL_STEPS+1, 13) or not np.isfinite(actor).all():
+                    raise ValueError('Saved actor state malformed: '+apath)
+                actor_snapshots[actor_name] = actor[-1, :3].tolist()
         return {
             'h5_path': str(path.resolve()), 'h5_sha256': sha256(path),
             'dataset': chosen, 'available_datasets': found,
             'qpos_9': q.tolist(), 'qpos_previous_9': raw[-2].tolist(),
             'qpos_snapshot_index': PHYSICAL_STEPS,
             'qpos_66_sha256': hashlib.sha256(raw.tobytes()).hexdigest(),
+            'packed_articulation_state_31': (None if full_state is None
+                                              else full_state[-1].tolist()),
+            'packed_qvel_9': (None if full_state is None
+                              else full_state[-1, PANDA_QVEL].tolist()),
+            'actor_last_xyz': actor_snapshots,
+            'layout': ('MANISKILL_ARTICULATION_ROOT13_QPOS9_QVEL9' if full_state is not None
+                       else 'NAMED_EXPLICIT_QPOS9_ONLY'),
+            'layout_source': ('ManiSkill Articulation.get_state/set_state: 13+2*DOF; '
+                              'root pose7, root linear3, root angular3, qpos9, qvel9'),
         }
 
 
@@ -164,6 +242,13 @@ def planning_only(snapshot, last, official_root):
 
     if not np.allclose(snapshot['qpos_9'][-2:], last['finger_joint_qpos_m'], atol=.003, rtol=0):
         raise ValueError('Saved H5 qpos fingers do not match frozen 65th physical state')
+    if snapshot['packed_articulation_state_31'] is None:
+        raise ValueError('FULL_ARTICULATION_STATE_REQUIRED_FOR_PLAN: qpos alone does not verify root/qvel')
+    actor_xyz = snapshot['actor_last_xyz']
+    for actor, recorded_key in [('cube', 'task_cube'), ('m1b3_dynamic_blocker', 'blocker')]:
+        if actor not in actor_xyz or np.linalg.norm(
+                np.asarray(actor_xyz[actor]) - np.asarray(last[recorded_key])) > .001:
+            raise ValueError('Saved H5 last actor state disagrees with 65th trace: '+actor)
     env = None
     solver = None
     try:
@@ -175,10 +260,14 @@ def planning_only(snapshot, last, official_root):
         env.reset(seed=SEED, options={'m1b3_open': False})
         b = env.unwrapped
         q = np.asarray(snapshot['qpos_9'], dtype=np.float64)
-        b.agent.robot.set_qpos(torch.as_tensor(q[None, :], device=b.device, dtype=torch.float32))
+        full = np.asarray(snapshot['packed_articulation_state_31'], dtype=np.float64)
+        b.agent.robot.set_state(torch.as_tensor(full[None, :], device=b.device, dtype=torch.float32))
+        actual_full = b.agent.robot.get_state().detach().cpu().numpy().reshape(-1)
+        if actual_full.shape != (31,) or not np.allclose(actual_full, full, atol=2e-5, rtol=0):
+            raise ValueError('Local ManiSkill articulation layout differs from saved frozen 31D state')
         actual_q = b.agent.robot.get_qpos().detach().cpu().numpy().reshape(-1)
         if actual_q.shape != (9,) or not np.allclose(actual_q, q, atol=2e-5, rtol=0):
-            raise ValueError('Failed to restore full frozen qpos')
+            raise ValueError('Failed to restore frozen robot qpos')
         actual_tcp = b.agent.tcp_pose.p.detach().cpu().numpy().reshape(-1)[:3]
         if float(np.linalg.norm(actual_tcp - np.asarray(last['tcp']))) > .005:
             raise ValueError('Saved H5 qpos FK disagrees with last measured TCP >5mm')
@@ -238,6 +327,8 @@ def planning_only(snapshot, last, official_root):
             'reconstructed_grasp_pose_world_xyz_wxyz': pose7.tolist(),
             'pose_provenance': 'REGENERATED_FROM_FROZEN_CODE_NOT_SERIALIZED_IN_FAILED_RUN',
             'restored_qpos_9': q_start.tolist(),
+            'restored_articulation_root13': actual_full[:13].tolist(),
+            'articulation_state_layout_validated_against_local_mani_skill': True,
             'restored_tcp_world_xyz_m': actual_tcp.tolist(),
             'restored_object_world_xyz_m': cube.tolist(),
             'restored_blocker_world_xyz_m': blocker.tolist(),
@@ -283,8 +374,13 @@ def main(argv=None):
     try:
         st, last, old = frozen_json(a.case)
         snap = extract_snapshot(a.case, a.h5, a.dataset)
-        if not math.isclose(snap['qpos_9'][-2], last['finger_joint_qpos_m'][0], abs_tol=.003):
-            raise ValueError('Final finger position mismatch')
+        if any(abs(snap['qpos_9'][-2+i] - last['finger_joint_qpos_m'][i]) > .003
+               for i in range(2)):
+            raise ValueError('Final finger positions mismatch real trace')
+        for actor, trace_key in [('cube', 'task_cube'), ('m1b3_dynamic_blocker', 'blocker')]:
+            xyz = snap['actor_last_xyz'].get(actor)
+            if xyz is not None and math.dist(xyz, last[trace_key]) > .001:
+                raise ValueError('Saved H5 actor position differs >1mm from frozen trace: '+actor)
         result = {
             'type': 'M1B3_SOURCE_FROZEN_PLANNING_ONLY',
             'source_case': str(a.case.resolve()),
@@ -314,7 +410,8 @@ def main(argv=None):
         print('M1_SOURCE_FROZEN_PLANNING_GATE', json.dumps({
             'decision': result['decision'], 'mode': result['mode'],
             'new_physx_actions': 0, 'authorizes_physics': False,
-            'snapshot_dataset': snap['dataset'], 'report': str(out)
+            'snapshot_dataset': snap['dataset'], 'decoded_layout': snap['layout'],
+            'finger_qpos_m': snap['qpos_9'][-2:], 'report': str(out)
         }, ensure_ascii=False), flush=True)
     except Exception as exc:
         # Error path deliberately does not fabricate a classification or a success.

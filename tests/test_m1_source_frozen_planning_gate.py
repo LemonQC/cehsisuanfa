@@ -51,6 +51,7 @@ class OfflinePlanningGateTests(unittest.TestCase):
             arr[-1,-2:]=.023
             with h5py.File(p,'w') as f:
                 f.create_dataset('traj_0/obs/agent/qpos',data=arr)
+                f.create_dataset('traj_0/actions', data=np.zeros((65, 8), dtype=np.float32))
             r=g.extract_snapshot(d)
             self.assertEqual(r['qpos_snapshot_index'],65)
             self.assertEqual(r['qpos_9'][-1],.023)
@@ -59,8 +60,80 @@ class OfflinePlanningGateTests(unittest.TestCase):
                 f.create_dataset('traj_0/env_states/robot/qpos',data=other)
             with self.assertRaisesRegex(ValueError, 'AMBIGUOUS_QPOS'):
                 g.extract_snapshot(d)
-            r=g.extract_snapshot(d,dataset='traj_0/obs/agent/qpos')
-            self.assertEqual(r['dataset'],'traj_0/obs/agent/qpos')
+            # Explicit selection must not bypass conflicting recorded qpos.
+            with self.assertRaisesRegex(ValueError, 'AMBIGUOUS_QPOS'):
+                g.extract_snapshot(d,dataset='traj_0/obs/agent/qpos')
+
+    def test_recovers_real_65_step_style_packed_panda_31d(self):
+        import h5py
+        import numpy as np
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'source.h5'
+            packed=np.zeros((66,31), dtype=np.float32)
+            packed[:,3]=1.0  # root quaternion wxyz
+            packed[:,13:20]=np.array([0.,-.79,0.,-2.36,0.,1.57,.79],dtype=np.float32)
+            packed[:,20:22]=.023
+            packed[:,22:31]=.005
+            with h5py.File(p,'w') as f:
+                f.create_dataset('traj_0/actions',data=np.zeros((65,8),dtype=np.float32))
+                f.create_dataset('traj_0/env_states/articulations/panda',data=packed)
+                cube=np.zeros((66,13),dtype=np.float32)
+                cube[:,3]=1.0
+                cube[:,2]=.02
+                f.create_dataset('traj_0/env_states/actors/cube',data=cube)
+            r=g.extract_snapshot(Path(tmp))
+            self.assertEqual(r['dataset'],g.PACKED_PANDA_PATH)
+            self.assertEqual(r['layout'],'MANISKILL_ARTICULATION_ROOT13_QPOS9_QVEL9')
+            self.assertEqual(len(r['packed_articulation_state_31']),31)
+            self.assertEqual(len(r['qpos_9']),9)
+            self.assertAlmostEqual(r['qpos_9'][-1],.023,places=6)
+            self.assertAlmostEqual(r['packed_qvel_9'][0],.005,places=6)
+            self.assertEqual(r['qpos_snapshot_index'],65)
+            self.assertEqual(r['actor_last_xyz']['cube'],[0.,0.,float(cube[-1,2])])
+
+    def test_rejects_misidentified_packed_states_not_well_formed(self):
+        import h5py
+        import numpy as np
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'source.h5'
+            bad=np.zeros((66,31),dtype=np.float32)
+            with h5py.File(p,'w') as f:
+                f.create_dataset('traj_0/actions',data=np.zeros((65,8)))
+                f.create_dataset(g.PACKED_PANDA_PATH,data=bad)
+            with self.assertRaisesRegex(ValueError,'ROOT_QUATERNION_NOT_UNIT'):
+                g.extract_snapshot(Path(tmp))
+            with h5py.File(p,'a') as f:
+                f[g.PACKED_PANDA_PATH][:,3]=1.
+                f[g.PACKED_PANDA_PATH][-1,21]=.08
+            with self.assertRaisesRegex(ValueError,'JOINT_SANITY_FAILED'):
+                g.extract_snapshot(Path(tmp))
+
+    def test_named_and_packed_joint_values_must_agree(self):
+        import h5py
+        import numpy as np
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'source.h5'
+            packed=np.zeros((66,31),dtype=np.float32)
+            packed[:,3]=1.0
+            with h5py.File(p,'w') as f:
+                f.create_dataset('traj_0/actions',data=np.zeros((65,8)))
+                f.create_dataset(g.PACKED_PANDA_PATH,data=packed)
+                named=np.zeros((66,9),dtype=np.float32)
+                named[-1,0]=1.0
+                f.create_dataset('traj_0/obs/agent/qpos',data=named)
+            with self.assertRaisesRegex(ValueError,'AMBIGUOUS_QPOS'):
+                g.extract_snapshot(Path(tmp))
+
+    def test_packed_articulation_requires_original_named_path(self):
+        import h5py
+        import numpy as np
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'source.h5'
+            with h5py.File(p,'w') as f:
+                f.create_dataset('traj_0/actions',data=np.zeros((65,8)))
+                f.create_dataset('traj_0/obs',data=np.zeros((66,31)))
+            with self.assertRaisesRegex(ValueError,'NO_QPOS_DATASET'):
+                g.extract_snapshot(Path(tmp))
 
     def test_rejects_flat_observation_not_identified_as_qpos(self):
         try:
@@ -72,6 +145,7 @@ class OfflinePlanningGateTests(unittest.TestCase):
             p=Path(tmp)/'source.h5'
             with h5py.File(p,'w') as f:
                 f.create_dataset('traj_0/obs',data=np.zeros((66,65)))
+                f.create_dataset('traj_0/actions', data=np.zeros((65, 8), dtype=np.float32))
             with self.assertRaisesRegex(ValueError,'NO_QPOS_DATASET'):
                 g.extract_snapshot(Path(tmp))
 
