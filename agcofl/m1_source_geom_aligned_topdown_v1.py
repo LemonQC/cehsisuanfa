@@ -173,6 +173,9 @@ def execute(env):
         planner=get_planner(traced)
         pts=original_obstacle_points()
         planner.add_collision_pts(pts)
+        # Upstream add_collision_pts() updates the cloud but does NOT
+        # automatically enable it for plan_screw/plan_qpos_to_pose.
+        planner.use_point_cloud=True
         phases.append({"phase":"original_static_and_blocker_collision_points",
                        "point_count":len(pts),
                        "pointcloud_not_exact_mesh_proof":True})
@@ -305,8 +308,9 @@ def run_once(out,official_root):
     geometry_contract()
     root=Path(out).resolve()
     case=root/CASE
-    if (case/"status.json").exists() or any(case.glob("*.json"))
-            or any(case.glob("*.h5")):
+    if ((case/"status.json").exists()
+            or any(case.glob("*.json"))
+            or any(case.glob("*.h5"))):
         raise FileExistsError(f"Original M1 SOURCE aligned contact case immutable: {case}")
     case.mkdir(parents=True,exist_ok=True)
     env=None
