@@ -327,8 +327,12 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     first,other=require_plan(plan,episodes,steps)
     out=out.resolve()
     require_preflight_only_directory(out)
-    # Validate all official train_config placeholders BEFORE reserving a real
-    # experiment directory. v2 failed at this exact step with zero PhysX actions.
+    # Pre-check the exact PartNet drawer model and configure MS_ASSET_DIR
+    # BEFORE importing ManiSkill or reserving an immutable rollout manifest.
+    # v3 failed during the official cabinet scene construction, 0 env actions.
+    from scripts.prepare_roboreel_drawer_partnet import configure_for_robot_dev
+    scene_asset=configure_for_robot_dev(Path(plan['project']),plan['task'])
+    # Validate all official checkpoint config paths before any physics actions.
     original_cfg,openpi_home=prepare_official_runtime_config(plan)
     # Preserve the first blocked/ready records, append the new verified state.
     save_preflight_snapshot(out,plan)
@@ -338,7 +342,8 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
               'max_steps':steps,'output_dir':str(out), 'preflight':plan,
               'no_official_eval_demo':True, 'new_training_runs':0,
               'no_new_model_checkpoint':True,'is_tro_novelty_evidence':False,
-              'openpi_data_home':openpi_home}
+              'openpi_data_home':openpi_home,
+              'scene_asset_gate':scene_asset}
     save_json_once(out/'manifest.json',manifest)
     os.environ.pop('DISPLAY',None)
     os.environ.pop('WAYLAND_DISPLAY',None)
