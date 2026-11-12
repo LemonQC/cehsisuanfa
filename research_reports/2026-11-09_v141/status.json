@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "TARGET M1B3 FROZEN TRUE PASS: v6 source-target task same geometry seed120, target clear+push 66 actual steps and 8.193mm error, never physically grasped. Do NOT rerun target or create v7. NEXT OFFLINE ONLY: git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_current_compare_grasp_contact.py' -q; python -m scripts.m1_current_compare_grasp_contact. Report M1_SOURCE_CONTACT_ROOT_DIAG comparing failed M1B3 side-grasp 106 actions and actually successful M1B2 source x.15. After evidence choose one physically valid source Pick same goal x.21 without blocker relocation; source/video, TAMP and M2 remain NOT_RUN. Source must not fake goal from M1B2 x.15.",
-  "research_execution_reference": "docs/2026-11-12_M1_V6_TARGET_PHYSICS_SUCCESS_SOURCE_NEXT.md",
+  "next_operator_action": "Target M1B3 v6 physically passed 66 steps; no more target. Current B3 side source 106 actual steps closed at TCP 103mm from cube (z=.121 vs cube .020), 0 grasp. FIRST read existing original B3 blocked_source topdown failures and old B2 contact success alongside side via one CPU-only command: git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_source_three_way_existing_audit.py' -q; python -m scripts.m1_source_three_way_existing_audit. Report M1_SOURCE_THREE_WAY_REAL_TRACE_GATE. No source full retry until it shows which original source approach actually reached the cube or failed contact, and do not swap or train new methods yet.",
+  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Original M1B3 SAME GOAL target physics now SUCCESS v6 at fixed seed120: blocked clear 32 and Cartesian push 10, total 66 actions final goal error 8.193mm; both objects physically never grasped, Panda gripper CLOSED pusher. Original M1B3 source PICK remains NO_GO after 106 real side-grasp actions 0 valid grasp, so matched source-target pair NOT_YET established. Strong TAMP/learned method NOT_RUN.",
@@ -1153,5 +1153,45 @@
     "stage_now": "FROZEN_TARGET_SUCCESS_NO_V7_OR_REPEATED_SEEDS_BEFORE_SOURCE_GATE",
     "next": "Run zero-physics prior true source comparison scripts/m1_current_compare_grasp_contact.py. Existing source physically invalid: 106 steps 0 grasp. Then select one mature source grasp tool grounded in actual contact evidence; need same-goal x.21 source to form pair. No target reruns, no M2/strong TAMP claim.",
     "documentation": "docs/2026-11-12_M1_V6_TARGET_PHYSICS_SUCCESS_SOURCE_NEXT.md"
+  },
+  "current_m1_source_grasp_compare_20261112": {
+    "stage": "ACTUAL_USER_OFFLINE_SCRIPT_EXECUTED_4_TESTS_OK; ORIGINAL B3 TOPDOWN RAW COMPARISON_NEW_CODE_COMMITTED_NOT_RUN",
+    "first_closed_current_side_step": 100,
+    "closed_command_steps_current_side": 6,
+    "current_side_actual_grasp_steps": 0,
+    "current_side_min_TCP_cube_m": 0.10241956894206888,
+    "current_side_tcp_xyz_at_first_close": [
+      -0.008148275315761566,
+      0.02015252225100994,
+      0.12097346037626266
+    ],
+    "current_side_cube_xyz_at_first_close": [
+      -3.703731010773481e-7,
+      -7.008002285147086e-7,
+      0.019999923184514046
+    ],
+    "current_side_tcp_xyz_after_six_close": [
+      -0.008437223732471466,
+      0.019608577713370323,
+      0.120207779109478
+    ],
+    "old_M1B2_real_source_first_close_step": 73,
+    "old_M1B2_tcp_xyz_at_first_close": [
+      -0.0029121506959199905,
+      -0.00007424323121085763,
+      0.020009063184261322
+    ],
+    "old_M1B2_tcp_cube_m_at_first_close": 0.0029121525525574506,
+    "old_M1B2_physically_grasping_steps": 84,
+    "crucial_goal_difference": "old M1B2 goal x=.150 vs frozen M1B3 goal x=.210",
+    "interpretation": "side 106-step failure is precontact mismatch: close commanded at TCP z~121mm while cube center z20mm, actual min 102mm. Do not adjust finger force/lift to repair not approaching. Old successful B2 physical grasp only reference not same-goal demo.",
+    "pending_current_scene_contrast": "original M1B3 blocked_source topdown real trace already saved, not yet compared with failed B3 side and successful B2 at physical first closure",
+    "new_read_only_script": "scripts/m1_source_three_way_existing_audit.py",
+    "new_script_tests": "tests/test_m1_source_three_way_existing_audit.py",
+    "new_report": "outputs/m1_current_executor_swap_smoke/source_three_way_existing_audit.json",
+    "report_stage": "CODE_COMMITTED_SERVER_NOT_EXECUTED",
+    "no_new_physics": true,
+    "target_v6_success_stays_frozen": true,
+    "doc": "docs/2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md"
   }
 }
