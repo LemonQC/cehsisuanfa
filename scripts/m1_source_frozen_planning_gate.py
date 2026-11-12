@@ -215,6 +215,48 @@ def collision_query(planner, candidate):
     return out
 
 
+def make_mplib_ik_pose(world_pose_xyz_wxyz):
+    """Build the pybind Pose accepted by MPLib Planner.IK, fail closed.
+
+    Some pinned MPLib builds expose Pose only under ``mplib.pymp``, not
+    ``mplib.Pose``.  The original ManiSkill screw executor accepts the flat
+    seven-vector independently; the IK method requires the MPLib Pose type.
+    Never silently substitute SAPIEN Pose or change the target frame.
+    """
+    import importlib
+    import numpy as np
+
+    values = np.asarray(world_pose_xyz_wxyz, dtype=np.float64)
+    if values.shape != (7,) or not np.isfinite(values).all():
+        raise ValueError('MPLIB_IK_POSE_EXPECTED_FINITE_7D_XYZ_WXYZ')
+    if abs(float(np.linalg.norm(values[3:])) - 1.) > .02:
+        raise ValueError('MPLIB_IK_POSE_QUATERNION_NOT_UNIT')
+    import mplib
+    errors = []
+    # Prefer explicitly exported C++ binding; do not assume public root alias.
+    for name in ('mplib.pymp', 'mplib'):
+        try:
+            module = importlib.import_module(name)
+        except (ImportError, ModuleNotFoundError) as exc:
+            errors.append(f'{name}: {type(exc).__name__}')
+            continue
+        ctor = getattr(module, 'Pose', None)
+        if ctor is None:
+            errors.append(f'{name}: Pose unavailable')
+            continue
+        try:
+            return ctor(p=values[:3], q=values[3:]), f'{name}.Pose'
+        except (TypeError, ValueError, RuntimeError) as exc:
+            # Older pybind versions may have a different constructor signature.
+            # Fail safely rather than passing a guessed pose representation.
+            errors.append(f'{name}.Pose: {type(exc).__name__}: {str(exc)[:160]}')
+    raise RuntimeError(
+        'MPLIB_IK_POSE_API_UNAVAILABLE: version='
+        + str(getattr(mplib, '__version__', 'unknown'))
+        + ' module=' + str(getattr(mplib, '__file__', 'unknown'))
+        + ' attempted=' + '; '.join(errors))
+
+
 class NoPhysicalStep:
     """Deny path following even if a wrapper accidentally invokes it."""
     def __init__(self, env):
@@ -299,8 +341,8 @@ def planning_only(snapshot, last, official_root):
 
         # NOTE: high-level IK may itself filter collisions; its failure is NOT
         # a proof that raw forward kinematics are incapable of reaching pose.
-        ik_raw = inner.IK(mplib.Pose(p=pose7[:3], q=pose7[3:]), q_start,
-                          n_init_qpos=20)
+        ik_pose, ik_pose_factory = make_mplib_ik_pose(pose7)
+        ik_raw = inner.IK(ik_pose, q_start, n_init_qpos=20)
         if not isinstance(ik_raw, tuple) or len(ik_raw) != 2:
             raise RuntimeError('Pinned MPLib IK API changed; no automatic fallback')
         ik_status, solutions = ik_raw
@@ -335,6 +377,7 @@ def planning_only(snapshot, last, official_root):
             'collision_points_count': int(len(pts)),
             'collision_points_not_exact_mesh': True,
             'mplib_version': getattr(mplib, '__version__', 'UNKNOWN'),
+            'ik_pose_factory': ik_pose_factory,
             'ik_status': str(ik_status), 'ik_solutions_returned': len(candidates),
             'first_ik_candidate': None if candidate is None else candidate.tolist(),
             'ik_collision_checks': col,

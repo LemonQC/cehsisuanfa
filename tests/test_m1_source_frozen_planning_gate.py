@@ -2,12 +2,46 @@
 import json
 import tempfile
 import unittest
+import sys
+import types
+from unittest import mock
 from pathlib import Path
 
 from scripts import m1_source_frozen_planning_gate as g
 
 
 class OfflinePlanningGateTests(unittest.TestCase):
+    def test_mplib_ik_pose_uses_pymp_when_root_has_no_pose(self):
+        import numpy as np
+        fake_mplib = types.ModuleType('mplib')
+        fake_mplib.__path__ = []
+        fake_mplib.__version__ = 'test-pinned'
+        fake_pymp = types.ModuleType('mplib.pymp')
+        class FakePose:
+            def __init__(self, p, q):
+                self.p, self.q = p, q
+        fake_pymp.Pose = FakePose
+        with mock.patch.dict(sys.modules, {'mplib': fake_mplib,
+                                           'mplib.pymp': fake_pymp}):
+            obj, source = g.make_mplib_ik_pose([.1, .2, .3, 1, 0, 0, 0])
+        self.assertIsInstance(obj, FakePose)
+        self.assertEqual(source, 'mplib.pymp.Pose')
+        np.testing.assert_array_equal(obj.p, [.1, .2, .3])
+        np.testing.assert_array_equal(obj.q, [1., 0., 0., 0.])
+
+    def test_mplib_ik_pose_reports_missing_binding_not_fake_success(self):
+        fake_mplib = types.ModuleType('mplib')
+        fake_mplib.__path__ = []
+        fake_mplib.__version__ = 'test-missing'
+        with mock.patch.dict(sys.modules, {'mplib': fake_mplib,
+                                           'mplib.pymp': None}):
+            with self.assertRaisesRegex(RuntimeError, 'MPLIB_IK_POSE_API_UNAVAILABLE'):
+                g.make_mplib_ik_pose([.1, .2, .3, 1, 0, 0, 0])
+
+    def test_mplib_ik_pose_invalid_quaternion_rejected_without_planning(self):
+        with self.assertRaisesRegex(ValueError, 'QUATERNION_NOT_UNIT'):
+            g.make_mplib_ik_pose([.1, .2, .3, 2, 0, 0, 0])
+
     def test_collision_and_path_have_distinct_outcomes(self):
         self.assertEqual(g.verdict('IK Failed', None, None, 'Failed'),
                          'INCONCLUSIVE_IK_OR_COLLISION_FAILURE')

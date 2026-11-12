@@ -76,3 +76,27 @@ python -m scripts.m1_source_frozen_planning_gate --plan
 ### 当前科学结论（在服务器新证据出现前不变）
 
 目标端 v6 是一个**特权状态脚本控制器的单 seed 物理成功**；M1B3 源端三条真实执行路线都没有形成有效抓持；没有有效同目标 cross-behavior 示范对，没有等信息强 TAMP 优势，没有新学习方法。这个离线门槛只处理工程可行性，不构成论文创新或 T-RO GO。若数据不齐或规划判别不能提供干净证据，**本场景以基准构造工程 NO-GO 结案**，并保留 M0 和目标 v6 成果，不继续修改源执行器。
+
+## 2026-11-12 后续实机接口兼容性修复（没有获得新的规划结论）
+
+用户在原 `pi05` 环境执行 `--plan`，原 H5 已通过冻结状态检查、场景初始化，但在 `inner.IK(mplib.Pose(...))` 触发：
+
+```text
+AttributeError: module 'mplib' has no attribute 'Pose'
+```
+
+属于离线诊断脚本对本地 MPLib 导出路径的错误假设，**不是 IK 失败、更不是物理不可达证据**。改为优先构造 `mplib.pymp.Pose`（MPlib C++ 类型），再尝试 public `mplib.Pose` 导出；两者均不存在或构造失败则显式 `MPLIB_IK_POSE_API_UNAVAILABLE`，绝不以 SAPIEN Pose 冒充。原 grasp 目标、Panda 状态、障碍点云、IK 20 个内部初始化点、Screw 规划调用均不变。记录 `ik_pose_factory` 便于审查。
+
+本地增加了三个纯 API 兼容性单元测试（无需安装 mplib，也不创建场景），保证当根模块没有 `Pose` 而 `mplib.pymp.Pose` 存在时正确构造；两个位置都不可用则保守 INCONCLUSIVE；非法四元数拒绝。实际服务器是否存在 `mplib.pymp.Pose` **需要用户现场运行验证**。
+
+修复后重复同一条只规划命令：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+conda activate pi05
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_m1_source_frozen_planning_gate.py' -v
+env -u DISPLAY -u WAYLAND_DISPLAY python -u -m scripts.m1_source_frozen_planning_gate --plan
+```
+
+任何 `INCONCLUSIVE` 仍应保持原实验冻结、不追加物理动作。
