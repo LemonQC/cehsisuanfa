@@ -1,3 +1,11 @@
+## ★ 2026-11-12 — M1 v4 真实后210步已证实执行器停滞，替换为**原来35步已成功的Cartesian推动接口**，同场景v5仅一次验收
+
+用户从已保存真实 `outputs/m1_current_target_reference_height_v4/target_reference_height/physical_trace.json` 抽出 `push_3_x_0.260` 的**210步**：TCP X范围[0.130775899,0.131375283]m，整个210步变化**0.599mm**；方块X范围[0.169611618,0.169611722]m，位移**约0.0001mm**。故这是Panda关节空间/MPLib Screw**实际运动停滞**，而非仅“规划路径太长”或“加步数即可完成”。实际发生的是机械臂停在狭口附近，原因可能是手指/连杆干涉、关节控制无法跟踪，但没有接触力证据不能下确定碰撞结论。当前方块x=.1696半宽.020，实体仍与x=.146..170的50mm狭口重叠，且终点误差40.47mm未达到20mm成功门槛。**禁止再次运行v4或增加450步。**
+
+已提交 `agcofl/m1_original_scene_cartesian_pusher_v5.py` 与 `scripts/run_m1_original_scene_cartesian_pusher_once.sh`（和CPU测试）：在**相同原始M1B3场景、seed120、物体/挡块、终点及450步上限**，不再用MPLib Screw推动，而采用**原实验中已真实证明的 `pd_ee_delta_pose` / `ActorPush` Cartesian物理执行接口**：原32步成功的 `ActorPush` 清障，随后安全竖直退到160mm、悬空至方块−X后方、下降到有实测参考的TCP高度38mm，最后沿+X推动且随真实目标成功自停、夹爪仍闭合但任何物体都不能被抓起。新上限 Push120步，TCP和方块连续15步均停滞立刻停止（不再耗费210步）。Runner先纯CPU测试和**读取原35步成功 `open_direct` 与v4 210步真实失败**并存SHA256，核对事实后才允许**一次**新候选物理验证；原数据不改，不训练Ours、不跑TAMP、不换研究问题。代码已推送，服务器尚未运行，不能声称目标端已修复；源端同目标真实抓取仍未通过。详细 [v4真实停滞及v5替换](2026-11-12_M1_V4_STALLED_TCP_AND_V5_CARTESIAN_EXECUTOR_SWAP.md)。
+
+---
+
 ## ★ 2026-11-12 — 原 M1 v4 真实物理：清障通过、推方块至x=.1696，第三段推送耗尽450步；冻结并查看后210步
 
 用户 pi05 服务器 `M1_REFERENCE_HEIGHT_GATE`：`success=false`, `actions=450`, `clearance_valid=true`, `goal_error_m=.04047170517`, 方块最终 `[x=.1696116924,y=.00259693293,z=.0199999101]`，`guard_violation=null`，错误为 `M1B2_STEP_BUDGET_EXCEEDED`。原M1B3场景/seed/目标保持不变。阶段：闭合手爪6步、挡块清障RRT58+Screw24=82步（残差6.324mm）、安全退后18步、悬空后移38步、下降22步、+X推动第一段37步至方块x=.133579、第二段37步至方块x=.169612，合计**240步**；随后第三段目标 TCP x=.260的 Screw 动作尝试剩余**210步**，未返回完成，保存全450步轨迹。需要纠正：方块中心x=.1696但半宽.020，实体在x=.1496..1896，**尚未完全退出x=.146..170的狭口**；成功容差目标x=.210±.020也未达到。不能简单加预算或称碰撞；ManiSkill原 `BaseMotionPlanningSolver.follow_path` 按规划轨迹动作数顺序执行，没有 cube-progress 自停逻辑，异常由自定义450步保护触发。下一步**只读** `outputs/m1_current_target_reference_height_v4/target_reference_height/physical_trace.json` 里第三段 `execution_phase=push_3_x_0.260`，核对TCP X与Cube X是否停滞或接触失效，见 [完整真实结果和现成Python诊断命令](2026-11-12_M1_TARGET_V4_PUSH3_450_STEP_PARTIAL_SUCCESS.md)。旧raw、旧baseline、源端106步未抓住的失败保持冻结，强等信息TAMP与M2均未执行。
