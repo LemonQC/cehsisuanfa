@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "No more source or target PhysX now. Source geometry topdown v1 actual 65 steps failed grasp_pose MPLib screw planner before any grasp_pose step; initial partial open q.02385 worked, pregrasp 59 actions tcp52.98mm from cube, neither cube nor blocker moved, contact force measured 65 steps but magnitude not shared. To disambiguate contact vs virtual collision and orientation, pull GitHub main, run CPU-only `python -m unittest discover -s tests -p 'test_m1_source_65_step_force_vs_planner_audit.py' -q` then `python -m scripts.m1_source_65_step_force_vs_planner_audit`. Report M1_SOURCE_65_STEP_FORCE_VS_PLANNER_DIAG, do not automatically create new source grasp version or test. Target v6 stays frozen true success66 actions. No source matched video, fair TAMP or learning claims.",
-  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_ALIGNED_65_PHYSICS_FAILURE_NEXT_FORCE_AUDIT.md",
+  "next_operator_action": "Stop further PhysX and source grasp executor versions on frozen M1B3. Real source 65-action force audit: partial opening executed, world X closing axis abs dot .999939, hand/finger/static-wall forces 0N all 65 actions, pregrasp TCP tracking error 16.75mm, grasp_pose MPLib plan_screw returns failed with 0 physical actions. Three attempted source grasps all physically 0, target v6 PhysX success 66 frozen. Engineering NO-GO for current source executor, not universal robot impossibility. Only optional future work: offline exact-pose IK/collision/trajectory certificate using existing saved pregrasp robot qpos, otherwise stop matched task and reassess novelty; no learning/Ours/M2 or equal-info TAMP claimed.",
+  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_FORCE_ZERO_PLANNER_FAILURE_NO_GO_DECISION.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Original M1B3 SAME GOAL target physics now SUCCESS v6 at fixed seed120: blocked clear 32 and Cartesian push 10, total 66 actions final goal error 8.193mm; both objects physically never grasped, Panda gripper CLOSED pusher. Original M1B3 source PICK remains NO_GO after 106 real side-grasp actions 0 valid grasp, so matched source-target pair NOT_YET established. Strong TAMP/learned method NOT_RUN.",
@@ -1315,16 +1315,52 @@
     "equal_info_tamp": "NOT_RUN",
     "learned_method": "NOT_STARTED",
     "next_action": {
-      "no_new_physics": true,
-      "code": "scripts/m1_source_65_step_force_vs_planner_audit.py",
-      "tests": "tests/test_m1_source_65_step_force_vs_planner_audit.py",
-      "output": "outputs/m1_source_geom_aligned_topdown_v1/real65_step_contact_audit.json",
-      "doc": "docs/2026-11-12_M1_SOURCE_ALIGNED_65_PHYSICS_FAILURE_NEXT_FORCE_AUDIT.md",
-      "goal": "Inspect 65 already logged original wall contact forces, last TCP quaternion closing axis, measured pregrasp pose target error. Distinguish virtual collision-aware planning failure from observed physical tool-wall contact; source final grasp pose had zero executed actions.",
-      "hard_stop": "Do not start any other source candidate or adjust gripper/gains/walls/steps before this read-only evidence; if no feasible actual source after geometry review, formally stop this matched-source target-pilot and reassess scientific viability.",
-      "source_same_goal_success": false,
-      "strong_tamp": "NOT_RUN",
-      "learned_method": "NOT_STARTED"
+      "stage": "REAL_USER_OFFLINE_FORCE_AUDIT_EXECUTED; ENGINEERING_NO_GO_SOURCE_EXECUTORS_NO_NEW_PHYSX",
+      "actual_new_physics": 0,
+      "real_observation": {
+        "pregrasp_tcp_xyz_m": [
+          -0.001790609210729599,
+          -0.014053452759981155,
+          0.0710543543100357
+        ],
+        "pregrasp_tcp_position_residual_m": 0.016753563588883254,
+        "tcp_cube_center_distance_m": 0.05298314897233072,
+        "world_x_closing_alignment_abs": 0.9999386535384088,
+        "static_wall_tool_force_samples": 65,
+        "missing_force_samples": 0,
+        "max_force_n": 0,
+        "contact_force_steps_gt_0p5N": 0,
+        "first_significant_tool_wall_contact": null,
+        "grasp_pose_screw_plan_executed_physics_actions": 0,
+        "confidence_limits": "Only hand+two fingers against STATIC walls and executed states; no blocker/table/arm link contact evidence, no IK/collision failure mode; 0N does not prove final unexecuted target collision-free."
+      },
+      "current_source_tried": [
+        {
+          "approach": "original_topdown_mplib",
+          "steps": 335,
+          "actual_grasp_steps": 0,
+          "min_tcp_to_cube_m": 0.06396616893656654
+        },
+        {
+          "approach": "adapted_side_mplib",
+          "steps": 106,
+          "actual_grasp_steps": 0,
+          "min_tcp_to_cube_m": 0.10241956894206888
+        },
+        {
+          "approach": "aligned_topdown_partial_open_point_cloud",
+          "steps": 65,
+          "actual_grasp_steps": 0,
+          "last_tcp_to_cube_m": 0.05298314897233072,
+          "grasp_pose_plan_actions": 0
+        }
+      ],
+      "engineering_decision": "NO_GO for tested original M1B3 source executors, NOT proof of impossible physical robot Pick task. Freeze episodes. No more source v2/v3 or target v7.",
+      "only_optional_reopen_gate": "Planning-only certificate on exact old pregrasp/goal using saved robot joint qpos, local Panda URDF/SRDF, blocker/static walls and explicit IK vs collision vs screw trajectory diagnostics; no PhysX before a positive deterministic feasible plan. If cannot recover qpos or certificate inconclusive, stop current matched pilot.",
+      "source_physically_solved": false,
+      "matched_source_target_pair": false,
+      "method_or_strong_tamp_run": false,
+      "documentation": "docs/2026-11-12_M1_SOURCE_FORCE_ZERO_PLANNER_FAILURE_NO_GO_DECISION.md"
     }
   }
 }
