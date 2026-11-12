@@ -258,7 +258,9 @@ def execute(env):
                 raise RuntimeError("SOURCE_CUBE_NOT_CARRIED_TO_SAME_GOAL")
 
         traced.phase="release"
-        planner.open_gripper(t=8)
+        # Same partial opening (46mm gap >40mm cube) avoids widening
+        # finger screw mounts beside the right 285mm static fence.
+        planner.open_gripper(t=8,gripper_state=PREGRASP_ACTION)
     except Exception as exc:
         error=f"{type(exc).__name__}: {str(exc)[:480]}"
     finally:
