@@ -1,3 +1,9 @@
+## ★ 2026-11-12 — 同一 M1 场景：成功 Push 的真实 TCP≈37mm，旧 v3 错把 TCP 接触高度设20mm；v4 单因素修复已提交，尚未运行
+
+用户提供原场景 `open_direct` **35步真实成功**：方块在 step26 首次移动，TCP [x=−15.18mm,z=37.38mm]；实际推动期间 TCP 最低 z=36.73mm；末步方块 x=195.93mm。相比原 v3 清障成功后安全回到后方但 TCP停在 [x=−54.78mm,z=41.28mm] 且未推动，代码明确将下降和后续全段推送的 **TCP目标高度都误设为 cube中心 z=20mm**，并按 `abs(TCP_z-cube_z)<18mm` 拒绝该位姿。仅凭TCP数据无法断言实际指尖碰撞、两种控制模式同姿态：`open_direct` 使用 `pd_ee_delta_pose`，v3用 `pd_joint_pos`。已提交 `agcofl/m1_current_target_reference_height_v4.py`（只把下降和+X推送目标 TCP z=.020→**.038m**，将后方接近验收改为实测TCP绝对高度0.034–0.050m并确保实际后方/横向位置），原 M1B3 场景几何、seed120、终点 x=.210、已成功的闭合夹爪82步清障、悬空返回、方向/抬升/未抓取/狭口等保护均不变；旧H5/视频不覆盖。运行 `bash scripts/run_m1_target_reference_height_once.sh`，先4项纯CPU单测和原35步/v3 169步真实文件SHA和目标一致性检查，通过才允许**最多一次**新 PhysX；结果 `M1_REFERENCE_HEIGHT_GATE`。代码已提交并核对入口，**用户服务器尚未执行**；不能把高度修复当成目标端成功，更不能宣称源Pick（实际双指抓取0）、TAMP和新Method已经解决。详见 [v4接触高度修复与止损门槛](docs/2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md)。
+
+---
+
 ## ★ 2026-11-11 — 目标端真实后362步轨迹发现反向推动：同一 M1 场景 v3 安全后方接近与向 +X 推送，待物理验证
 
 用户 pi05 服务器运行新离线脚本5测试 `OK`，读取**实际已保存的450步PhysX** 得到：闭合夹爪 MPLib 清障已82步成功，清障后362步方块从 x≈0 移到 `x=-0.050044m`、y≈0.00167m，目标 x=+0.210m，净目标进度 **−0.050049m**，末15步完全不动，TCP 最近距方块中心37mm。原失败代码第二阶段从当前机器人清障结束位置通过 RRTConnect 前往 `precontact_x=-0.050m`，与方块最终负位移数值吻合，**高度提示返回接近过程可能把方块误推向−X，但未记录具体碰撞时刻，不能声称已证明**。已提交 `agcofl/m1_current_target_safe_approach_v3.py`：保持原M1B3场景、seed120、goal x=.210、20mm阈值、`pd_joint_pos`、闭合夹爪、450步预算和**原v2已成功的MPLib清障过程完全不变**；只改清障后的接近——先在当前x/y垂直退到Z=.160m、悬空到方块−X后方65mm、竖直下降并实测 TCP在后方，之后分段沿+X前进(.110/.180/.260m)，每个 PhysX step 遇负向位移、横向漂移、抬升/抓取或狭口失配立即停止并存证。旧任意记录不改、不再跑原450步、新v3最多**一次**真实目标端实验。脚本 `bash scripts/run_m1_target_safe_approach_once.sh` 先5项纯CPU单测、原几何门槛、只读原450步记录和真实SHA256（验证既有−50mm失败）才启动PhysX；输出 `M1_TARGET_SAFE_APPROACH_GATE`，新结果于 `outputs/m1_current_target_safe_approach_v3/`。**代码已提交，尚未由用户服务器测试或执行**；source当前仍是106步真实双指抓取0，强TAMP/M2未做，不能冒充整套方案可行。详见 [当前M1安全接近修复的完整协议](docs/2026-11-11_M1_TARGET_SAFE_REAR_APPROACH_V3.md)。
