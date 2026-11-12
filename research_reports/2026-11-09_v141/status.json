@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Current M1 unchanged. git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_original_scene_cartesian_pusher_once.sh. Offline verify existing 35-step pd_ee_delta_pose original open_direct success and v4 210-step physical TCP+cub e stall (TCP range 0.6mm), then at most one new same-scene target episode with old successful Cartesian blocker clear, safe overhead handoff, reference Cartesian +X push. Stop immediately after 15 no-progress steps; don't rerun v4 or source. Await true M1_V5_CARTESIAN_PHYSICS_GATE; no source same-goal or TAMP/M2 claim.",
-  "research_execution_reference": "docs/2026-11-12_M1_V4_STALLED_TCP_AND_V5_CARTESIAN_EXECUTOR_SWAP.md",
+  "next_operator_action": "Original current M1 only: git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_original_scene_cartesian_pusher_v6_once.sh. Unit test and 54-step v5 real physics preflight before exactly one corrected tolerance v6 physical run. Return M1_V6_PHYSICAL_GATE. Keep original M0/M1B1/B2/B3/B4/v2/v3/v4/v5 and old source raw untouched. Do not interpret target success as source same-goal or TAMP.",
+  "research_execution_reference": "docs/2026-11-12_M1_V5_DESCENT_PREMATURE_ACCEPT_AND_V6_FIX.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
@@ -1008,7 +1008,7 @@
     }
   },
   "current_m1_original_scene_cartesian_v5": {
-    "stage": "CODE_COMMITTED_NOT_RUN_ON_USER_SERVER",
+    "stage": "REAL_USER_PHYSX_EXECUTED_54_STEPS_BLOCKER_CLEAR_32_SUCCESS_BUT_DESCENT_REAR_STOPPED_EARLY__ZERO_PUSH_STEPS",
     "rationale": "Source real reference M1B3 open_direct pd_ee_delta_pose succeeded 35 actions; source M1B3 blocked_clear ActorPush physically parked blocker in 32 actions; v4 jointspace Screw last 210 actions stalled TCP and cube.",
     "version": "m1_original_scene_cartesian_pusher_v5",
     "module": "agcofl/m1_original_scene_cartesian_pusher_v5.py",
@@ -1031,6 +1031,81 @@
     "source_matching": "STILL_NO_VALID_SOURCE_PICK_GRASP",
     "tamp": "NOT_RUN",
     "learning": "NOT_STARTED",
-    "paper_ready": false
+    "paper_ready": false,
+    "actual_physics": {
+      "success": false,
+      "steps": 54,
+      "error": "RuntimeError: ORIGINAL_PUSH_CONTACT_POSE_INVALID",
+      "goal_error_m": 0.2100006481501995,
+      "clearance_valid": true,
+      "clearance": {
+        "steps": 32,
+        "park_error_m": 0.005780176577047786,
+        "final_blocker_xyz_m": [
+          0.10254146158695221,
+          0.11980852484703064,
+          0.028997577726840973
+        ]
+      },
+      "retreat": {
+        "steps": 7,
+        "last_tcp_xyz_m": [
+          0.10030186176300049,
+          0.07285471260547638,
+          0.1505453884601593
+        ]
+      },
+      "overhead": {
+        "steps": 9,
+        "last_tcp_xyz_m": [
+          -0.04511170834302902,
+          0.00011365443060640246,
+          0.16115841269493103
+        ]
+      },
+      "descent": {
+        "steps": 6,
+        "last_tcp_xyz_m": [
+          -0.059219107031822205,
+          0.00019498061737976968,
+          0.056888557970523834
+        ],
+        "target_tcp_xyz_m": [
+          -0.06,
+          0,
+          0.038
+        ],
+        "target_3d_error_m_approx": 0.01891,
+        "v5_used_completion_tolerance_m": 0.022,
+        "push_contact_max_tcp_height_m": 0.052,
+        "stop_cause": "v5 prematurely accepts 18.9mm error then independent push precondition rejects z56.89mm"
+      },
+      "push_actual_steps": 0,
+      "cube_final_xyz_m": [
+        -6.547037401105626e-7,
+        -0.0000011169277058797888,
+        0.019999919459223747
+      ],
+      "physically_grasped_task": false,
+      "physically_grasped_blocker": false,
+      "source_same_goal_valid": false,
+      "provenance": "user console M1_CARTESIAN_PUSHER_RESULT/M1_V5_CARTESIAN_PHYSICS_GATE"
+    }
+  },
+  "current_m1_original_scene_cartesian_v6": {
+    "stage": "NEW_CODE_TESTS_AND_RUNNER_COMMITTED_NOT_EXECUTED_ON_USER_SERVER",
+    "single_factor": "Only change descend_rear `motion_to` acceptance tolerance 0.022m => 0.008m; old control, task, geometry, physical contact target Z .038, push logic untouched",
+    "code": "agcofl/m1_original_scene_cartesian_pusher_v6.py",
+    "unit_tests": "tests/test_m1_original_scene_cartesian_pusher_v6.py",
+    "runner": "scripts/run_m1_original_scene_cartesian_pusher_v6_once.sh",
+    "protocol": "docs/2026-11-12_M1_V5_DESCENT_PREMATURE_ACCEPT_AND_V6_FIX.md",
+    "authentic_v5_preflight": "v5 saved 54-step status+trace, real 32/7/9/6 staged actions and 56.89mm TCP, old 22mm tolerance and SHA256 verified first",
+    "original_geometry_unchanged": true,
+    "old_physical_raw_overwritten": false,
+    "new_physics_count": 0,
+    "source_pick_grasp_valid": false,
+    "equal_info_tamp": "NOT_RUN",
+    "learned_method": "NOT_STARTED",
+    "stop": "At most one PhysX run with original 450 total actions. If no actual contact or goal success, stop control tuning and inspect tool/fingertip geometry; do not begin arbitrary v7."
   }
 }
