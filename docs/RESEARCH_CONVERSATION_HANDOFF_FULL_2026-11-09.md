@@ -1,3 +1,9 @@
+## ★ 2026-11-12 — 原 M1 源Pick唯一几何校正候选真实失败（65步），停止新源端PhysX，先读旧接触力
+
+用户从 `pi05` 实际运行 `M1_SOURCE_GEOMETRY_ALIGNED_FINAL_GATE`：原场景/seed120、x=.210目标不变，执行 `65` 个PhysX动作后 `success=false`，`SOURCE_UPSTREAM_grasp_pose_PLANNING_FAILED`。新增Panda中间夹爪开口确实到位（双指各约23.85mm），真实障碍点云792点用于MPLib；`pregrasp`规划返回成功并执行59步，但最终TCP [−.00179,−.01405,.07105]m，距方块中心**52.98mm**，与预抓取指令位置约差**16.8mm**。`grasp_pose` 的 `plan_screw` 失败、**实际执行0步**；没有闭合抓取、真实抓取步数0、提升0、方块与挡块基本不动。回顾原B3顶抓335步最近63.97mm、侧抓106步最近102.42mm，也均无抓取。**目前只能确认虚拟规划器无法从预抓取姿态规划到抓取，不能证明手指实际撞墙。** 日志`wall_force_measured_steps=65`只表示65次力测量成功，未表明测得非零力。已提交标准库纯离线脚本`scripts/m1_source_65_step_force_vs_planner_audit.py`和5项CPU测试，读取现成65步trace里真实手/指与围栏力的最大值、非零接触次数、实际TCP朝向、预抓取位置偏差和SHA256；运行 `python -m unittest discover -s tests -p 'test_m1_source_65_step_force_vs_planner_audit.py' -q; python -m scripts.m1_source_65_step_force_vs_planner_audit`，打印 `M1_SOURCE_65_STEP_FORCE_VS_PLANNER_DIAG`；**本次没有新仿真，诊断代码也尚未经用户服务器执行**。源端当前按**三次实验均无法形成同目标物理抓取**处置，停止另开v2/v3随机姿态，不动目标端v6真实66步成功；强TAMP/Ours尚未开展。详见 [真实源失败和接触力判别门槛](2026-11-12_M1_SOURCE_ALIGNED_65_PHYSICS_FAILURE_NEXT_FORCE_AUDIT.md)。
+
+---
+
 ## ★ 2026-11-12 — 同目标源Pick两次真实失败均是TCP未接近，发现原Panda手指安装座可能超出104mm围栏；唯一一次几何校正源端候选
 
 用户服务器三路真实离线诊断（4 tests OK）：原M1B3顶抓335个物理step，TCP离方块最近63.97mm、首次夹爪闭合时69.47mm（TCP z=.0871而cube z=.020），0有效抓取、0提升；现侧抓106步最近102.42mm、0抓取；早先M1B2不同目标x=.150的顶抓170步中84步真实抓住、最高提升127.83mm，不能当作当前x=.210源演示。原顶抓规划阶段approach/grasp/lift/across返回真不代表物理抓取，必须补实际TCP靠近/双指接触门槛。
