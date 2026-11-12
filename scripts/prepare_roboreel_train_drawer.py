@@ -189,7 +189,7 @@ def download_two(selection: dict, data: Path, endpoint: str) -> list[dict]:
     return info
 
 
-def encode_one(project: Path, data: Path, demo_id: int, home: Path) -> None:
+def encode_one(project: Path, data: Path, demo_id: int, home: Path, frames_per_batch: int = 2) -> None:
     from scripts.roboreel_video_dependency_dev import PINNED_UPSTREAM
     media = data / media_rel(demo_id)
     target = data / feature_rel(demo_id)
@@ -224,9 +224,17 @@ def encode_one(project: Path, data: Path, demo_id: int, home: Path) -> None:
     rgb = module._read_camera_mp4(media.parent, 'front')
     if rgb is None or len(rgb) < 2:
         raise RuntimeError('Official encoder failed to decode '+str(media))
+    from agcofl.official_siglip_batched import encode_camera_batched, validate_batch_frames
+    validate_batch_frames(frames_per_batch)
     encoder = module._PersistentEncoder(max_T=max(1024, len(rgb)))
     target.parent.mkdir(parents=True, exist_ok=True)
-    status = encoder.encode_demo_camera(target.parent, rgb, 'front', overwrite=False)
+    def log_progress(done, total):
+        if done == total or done == frames_per_batch or done % 32 == 0:
+            print('ROBOREEL_TRAIN_DRAWER_SIGLIP_FRAMES', json.dumps({
+                'id': demo_id, 'done': done, 'total': total,
+                'frames_per_batch': frames_per_batch}), flush=True)
+    status = encode_camera_batched(encoder, target.parent, rgb, 'front',
+                                   batch_frames=frames_per_batch, progress=log_progress)
     if not target.is_file() or target.stat().st_size <= 512:
         raise RuntimeError('OFFICIAL_ENCODER_FAILED: '+str(status))
     print('ROBOREEL_TRAIN_DRAWER_SIGLIP_READY', json.dumps({
@@ -307,7 +315,8 @@ def run(args) -> int:
             result = subprocess.run([sys.executable, '-u', '-m',
                 'scripts.prepare_roboreel_train_drawer', '--encode-one', str(demo_id),
                 '--project', str(project), '--data-root', str(data),
-                '--out', str(output), '--endpoint', args.endpoint], cwd=project,
+                '--out', str(output), '--endpoint', args.endpoint,
+                '--frames-per-batch', str(args.frames_per_batch)], cwd=project,
                 env=child_env, check=False)
             if result.returncode != 0:
                 raise RuntimeError('OFFICIAL_SIGLIP_WORKER_FAILED id='+str(demo_id)+
@@ -329,6 +338,8 @@ def main(argv=None) -> int:
                    default=PROJECT / 'outputs/roboreel_train_drawer_assets/v1')
     p.add_argument('--endpoint', default=os.environ.get('HF_ENDPOINT', 'https://hf-mirror.com'))
     p.add_argument('--max-mb', type=int, default=300)
+    p.add_argument('--frames-per-batch', type=int, default=2,
+                   help='Microbatch of frames for pinned SigLIP, 1..8; default 2 on 4090')
     p.add_argument('--discover', action='store_true', help='Remote metadata only, no download')
     p.add_argument('--download', action='store_true', help='Explicitly download exactly 2 verified TRAIN videos')
     p.add_argument('--features', action='store_true', help='Extract real official SigLIP features, isolated per video')
@@ -340,8 +351,10 @@ def main(argv=None) -> int:
         home = cache_home(project)
         if home is None:
             raise RuntimeError('SIGLIP_LOCAL_CACHE_MISSING_NO_GCS')
-        encode_one(project, data, args.encode_one, home)
+        encode_one(project, data, args.encode_one, home, args.frames_per_batch)
         return 0
+    from agcofl.official_siglip_batched import validate_batch_frames
+    validate_batch_frames(args.frames_per_batch)
     return run(args)
 
 
