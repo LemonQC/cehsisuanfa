@@ -158,6 +158,46 @@ class VideoSensitivityDevTests(unittest.TestCase):
                 project_path(self.project,'${UNKNOWN_CHECKPOINT_VAR}/model',
                              {'ROBOREEL_CKPT':'/known'})
 
+    def test_blocked_to_ready_preflight_is_immutable_append_only(self):
+        from scripts.roboreel_video_dependency_dev import (
+            save_preflight_snapshot,require_preflight_only_directory,read_json)
+        directory=self.project/'out/experiment'
+        blocked={'status':'BLOCKED','reason':'NEED_TWO_TRAIN_FEATURES'}
+        ready={'status':'READY_FOR_BOUNDED_DEV','usable_train_demo_ids':[0,1]}
+        p0=save_preflight_snapshot(directory,blocked)
+        self.assertEqual(p0.name,'preflight.json')
+        p1=save_preflight_snapshot(directory,ready)
+        self.assertRegex(p1.name,r'^preflight_[0-9a-f]{16}\.json
+        p=self.project/'out/report.json'
+        save_json_once(p,{'a':1});save_json_once(p,{'a':1})
+        with self.assertRaises(FileExistsError):save_json_once(p,{'a':2})
+
+
+if __name__=='__main__': unittest.main()
+)
+        self.assertEqual(read_json(p0),blocked)
+        self.assertEqual(read_json(p1),ready)
+        self.assertEqual(save_preflight_snapshot(directory,ready),p1)
+        self.assertEqual(len(list(directory.iterdir())),2)
+        require_preflight_only_directory(directory)
+
+    def test_existing_real_experiment_cannot_be_overwritten(self):
+        from scripts.roboreel_video_dependency_dev import (
+            save_preflight_snapshot,require_preflight_only_directory)
+        directory=self.project/'out/experiment'
+        save_preflight_snapshot(directory,{'status':'BLOCKED'})
+        (directory/'manifest.json').write_text('{}')
+        with self.assertRaisesRegex(FileExistsError,'Never rerun'):
+            require_preflight_only_directory(directory)
+
+    def test_unsafe_preflight_sideload_not_allowed(self):
+        from scripts.roboreel_video_dependency_dev import require_preflight_only_directory
+        directory=self.project/'out/experiment'
+        directory.mkdir(parents=True)
+        (directory/'preflight_NOT_A_HASH.json').write_text('{}')
+        with self.assertRaises(FileExistsError):
+            require_preflight_only_directory(directory)
+
     def test_result_file_immutable(self):
         p=self.project/'out/report.json'
         save_json_once(p,{'a':1});save_json_once(p,{'a':1})

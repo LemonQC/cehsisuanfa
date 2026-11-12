@@ -267,14 +267,45 @@ def save_json_once(path:Path,obj):
         path.write_text(payload)
 
 
+
+def save_preflight_snapshot(directory:Path,plan:dict)->Path:
+    """Keep original preflight; append content-addressed changes.
+
+    BLOCKED can become READY when genuine TRAIN media/features are added.
+    Previous records remain byte-for-byte immutable.
+    """
+    directory=Path(directory)
+    legacy=directory/'preflight.json'
+    if not legacy.exists():
+        save_json_once(legacy,plan)
+        return legacy
+    if read_json(legacy)==plan:
+        return legacy
+    payload=json.dumps(plan,indent=2,ensure_ascii=False,sort_keys=True)+'\n'
+    content_hash=hashlib.sha256(payload.encode('utf-8')).hexdigest()[:16]
+    snapshot=directory/f'preflight_{content_hash}.json'
+    save_json_once(snapshot,plan)
+    return snapshot
+
+
+def require_preflight_only_directory(directory:Path):
+    """Prior preflight snapshots are safe; existing rollout outputs are not."""
+    directory=Path(directory)
+    if not directory.exists():return
+    for p in directory.iterdir():
+        is_preflight=(p.name=='preflight.json' or
+            bool(re.fullmatch(r'preflight_[0-9a-f]{16}\.json',p.name)))
+        if not p.is_file() or not is_preflight:
+            raise FileExistsError('Never rerun/overwrite existing DEV: '+str(directory))
+
+
 def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     first,other=require_plan(plan,episodes,steps)
     out=out.resolve()
-    if out.exists() and any(x.name!='preflight.json' for x in out.iterdir()):
-        raise FileExistsError('Never rerun/overwrite existing DEV: '+str(out))
-    if (out/'preflight.json').is_file() and read_json(out/'preflight.json')!=plan:
-        raise ValueError('PREFLIGHT_INPUTS_CHANGED: preserve older evidence, use new --out')
-    out.mkdir(parents=True,exist_ok=True)
+    require_preflight_only_directory(out)
+    # Keep previous BLOCKED status, add READY snapshot before the simulator.
+    # Any pre-existing manifest, actions or videos still cause hard failure.
+    save_preflight_snapshot(out,plan)
     # Freeze the manifest before ANY simulator initialization.
     manifest={'type':'ROBOREEL_TRAIN_VIDEO_DEV_V1', 'task':plan['task'],
               'train_video_ids':[first,other], 'episodes':episodes,
@@ -437,9 +468,15 @@ def main(argv=None):
             'status','task','reason','checkpoint_dir','data_dir','checkpoint_tasks',
             'train_video_demos_with_media','train_feature_demos','train_demos_usable',
             'usable_train_demo_ids','missing_example','eval_config')},ensure_ascii=False),flush=True)
-        # Never overwrite existing reporting on a different machine/dataset.
-        out=args.out/'preflight.json'
-        save_json_once(out,plan)
+        # Report immutable preflight state transitions; never overwrite physics.
+        try:
+            require_preflight_only_directory(args.out)
+        except FileExistsError:
+            print('ROBOREEL_VIDEO_DEV_EXISTING_EXPERIMENT_PRESERVED',
+                  str(args.out),flush=True)
+            return 0
+        snapshot=save_preflight_snapshot(args.out,plan)
+        print('ROBOREEL_VIDEO_DEV_PREFLIGHT_SNAPSHOT',str(snapshot),flush=True)
         return 0
     require_plan(plan,args.episodes,args.max_steps)
     run_dev(plan,args.out,args.episodes,args.max_steps,not args.no_video)
