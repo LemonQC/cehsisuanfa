@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Pull GitHub main, conda activate pi05, run bash scripts/run_m1_target_reference_height_once.sh. It first runs four no-physics tests, compares existing 35-step original direct success actual TCP z=.0374 to v3 stopped z=.0413, checks matching goal and source SHA, then max one bounded PhysX attempt on exact original scene with only target contact-height correction; read M1_REFERENCE_HEIGHT_GATE. No other old data or baselines rerun; current source Pick still no valid physical grasp.",
-  "research_execution_reference": "docs/2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md",
+  "next_operator_action": "NO NEW PHYSX. Run read-only Python snippet in docs/2026-11-12_M1_TARGET_V4_PUSH3_450_STEP_PARTIAL_SUCCESS.md to inspect v4 physical_trace.json last 210 steps, TCP x and cube x trajectory and sample positions. Report stage-3 prints; only then choose narrow execution fix. Same scene/goal/seed and source work remain unchanged.",
+  "research_execution_reference": "docs/2026-11-12_M1_TARGET_V4_PUSH3_450_STEP_PARTIAL_SUCCESS.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
@@ -911,7 +911,7 @@
     }
   },
   "current_m1_target_reference_height_v4": {
-    "stage": "CODE_COMMITTED_NOT_EXECUTED_ON_OPERATOR_SERVER",
+    "stage": "REAL_OPERATOR_PHYSX_EXECUTED_450; CLEARANCE_PASS; +X_PUSH_PASS_TO_X_0.1696; UNFINISHED_PUSH3_BUDGET_EXIT",
     "module": "agcofl/m1_current_target_reference_height_v4.py",
     "tests": "tests/test_m1_current_target_reference_height_v4.py",
     "runner": "scripts/run_m1_target_reference_height_once.sh",
@@ -929,6 +929,59 @@
     "source_grasp_unresolved": true,
     "equal_info_tamp": "NOT_RUN",
     "learned_method": "NOT_STARTED",
-    "paper_ready": false
+    "paper_ready": false,
+    "user_observed": {
+      "success": false,
+      "actual_steps": 450,
+      "clearance_valid": true,
+      "blocker_clearance_actions": 82,
+      "blocker_clearance_error_m": 0.0063239995587955735,
+      "after_clear_retreat": 18,
+      "overhead": 38,
+      "descend": 22,
+      "push1": {
+        "steps": 37,
+        "cube_final_xy": [
+          0.1335791051387787,
+          -0.001786937122233212
+        ]
+      },
+      "push2": {
+        "steps": 37,
+        "cube_final_xy": [
+          0.16961169242858887,
+          0.002596937818452716
+        ],
+        "tcp_final_x": 0.1329304426908493
+      },
+      "push3": {
+        "attempted_steps": 210,
+        "completed": false,
+        "observed_trace_details": "NOT_YET_EXAMINED",
+        "target_tcp_x": 0.26
+      },
+      "cube_final_xyz": [
+        0.16961169242858887,
+        0.002596932929009199,
+        0.019999910145998
+      ],
+      "goal_error_m": 0.04047170517173648,
+      "guard_violation": null,
+      "error": "RuntimeError: M1B2_STEP_BUDGET_EXCEEDED: no unbounded expert planning",
+      "grounded": "yes per user-provided final cube z",
+      "geometrical_throat": "cube center 0.1696, cube spans x 0.1496..0.1896, still overlaps throat right edge x0.170; not fully through",
+      "interpretation": "planner was executing stage3 when 450 cap hit; not sufficient evidence of planner failure or physical jam; do not increase cap without inspecting actual last 210 states",
+      "source_pair_valid": false,
+      "original_raw_files_modified": false,
+      "provenance": "user actual server M1_TARGET_REFERENCE_HEIGHT_RESULT/M1_REFERENCE_HEIGHT_GATE 2026-11-12"
+    },
+    "next_action": {
+      "no_physics": true,
+      "goal": "Read final 210 steps with execution_phase=push_3_x_0.260; compare TCP x vs cube x vs time to distinguish long planned path, robot stall, lost contact",
+      "reference": "docs/2026-11-12_M1_TARGET_V4_PUSH3_450_STEP_PARTIAL_SUCCESS.md",
+      "source_grasp_still_unresolved": true,
+      "strong_tamp": "NOT_RUN",
+      "new_method": "NOT_STARTED"
+    }
   }
 }
