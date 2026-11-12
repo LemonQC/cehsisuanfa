@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "No more PhysX yet: read original outputs/m1b3_corridor_dev/open_direct/physical_trace.json and v3 current physical_trace.json to compare TCP z and XY at onset of actual cube motion, finger commands and relative pose; v3 inherits q from post blocker-clear +Y orientation while needing +X push. If geometry/pose evidence supports it, select one proper task-aligned pusher orientation/contact height implementation, versioned and bounded. No scene/seed changes. Source true grasp still 0, no TAMP/M2.",
-  "research_execution_reference": "docs/2026-11-12_M1_TARGET_V3_DESCENT_TRACKING_DIAG.md",
+  "next_operator_action": "Pull GitHub main, conda activate pi05, run bash scripts/run_m1_target_reference_height_once.sh. It first runs four no-physics tests, compares existing 35-step original direct success actual TCP z=.0374 to v3 stopped z=.0413, checks matching goal and source SHA, then max one bounded PhysX attempt on exact original scene with only target contact-height correction; read M1_REFERENCE_HEIGHT_GATE. No other old data or baselines rerun; current source Pick still no valid physical grasp.",
+  "research_execution_reference": "docs/2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
@@ -865,6 +865,70 @@
       "physical_contact_geometry_cause": "NOT_PROVEN, observed z plateau .0413 while x moves forward",
       "possible_confound": "TCP orientation q reused from +Y blocker-clear for +X cube push; no per-step quaternion or link collision forces in trace",
       "do_not_do": "Do not relax height check or rerun current v3 to force attempt; compare actual successful open_direct TCP contact position first."
+    },
+    "reference_compare_20261112": {
+      "source": "user printed exact successful open_direct 35-step trace and failed v3 step168; no fresh PhysX",
+      "successful_original_direct": {
+        "steps": 35,
+        "first_observed_cube_motion_step": 26,
+        "first_moving_TCP_xyz_m": [
+          -0.01517760194838047,
+          0.0003298224473837763,
+          0.037377677857875824
+        ],
+        "first_moving_cube_xyz_m": [
+          0.013803093694150448,
+          -0.00008125868043862283,
+          0.020000116899609566
+        ],
+        "final_TCP_xyz_m": [
+          0.12471044808626175,
+          -0.0009101950563490391,
+          0.046665556728839874
+        ],
+        "final_cube_xyz_m": [
+          0.19592995941638947,
+          0.0026338130701333284,
+          0.020000118762254715
+        ],
+        "moving_phase_min_TCP_z_m": 0.03673142194747925,
+        "finger_action": -1,
+        "control_mode": "pd_ee_delta_pose"
+      },
+      "failed_v3": {
+        "action_count": 169,
+        "final_TCP_xyz_m": [
+          -0.05478159710764885,
+          0.0013554752804338932,
+          0.04128366708755493
+        ],
+        "no_cube_motion": true,
+        "command_descent_and_push_TCP_z_m": 0.02,
+        "error": "M1_TARGET_NO_VALID_REAR_CONTACT_POSE_BEFORE_PUSH",
+        "control_mode": "pd_joint_pos"
+      },
+      "interpretation": "v3 commanded TCP at 20mm cube-center for descent AND all +X push while real successful TCP was near 37mm. Existing data support contact-frame height correction but do not prove same gripper orientation, actual collision forces or universal feasibility."
     }
+  },
+  "current_m1_target_reference_height_v4": {
+    "stage": "CODE_COMMITTED_NOT_EXECUTED_ON_OPERATOR_SERVER",
+    "module": "agcofl/m1_current_target_reference_height_v4.py",
+    "tests": "tests/test_m1_current_target_reference_height_v4.py",
+    "runner": "scripts/run_m1_target_reference_height_once.sh",
+    "protocol": "docs/2026-11-12_M1_TARGET_REFERENCE_HEIGHT_V4.md",
+    "scene": "SAME ORIGINAL AGCOFLM1B3Corridor-v0",
+    "seed": 120,
+    "prior_clearance": "same original closed Panda/MPLib 6+82-step program",
+    "only_intended_modification": "TCP descend and push goal Z .020 => .038; contact acceptance real tcp z .034-.050 and measured rear gap >=28mm; old v3 3-stage overhead and +X guard remain",
+    "original_h5_untouched": true,
+    "new_PhysX_executions": 0,
+    "original_success_reference_control_mode": "pd_ee_delta_pose",
+    "v4_target_control_mode": "pd_joint_pos",
+    "no_same_tcp_orientation_proof": true,
+    "stop_gate": "one original-scene single-seed bounded 450-step trial only after existing saved 35-step open_direct success and 169-step v3 failure sanity checks. If fail, freeze and inspect contact geometry rather than endless v5 tuning.",
+    "source_grasp_unresolved": true,
+    "equal_info_tamp": "NOT_RUN",
+    "learned_method": "NOT_STARTED",
+    "paper_ready": false
   }
 }
