@@ -15,6 +15,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -38,12 +39,34 @@ def digest(path: Path) -> str:
     return h.hexdigest()
 
 
-def project_path(project: Path, value: str) -> Path:
-    s=os.path.expanduser(os.path.expandvars(str(value)))
+# The existing M0 executor exported these directory roots. The saved
+# evaluator JSON uses ${ROBOREEL_CKPT}; do not rely on a prior shell export.
+VARIABLE = re.compile(r'\\$(?:\\{([A-Za-z_][A-Za-z0-9_]*)\\}|([A-Za-z_][A-Za-z0-9_]*))')
+
+
+def official_path_vars(project: Path) -> dict[str, str]:
+    base = project.resolve() / 'outputs/v120_baselines'
+    defaults = {'ROBOREEL_CKPT': base / 'released_checkpoints',
+                'ROBOREEL_DATA': base / 'official_eval_data'}
+    # An explicit environment override takes precedence over project defaults.
+    return {key: os.path.expanduser(os.environ.get(key) or str(path))
+            for key, path in defaults.items()}
+
+
+def project_path(project: Path, value: str, path_vars: dict | None = None) -> Path:
+    variables = dict(os.environ)
+    if path_vars is not None:
+        variables.update(path_vars)
+    def replace_var(match):
+        key = match.group(1) or match.group(2)
+        if not variables.get(key):
+            raise ValueError(f'UNEXPANDED_PATH_VARIABLE: {value}')
+        return str(variables[key])
+    s = os.path.expanduser(VARIABLE.sub(replace_var, str(value)))
     if '$' in s:
         raise ValueError(f'UNEXPANDED_PATH_VARIABLE: {value}')
-    p=Path(s)
-    return (p if p.is_absolute() else project/p).resolve()
+    p = Path(s)
+    return (p if p.is_absolute() else project / p).resolve()
 
 
 def read_json(path:Path):
@@ -97,9 +120,11 @@ def video_inventory(data:Path,task:str,cameras:list[str]):
 def preflight(project:Path, config:Path|None, task:str, data_override:Path|None=None) -> dict:
     project=project.resolve()
     cfg_path=select_config(project,config)
+    path_vars=official_path_vars(project)
     result={'type':'ROBOREEL_DEV_VIDEO_DEPENDENCY_PREFLIGHT',
             'task':task,'task_env':ALLOWED_TASKS[task],
             'project':str(project),'eval_config':str(cfg_path),
+            'resolved_official_path_vars':path_vars,
             'train_demo_ids_only':True,'heldout_eval_ids_excluded':True,
             'new_physx_actions':0,'new_training_runs':0,'status':'BLOCKED'}
     if not cfg_path.is_file():
@@ -111,7 +136,7 @@ def preflight(project:Path, config:Path|None, task:str, data_override:Path|None=
             raise ValueError('Config must be original demo_pi05')
         if 'checkpoint_dir' not in cfg:
             raise ValueError('MISSING_CHECKPOINT_DIR_IN_CONFIG')
-        checkpoint=project_path(project,cfg['checkpoint_dir'])
+        checkpoint=project_path(project,cfg['checkpoint_dir'],path_vars)
         for cand in (checkpoint/'train_config.json',checkpoint.parent/'train_config.json'):
             if cand.is_file():
                 train_file=cand;break
@@ -120,7 +145,7 @@ def preflight(project:Path, config:Path|None, task:str, data_override:Path|None=
         tc=read_json(train_file)
         tasks=[t for t in (tc.get('tasks') or [tc.get('task')]) if t]
         cameras=list(tc.get('demo_cameras') or ([tc['demo_camera']] if tc.get('demo_camera') else ['front']))
-        data=project_path(project,str(data_override) if data_override else tc['data_dir'])
+        data=project_path(project,str(data_override) if data_override else tc['data_dir'],path_vars)
         root=project/'third_party'/'roboreel_models'
         source=root/'src'/'evaluation'/'demo_pi05_runner.py'
         if not source.is_file():
@@ -261,6 +286,12 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     os.environ.pop('WAYLAND_DISPLAY',None)
     os.environ.setdefault('MUJOCO_GL','egl')
     os.environ.setdefault('MUJOCO_EGL_DEVICE_ID','0')
+    # Reuse the same roots when the official runner loads train_config.json.
+    for key, value in plan['resolved_official_path_vars'].items():
+        current = os.environ.get(key)
+        if current and os.path.expanduser(current) != value:
+            raise RuntimeError('OFFICIAL_PATH_VARIABLE_CHANGED_SINCE_PREFLIGHT: ' + key)
+        os.environ[key] = value
     official=Path(plan['project'])/'third_party'/'roboreel_models'
     inject_upstream(official)
     import gymnasium as gym  # noqa: F401
@@ -398,7 +429,7 @@ def main(argv=None):
     p.add_argument('--episodes',type=int,default=2)
     p.add_argument('--max-steps',type=int,default=800)
     p.add_argument('--no-video',action='store_true',help='DEV without mp4 output')
-    p.add_argument('--out',type=Path,default=Path('outputs/roboreel_video_dependency_dev/v0'))
+    p.add_argument('--out',type=Path,default=Path('outputs/roboreel_video_dependency_dev/v1'))
     args=p.parse_args(argv)
     plan=preflight(args.project,args.config,args.task,args.data_dir)
     if not args.run:

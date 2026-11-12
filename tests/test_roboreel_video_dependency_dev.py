@@ -1,5 +1,6 @@
 """Zero simulator/model/network regression fixtures for the small TRAIN-only DEV gate."""
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -116,6 +117,46 @@ class VideoSensitivityDevTests(unittest.TestCase):
     def test_action_difference_metric(self):
         self.assertIsNone(action_displacement([], [[0]*8]))
         self.assertAlmostEqual(action_displacement([[0]*8], [[1]+[0]*7]),1.0)
+
+    def test_official_m0_placeholder_paths_use_existing_v120_layout(self):
+        from scripts.roboreel_video_dependency_dev import official_path_vars, project_path
+        root=self.project/'outputs/v120_baselines'
+        ckpt=root/'released_checkpoints/nd/vid_cond_pi05_uniform/ckpt'
+        (ckpt/'params').mkdir(parents=True)
+        (ckpt.parent/'train_config.json').write_text(json.dumps({
+            'data_dir':'${ROBOREEL_DATA}', 'tasks':['toys_in_drawer'],
+            'demo_cameras':['front'],
+            'demonstration_config':'perceptual-framesamp-context.yaml'}))
+        self.config.write_text(json.dumps({
+            'model':'demo_pi05',
+            'checkpoint_dir':'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt'}))
+        with patch.dict(os.environ,{'ROBOREEL_CKPT':'','ROBOREEL_DATA':''}):
+            env=official_path_vars(self.project)
+            self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/nd/vid_cond_pi05_uniform/ckpt',env),ckpt.resolve())
+            self.assertEqual(project_path(self.project,'$ROBOREEL_DATA',env),
+                             (root/'official_eval_data').resolve())
+            r=preflight(self.project,None,'toys_in_drawer')
+        self.assertEqual(r['checkpoint_dir'],str(ckpt.resolve()))
+        self.assertEqual(r['data_dir'],str((root/'official_eval_data').resolve()))
+        self.assertEqual(r['reason'],'NEED_TWO_GENUINE_TRAIN_VIDEOS_AND_FEATURES')
+        self.assertNotIn('UNEXPANDED_PATH_VARIABLE',str(r))
+
+    def test_operator_override_has_precedence_over_v120_defaults(self):
+        from scripts.roboreel_video_dependency_dev import official_path_vars, project_path
+        override=self.project/'special/checked_checkpoint_root'
+        with patch.dict(os.environ,{'ROBOREEL_CKPT':str(override),'ROBOREEL_DATA':''}):
+            paths=official_path_vars(self.project)
+        self.assertEqual(project_path(self.project,'${ROBOREEL_CKPT}/nd/policy',paths),
+                         (override/'nd/policy').resolve())
+        self.assertEqual(paths['ROBOREEL_DATA'],
+                         str(self.project/'outputs/v120_baselines/official_eval_data'))
+
+    def test_unrecognised_placeholder_still_fails_closed(self):
+        from scripts.roboreel_video_dependency_dev import project_path
+        with patch.dict(os.environ,{'UNKNOWN_CHECKPOINT_VAR':''}):
+            with self.assertRaisesRegex(ValueError,'UNEXPANDED_PATH_VARIABLE'):
+                project_path(self.project,'${UNKNOWN_CHECKPOINT_VAR}/model',
+                             {'ROBOREEL_CKPT':'/known'})
 
     def test_result_file_immutable(self):
         p=self.project/'out/report.json'

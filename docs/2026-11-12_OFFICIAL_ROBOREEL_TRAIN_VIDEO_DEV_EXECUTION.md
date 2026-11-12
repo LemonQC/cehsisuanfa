@@ -43,3 +43,9 @@ env -u DISPLAY -u WAYLAND_DISPLAY \
 若 `CHECKPOINT_NOT_TRAINED_FOR_TASK`：不得把 PushCube 专用模型硬套抽屉；先检查训练配置中的官方长序列 checkpoint 是否已缓存。只需一次确定性的检查即可，不做 B5。
 
 本工具不是 CEPS 模型，也不保证 T-RO 可发表。它的价值是：直接在现成官方 Benchmark 上给出有实测结果的“视频输入条件改变，机器人执行是否发生变化”起点，后续方法必须由实际失败模式驱动。
+
+## 2026-11-12: original M0 environment variables (bug fix)
+
+The working M0 launcher used `ROBOREEL_CKPT=outputs/v120_baselines/released_checkpoints` and `ROBOREEL_DATA=outputs/v120_baselines/official_eval_data` when invoking the original RoboReel evaluator. Its saved config therefore legitimately contains `${ROBOREEL_CKPT}`. The first DEV preflight did not restore these exported variables and stopped with `UNEXPANDED_PATH_VARIABLE` **before running a single PhysX step**. The script now resolves them from the known project layout if unset, honors explicit shell overrides, and exports the resolved paths to the official runner. Unknown variables still block; missing TRAIN demos still block. The original `v0/preflight.json` is immutable; the repaired default output is `outputs/roboreel_video_dependency_dev/v1`.
+
+Run `python -m unittest discover -s tests -p 'test_roboreel_video_dependency_dev.py' -v` followed by `python -m scripts.roboreel_video_dependency_dev`. Do **not** run `--run` until the new preflight says READY_FOR_BOUNDED_DEV.
