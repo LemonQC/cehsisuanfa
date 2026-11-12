@@ -41,7 +41,7 @@ def digest(path: Path) -> str:
 
 # The existing M0 executor exported these directory roots. The saved
 # evaluator JSON uses ${ROBOREEL_CKPT}; do not rely on a prior shell export.
-VARIABLE = re.compile(r'\\$(?:\\{([A-Za-z_][A-Za-z0-9_]*)\\}|([A-Za-z_][A-Za-z0-9_]*))')
+VARIABLE = re.compile(r'\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))')
 
 
 def official_path_vars(project: Path) -> dict[str, str]:
