@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Current M1 same original scene only. git pull --ff-only origin main; conda activate pi05; bash scripts/run_m1_target_safe_approach_once.sh. Runner 5 stdlib tests, geometry contract, read-only original 450 step audit and SHA256 then one new v3 physically guarded rear approach with v2 82-step successful clearance unchanged; reports M1_TARGET_SAFE_APPROACH_GATE. If no progress/backwards violation, preserve and inspect rather than retune. Separately source grasp still fails; no M2/TAMP claims.",
-  "research_execution_reference": "docs/2026-11-11_M1_TARGET_SAFE_REAR_APPROACH_V3.md",
+  "next_operator_action": "No more PhysX yet: read original outputs/m1b3_corridor_dev/open_direct/physical_trace.json and v3 current physical_trace.json to compare TCP z and XY at onset of actual cube motion, finger commands and relative pose; v3 inherits q from post blocker-clear +Y orientation while needing +X push. If geometry/pose evidence supports it, select one proper task-aligned pusher orientation/contact height implementation, versioned and bounded. No scene/seed changes. Source true grasp still 0, no TAMP/M2.",
+  "research_execution_reference": "docs/2026-11-12_M1_TARGET_V3_DESCENT_TRACKING_DIAG.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Current matched-goal M1 physics: target CLOSED Panda/MPLib physically cleared blocker in 82+6 initial steps without grasp; remainder 362-step cube push exceeded 450 action budget, target error 260mm. Original M1B3 closed DiagnosticPush 32-step clearance also worked. Source side-grasp failed 106 steps, 0 dual-finger grasps, source pairing NOT achieved. Target after-clearance trace diagnosis code ready NOT_RUN. Strong equal-info TAMP NOT_RUN.",
@@ -816,7 +816,7 @@
     }
   },
   "current_m1_target_safe_approach_v3": {
-    "stage": "SOURCE_CODE_AND_5_UNIT_TESTS_COMMITTED; USER_PHYSX_NOT_RUN",
+    "stage": "REAL_PHYSICS_EXECUTED_169_STEPS_BLOCKER_CLEARANCE_SUCCESS_SAFE_OVERHEAD_OK_DESCENT_TCP_HEIGHT_PLATEAU_BEFORE_PUSH",
     "scientific_question": "UNCHANGED original same-goal Pick source -> Push-only target requiring blocker intervention, current M1B3 physical scene",
     "code": "agcofl/m1_current_target_safe_approach_v3.py",
     "runner": "scripts/run_m1_target_safe_approach_once.sh",
@@ -830,6 +830,41 @@
     "equal_info_tamp": "NOT_RUN",
     "source_real_grasp": "STILL_FAIL_106_STEPS_NO_VALID_GRASP",
     "learned_method": "NOT_STARTED",
-    "publishable_result": false
+    "publishable_result": false,
+    "operator_actual_result": {
+      "success": false,
+      "actions": 169,
+      "closed_clearance_valid": true,
+      "clearance_actions": 82,
+      "clearance_goal_error_m": 0.0063239995587955735,
+      "retreat_vertical_actions": 18,
+      "overhead_to_back_actions": 38,
+      "descend_behind_cube_actions": 25,
+      "last_descent_TCP_xyz_m": [
+        -0.05478159710764885,
+        0.0013554752804338932,
+        0.04128366708755493
+      ],
+      "requested_descent_TCP_xyz_m_approx": [
+        -0.065,
+        0,
+        0.02
+      ],
+      "last_cube_xyz_m": [
+        -6.594304409190954e-7,
+        -0.000001127430437009025,
+        0.01999991573393345
+      ],
+      "gripper_finger_qpos_final_m": [
+        0,
+        0
+      ],
+      "source": "operator 2026-11-12 terminal 25-step actual physical_trace from v3",
+      "error": "RuntimeError: M1_TARGET_NO_VALID_REAR_CONTACT_POSE_BEFORE_PUSH",
+      "push_x_steps": 0,
+      "physical_contact_geometry_cause": "NOT_PROVEN, observed z plateau .0413 while x moves forward",
+      "possible_confound": "TCP orientation q reused from +Y blocker-clear for +X cube push; no per-step quaternion or link collision forces in trace",
+      "do_not_do": "Do not relax height check or rerun current v3 to force attempt; compare actual successful open_direct TCP contact position first."
+    }
   }
 }
