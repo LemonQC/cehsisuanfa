@@ -350,8 +350,8 @@
     "Trainable closed-loop policy using TRAIN action data and balanced information budget"
   ],
   "latest_code_fix": "2026-11-10 v1.4.4: optional metadata-only HF mirror precheck and selective checkpoint mirror mode, no-API fallback",
-  "next_operator_action": "Target M1B3 v6 physically passed 66 steps; no more target. Current B3 side source 106 actual steps closed at TCP 103mm from cube (z=.121 vs cube .020), 0 grasp. FIRST read existing original B3 blocked_source topdown failures and old B2 contact success alongside side via one CPU-only command: git pull --ff-only origin main; conda activate pi05; python -m unittest discover -s tests -p 'test_m1_source_three_way_existing_audit.py' -q; python -m scripts.m1_source_three_way_existing_audit. Report M1_SOURCE_THREE_WAY_REAL_TRACE_GATE. No source full retry until it shows which original source approach actually reached the cube or failed contact, and do not swap or train new methods yet.",
-  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md",
+  "next_operator_action": "Target original M1B3 v6 FROZEN physically success. Three-way source real offline: original B3 topdown 335 steps 0 grasp, closest TCP63.97mm; B3 side106 steps 0 grasp, closest102.42mm; older B2 source goal x.15 physically grasped84 steps. New source contact geometry candidate: pull main and run bash scripts/run_m1_source_geom_aligned_topdown_once.sh, first five CPU tests+local panda URDF collision box+all 3 saved source traces+frozen actual target v6 preflight (zero PhysX on mismatch), then at most ONE original M1B3 blocked-source physically monitored topdown aligned-X partial-open attempt. NEVER rerun target; stop if actual TCP remains >13mm, do not blindly change fingers or gains. If genuine source Pick+Place success paired x.21 target, only then evaluate strong equal-info TAMP/video gap.",
+  "research_execution_reference": "docs/2026-11-12_M1_SOURCE_TRUE_NONCONTACT_URDF_GEOMETRY_SINGLE_TRIAL.md",
   "m0_m1_m2_current": {
     "m0": "COMPLETE_AND_GITHUB_ARCHIVED: original RoboReel pi05 Uniform 46/60 and Vid2Robot 3/60",
     "m1": "Original M1B3 SAME GOAL target physics now SUCCESS v6 at fixed seed120: blocked clear 32 and Cartesian push 10, total 66 actions final goal error 8.193mm; both objects physically never grasped, Panda gripper CLOSED pusher. Original M1B3 source PICK remains NO_GO after 106 real side-grasp actions 0 valid grasp, so matched source-target pair NOT_YET established. Strong TAMP/learned method NOT_RUN.",
@@ -1155,7 +1155,7 @@
     "documentation": "docs/2026-11-12_M1_V6_TARGET_PHYSICS_SUCCESS_SOURCE_NEXT.md"
   },
   "current_m1_source_grasp_compare_20261112": {
-    "stage": "ACTUAL_USER_OFFLINE_SCRIPT_EXECUTED_4_TESTS_OK; ORIGINAL B3 TOPDOWN RAW COMPARISON_NEW_CODE_COMMITTED_NOT_RUN",
+    "stage": "THREE_WAY_USER_REAL_OFFLINE_GATE_EXECUTED_4_TESTS_OK; NO_NEW_PHYSX; ORIGINAL_B3_TOPDOWN_NO_CONTACT_335 AND SIDE_NO_CONTACT_106 CONFIRMED",
     "first_closed_current_side_step": 100,
     "closed_command_steps_current_side": 6,
     "current_side_actual_grasp_steps": 0,
@@ -1192,6 +1192,73 @@
     "report_stage": "CODE_COMMITTED_SERVER_NOT_EXECUTED",
     "no_new_physics": true,
     "target_v6_success_stays_frozen": true,
-    "doc": "docs/2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md"
+    "doc": "docs/2026-11-12_M1_SOURCE_GRASP_102MM_NONCONTACT_AND_THREE_WAY_AUDIT.md",
+    "three_way_operator_verified": {
+      "no_new_physx": true,
+      "original_B3_topdown": {
+        "steps": 335,
+        "close_action_steps": 253,
+        "actual_grasp_steps": 0,
+        "cube_actual_lift_m": 1.862645149230957e-8,
+        "min_tcp_cube_distance_m": 0.06396616893656654,
+        "first_close_step": 82,
+        "first_close_tcp_xyz_m": [
+          0.017346419394016266,
+          -0.004269837401807308,
+          0.08713726699352264
+        ],
+        "first_close_tcp_cube_distance_m": 0.06947370132293096,
+        "error": "RuntimeError: official_mplib_lower_failed",
+        "planner_phases": [
+          "approach:true",
+          "grasp_pose:true",
+          "close_gripper:true",
+          "lift:true",
+          "across:true",
+          "lower:false"
+        ],
+        "note": "Nominal planner success does not mean physical cube lifted or moved"
+      },
+      "original_B3_side": {
+        "steps": 106,
+        "close_action_steps": 6,
+        "actual_grasp_steps": 0,
+        "cube_lift_m": 7.450580596923828e-9,
+        "min_tcp_cube_distance_m": 0.10241956894206888,
+        "first_close_step": 100,
+        "first_close_tcp_cube_distance_m": 0.10328695932847012,
+        "error": "RuntimeError: CONTACT_NO_GO: official RRT grasp pose executed, but Panda did not physically grasp cube"
+      },
+      "old_B2_success": {
+        "goal_x_m": 0.15,
+        "steps": 170,
+        "close_action_steps": 85,
+        "actual_grasp_steps": 84,
+        "cube_lift_m": 0.12782789953052998,
+        "min_tcp_cube_distance_m": 0.002608460786700873,
+        "status": "true previous physical source contact but DIFFERENT end goal"
+      },
+      "scientific_interpretation": "Both CURRENT same-goal source configurations failed physical precontact reach, not merely weaker finger grip. Original B3 topdown gripper closed ~69.5mm from cube with TCP z~87mm near 75mm rail height; side ~103mm. No proof collision contact without actual force data.",
+      "provenance": "user M1_SOURCE_THREE_WAY_REAL_TRACE_GATE, actual read-only saved original B3/side/B2"
+    }
+  },
+  "current_m1_source_geometry_aligned_v1": {
+    "stage": "CODE_COMMITTED_USER_SERVER_NOT_RUN; ONE ORIGINAL_SCENE_SOURCE_CANDIDATE",
+    "code": "agcofl/m1_source_geom_aligned_topdown_v1.py",
+    "tests": "tests/test_m1_source_geom_aligned_topdown_v1.py",
+    "runner": "scripts/run_m1_source_geom_aligned_topdown_once.sh",
+    "doc": "docs/2026-11-12_M1_SOURCE_TRUE_NONCONTACT_URDF_GEOMETRY_SINGLE_TRIAL.md",
+    "unchanged": "M1B3 original geometry, seed120, original goal x=.210, Panda pd_joint_pos, no change to successful target v6 or old raw.",
+    "geometry_hypothesis": "Panda panda_v2.urdf screw mount outer y=q+.026m; fully open q=.040 extends .066m > original wall inner .052m by 14mm if closing axis world Y. Partial q=.023 extends .049, nominal 3mm margin; closing longitudinal world X further protects rail clearance. Exact local source robot URDF must be checked before PhysX.",
+    "candidate_actuator": "Upstream official Panda OBB/MPLib with world-X closing, topdown approach, Panda open_gripper(gripper_state=+.32) yields 46mm aperture, sampled original walls and blocker into collision point cloud, use_point_cloud true.",
+    "hard_gates": "Actual robot q measured near .023, actual TCP within 13mm cube BEFORE close, original source precontact max 155 physics actions, actual Panda bilateral grasp BEFORE any lift/carry, original 75mm rail overflight and goal x=.210/20mm, blocker displacement <25mm, original total 450 actions.",
+    "native_scope": "privileged physical diagnostic adapter NOT an unchanged official solver, NO scientific new-method/TAMP result",
+    "attempt_count": 0,
+    "output": "outputs/m1_source_geom_aligned_topdown_v1/source_aligned_topdown/",
+    "physics_result": "NOT_RUN",
+    "target_v6": "IMMUTABLE_SUCCESS_66STEPS_8.193MM",
+    "source_pair": "NOT_ESTABLISHED",
+    "equal_info_tamp": "NOT_RUN",
+    "learned_method": "NOT_STARTED"
   }
 }
