@@ -78,6 +78,46 @@ class PublishEvidenceTests(unittest.TestCase):
         self.assertEqual(d['status'],'PARTIAL')
         self.assertEqual(len(d['trials']),2)
 
+    def test_b06_append_only_partial_object_with_complete_results(self):
+        # B06 actually persists {"trials": [...]} while the older publisher
+        # expected a bare list and refused to create the video preview.
+        b06=self.root/'outputs/research_runs/b06_uniskill_stackcups_dev_v1'
+        b06.mkdir(parents=True)
+        result={
+            'status':'DEV_COMPLETE_NOT_FORMAL',
+            'task':'stack_cups',
+            'rollouts':4,'episodes':2,
+            'any_pair_success_difference':False,
+            'trials':[{'episode':e,'source_train_demo_id':sid,
+                       'success':False,'steps':800,'error_class':None}
+                      for e in range(2) for sid in range(2)],
+            'pairs':[{'episode':e,'source_ids':[0,1],
+                      'successes':[False,False]} for e in range(2)],
+        }
+        (b06/'results.json').write_text(json.dumps(result))
+        (b06/'per_trial.partial.json').write_text(
+            json.dumps({'trials':result['trials']}))
+        obj=read_result(b06,'outputs/research_runs/b06_uniskill_stackcups_dev_v1',None)
+        self.assertEqual(obj['status'],'DEV_COMPLETE_NOT_FORMAL')
+        self.assertEqual(obj['physical_rollouts_reported'],4)
+        self.assertEqual(obj['paired_episodes_reported'],2)
+        self.assertEqual(len(obj['trials']),4)
+        self.assertEqual(len(obj['pairs']),2)
+        dest,files,summary=build_evidence(self.root,b06,None,False)
+        self.assertTrue(dest.startswith('evidence/runs/b06_uniskill_stackcups_dev_v1_'))
+        self.assertEqual(set(files),{'evidence.json','README.md'})
+        self.assertIn(b'DEV_COMPLETE_NOT_FORMAL',files['README.md'])
+
+    def test_b06_malformed_partial_object_is_refused(self):
+        b06=self.root/'outputs/research_runs/b06_uniskill_stackcups_dev_v1'
+        b06.mkdir(parents=True)
+        (b06/'results.json').write_text(json.dumps({'status':'DEV_COMPLETE_NOT_FORMAL',
+                                                    'task':'stack_cups','trials':[]}))
+        (b06/'per_trial.partial.json').write_text(json.dumps({'trials':{},
+                                                               'token':'secret'}))
+        with self.assertRaisesRegex(ValueError,'PARTIAL_TRIALS_INVALID_OBJECT'):
+            read_result(b06,'outputs/research_runs/b06_uniskill_stackcups_dev_v1',None)
+
     def test_pipeline_status_is_sanitized(self):
         p=self.root/'outputs/experiment_publisher/pipeline_status/drawer_hf_v1/status.json'
         p.parent.mkdir(parents=True)
