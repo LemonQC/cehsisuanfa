@@ -14,7 +14,7 @@ PROJECT = Path(__file__).resolve().parents[1]
 STAGES = {
     'project_gate', 'bounded_video_subset', 'author_source_submodules',
     'project_local_conda_env', 'install_uniskill_deps',
-    'uniskill_policy_import_gate',
+    'uniskill_policy_import_gate', 'uniskill_runner_init_pre_physx',
     'pin_hf_revisions_and_disk_gate', 'download_pinned_official_uniskill_policy',
     'download_pinned_author_idm', 'preflight_before_skill_extraction',
     'extract_two_genuine_human_skills', 'final_preflight',
