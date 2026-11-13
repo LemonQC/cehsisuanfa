@@ -504,36 +504,92 @@ def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
           "summary": str(out / "SUMMARY.md")}), flush=True)
 
     if publish:
-        public = {
-            "schema": result["schema"],
-            "status": result["status"],
-            "task": result["task"],
-            "episodes": episodes,
-            "rollouts": len(trials),
-            "successes": result["successes"],
-            "new_physx_actions": result["new_physx_actions"],
-            "new_training_runs": 0,
-            "official_upstream_revision": manifest["official_upstream_revision"],
-            "policy_checkpoint_sha256": manifest["policy_checkpoint_sha256"],
-            "idm_checkpoint_sha256": manifest["idm_checkpoint_sha256"],
-            "source_video_sha256": manifest["source_video_sha256"],
-            "skill_sha256": manifest["skill_sha256"],
-            "trials": [{k: t[k] for k in ("episode", "reset_seed", "torch_rng_seed", "source_train_demo_id",
-                                           "success", "steps", "error_class", "actions_sha256", "video_sha256")}
-                       for t in trials],
-            "pairs": pairs,
-            "heldout_eval_videos_used": 0,
-            "formal_evaluation": False,
-        }
-        raw = (json.dumps(public, indent=2, ensure_ascii=False, sort_keys=True, allow_nan=False) + "\n").encode()
-        uid = hashlib.sha256(raw).hexdigest()[:16]
-        from scripts.publish_research_evidence import assert_evidence_branch_exists, write_immutable_report
-        assert_evidence_branch_exists()
-        remote_path = f"evidence/runs/b06_uniskill_stackcups_dev_{uid}/evidence.json"
-        publish_result = write_immutable_report(remote_path, raw)
-        print("ROBOREEL_B06_UNISKILL_PUBLISHED", json.dumps({"result": publish_result,
-              "url": f"https://github.com/LemonQC/cehsisuanfa/blob/tro1-experiment-evidence/{remote_path}"}), flush=True)
+        publish_existing(out)
     return result
+
+
+
+def publish_existing(out: Path) -> str:
+    """Publish a *finished* prior B06 result without importing torch/PhysX.
+
+    Useful after a network interruption between the last rollout and the
+    GitHub upload. All local SHA256 hashes are reverified, so this does not
+    accidentally report a modified/partial experiment as complete.
+    """
+    out = Path(out).expanduser().resolve()
+    allowed = PROJECT / "outputs/research_runs"
+    if not out.is_relative_to(allowed.resolve()):
+        raise ValueError("B06_PUBLISH_PATH_OUTSIDE_PROJECT_OUTPUTS")
+    mf, rf = out / "manifest.json", out / "results.json"
+    if not safe_regular(mf, 64) or not safe_regular(rf, 64):
+        raise FileNotFoundError("B06_COMPLETE_MANIFEST_AND_RESULTS_REQUIRED")
+    manifest = json.loads(mf.read_text(encoding="utf-8"))
+    result = json.loads(rf.read_text(encoding="utf-8"))
+    schema = "TRO1_B06_UNISKILL_STACKCUPS_DEV_V1"
+    if (result.get("schema") != schema or manifest.get("schema") != schema
+        or result.get("status") != "DEV_COMPLETE_NOT_FORMAL"
+        or manifest.get("status") != "RUNNING_BOUNDED_DEV_NOT_FORMAL"
+        or result.get("task") != "stack_cups"
+        or result.get("heldout_eval_videos_used") != 0
+        or result.get("new_training_runs") != 0):
+        raise ValueError("B06_NOT_A_VALID_COMPLETED_DEV_RESULT")
+    trials = result.get("trials")
+    n = result.get("episodes")
+    if (not isinstance(trials, list) or n not in (1, 2)
+        or len(trials) != 2*n or result.get("rollouts") != 2*n
+        or len(result.get("pairs", [])) != n):
+        raise ValueError("B06_TRIAL_COUNT_OR_PAIRS_INVALID")
+    seen = set()
+    for t in trials:
+        ep, sid = t["episode"], t["source_train_demo_id"]
+        if (not isinstance(ep, int) or not 0 <= ep < n
+            or not isinstance(sid, int) or sid not in manifest["source_train_demo_ids"]
+            or (ep,sid) in seen):
+            raise ValueError("B06_TRIAL_ID_INVALID_OR_DUPLICATE")
+        seen.add((ep,sid))
+        folder = out / f"episode_{ep:02d}" / f"source_{sid:04d}"
+        actions = folder / "actions.npy"
+        if not safe_regular(actions, 1) or sha256(actions) != t.get("actions_sha256"):
+            raise ValueError("B06_ACTION_TRACE_HASH_MISMATCH")
+        video_hash = t.get("video_sha256")
+        if video_hash:
+            video = folder / "rollout.mp4"
+            if not safe_regular(video, 1024) or sha256(video) != video_hash:
+                raise ValueError("B06_VIDEO_HASH_MISMATCH")
+    if result.get("successes") != sum(bool(t["success"]) for t in trials):
+        raise ValueError("B06_SUCCESS_COUNT_MISMATCH")
+    public = {
+        "schema": schema,
+        "status": result["status"],
+        "task": result["task"],
+        "episodes": n,
+        "rollouts": len(trials),
+        "successes": result["successes"],
+        "new_physx_actions": result["new_physx_actions"],
+        "new_training_runs": 0,
+        "official_upstream_revision": manifest["official_upstream_revision"],
+        "policy_checkpoint_sha256": manifest["policy_checkpoint_sha256"],
+        "idm_checkpoint_sha256": manifest["idm_checkpoint_sha256"],
+        "source_video_sha256": manifest["source_video_sha256"],
+        "skill_sha256": manifest["skill_sha256"],
+        "trials": [{k: t[k] for k in ("episode", "reset_seed", "torch_rng_seed",
+                                        "source_train_demo_id", "success", "steps",
+                                        "error_class", "actions_sha256", "video_sha256")}
+                   for t in trials],
+        "pairs": result["pairs"],
+        "heldout_eval_videos_used": 0,
+        "formal_evaluation": False,
+    }
+    raw = (json.dumps(public, indent=2, ensure_ascii=False, sort_keys=True,
+                      allow_nan=False) + "\n").encode("utf-8")
+    uid = hashlib.sha256(raw).hexdigest()[:16]
+    from scripts.publish_research_evidence import assert_evidence_branch_exists, write_immutable_report
+    assert_evidence_branch_exists()
+    remote_path = f"evidence/runs/b06_uniskill_stackcups_dev_{uid}/evidence.json"
+    published = write_immutable_report(remote_path, raw)
+    url = f"https://github.com/LemonQC/cehsisuanfa/blob/tro1-experiment-evidence/{remote_path}"
+    print("ROBOREEL_B06_UNISKILL_PUBLISHED", json.dumps({"result": published, "url": url}), flush=True)
+    return url
 
 
 def main(argv=None) -> int:
@@ -553,12 +609,18 @@ def main(argv=None) -> int:
     p.add_argument("--preflight", action="store_true", help="Read-only local/runtime check; no PhysX")
     p.add_argument("--run", action="store_true", help="Explicitly run 2..4 genuine PhysX DEV rollouts")
     p.add_argument("--publish", action="store_true", help="Publish sanitized result to evidence branch")
+    p.add_argument("--publish-existing", action="store_true", help="Re-publish an existing, verified complete DEV result with NO PhysX")
     p.add_argument("--no-video", action="store_true")
     args = p.parse_args(argv)
-    if not args.preflight and not args.run:
-        p.error("choose --preflight or --run")
+    if not args.preflight and not args.run and not args.publish_existing:
+        p.error("choose --preflight, --run or --publish-existing")
     if args.publish and not args.run:
         p.error("--publish requires --run")
+    if args.publish_existing:
+        if args.run or args.preflight:
+            p.error("--publish-existing cannot be combined with --run/--preflight")
+        publish_existing(args.out)
+        return 0
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     plan = preflight(args.project, args.data_dir, args.policy_checkpoint,
                      args.idm_checkpoint, args.skill_dir, args.config,
