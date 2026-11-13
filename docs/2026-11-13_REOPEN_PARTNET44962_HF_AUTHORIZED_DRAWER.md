@@ -64,3 +64,27 @@ Do not blindly rerun if any real manifest or actions exist. On download failure:
 - Existing `toys_in_drawer` genuine TRAIN `0000` and `0001` features were generated before the asset blocker; **do not repeat 0.66 GB of SigLIP computation**. We have not yet demonstrated physical success or runtime scene creation with the newly approved model.
 - **HF archive structure has not yet been inspected under the user's gated token**. The installer accepts a single model directory archive or a flat single-model archive and fails safely when unexpected layouts are encountered; this is more honest than assuming a downloaded ZIP is automatically compatible.
 - `ShapeNetCore` authorization exists but does not supply or replace PartNet's articulated `44962` cabinet.
+
+## 2026-11-13 project disk storage hardening
+
+The operator requires the 4 TB project mount, not the system/home disk, for all large bytes. The original explicit `hf_hub_download(cache_dir=...)` and `TemporaryDirectory(dir=...)` already point at the project. The new `configure_project_transfer_storage` also pins `HF_XET_CACHE`, `HF_HUB_CACHE`, `HF_ASSETS_CACHE`, and `TMPDIR` to `outputs/roboreel_partnet_single_44962/` **before the Hugging Face Python library import**. It deliberately does not replace `HF_HOME` or `HF_TOKEN_PATH` so an existing authorized login remains valid; the credential file is small. To make even the login token project-local, export the following variables *before* `hf auth login` and preserve them in the same shell when running the installer:
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+conda activate pi05
+git pull --ff-only origin main
+export HF_HOME="$PWD/outputs/roboreel_partnet_single_44962/hf_home"
+export HF_HUB_CACHE="$PWD/outputs/roboreel_partnet_single_44962/hf_cache"
+export HF_XET_CACHE="$PWD/outputs/roboreel_partnet_single_44962/hf_xet_cache"
+export HF_ASSETS_CACHE="$PWD/outputs/roboreel_partnet_single_44962/hf_assets_cache"
+export TMPDIR="$PWD/outputs/roboreel_partnet_single_44962/tmp"
+mkdir -p "$HF_HOME" "$HF_HUB_CACHE" "$HF_XET_CACHE" "$HF_ASSETS_CACHE" "$TMPDIR"
+chmod 700 "$HF_HOME"
+df -h "$PWD" "$HOME"
+env -u HF_ENDPOINT hf auth login
+env -u HF_ENDPOINT hf auth whoami
+python -m unittest discover -s tests -p 'test_download_roboreel_partnet44962_hf.py' -v
+python -u -m scripts.prepare_roboreel_drawer_partnet --hf-download
+```
+
+Exporting `HF_HOME` intentionally moves the account login location for **this terminal shell**: any earlier `~/.cache/huggingface` login will not be seen, so authenticate with the approved account again under this directory. Do not upload `outputs/` or tokens to GitHub; project `.gitignore` already excludes `outputs/`. If a previous login was completed under `$HOME`, the older token is not automatically moved or deleted. The code does not promise a successful on-server gated download until the operator checks `ROBOREEL_PARTNET_44962_READY`.
