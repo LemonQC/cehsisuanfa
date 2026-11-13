@@ -197,3 +197,26 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 若仍有新的 pip-check 错误，将以明确的包名/版本打印 `B06_DEPENDENCY_BLOCKED`；请保留原始输出再定点修复，不跳过环境/模型初始化 smoke。只有实际 `ROBOREEL_B06_UNISKILL_TRIAL` 才能算执行了 PhysX。
+
+## 12. 最新真实阻塞：HF 镜像 503 + read timeout；B06 checkpoint 分文件续传修复
+
+用户服务器已通过 B06 依赖阶段，但官方 RoboReel `snapshot_download()` 在并行获取 `nd/uniskill_policy/config.json` 时，`hf-mirror.com` 返回 **HTTP 503 Service Unavailable** 并发生 `httpx.ReadTimeout`。同时日志报告约 **740 MB** 权重传输进度，不能据此断言权重最终已完整落盘。自动阻塞回执：`evidence/runs/b06_blocked_2ef36e3d281eb045/evidence.json`，`stage=download_pinned_official_uniskill_policy`，本次仍未运行物理仿真。
+
+**处理原则：绝不清空约 740 MB 的已有权重、HF 缓存、Conda 环境；不修改官方模型 revision，也不重新训练。**
+
+- 新增 `scripts/b06_download_pinned_policy.py`，只读取此前已写入项目盘的 `b06_upstream_hf_lock_v1.json`。验证 `LogosRoboticsLab/roboreel_models`、40 位固定 commit、限定 `nd/uniskill_policy/` 的文件名和官方文件大小。
+- 改为**先下载两个小 JSON，再处理大权重文件**；已完整保存且大小准确、JSON 可解析的文件直接显示 `B06_POLICY_FILE_REUSED` 并跳过。HF 的临时缓存与 `.incomplete` 文件原样保留，交给官方 `hf_hub_download` 尝试续传。遇到已有最终文件但大小或 JSON 无法验证时停止，不覆盖它。
+- 对每个缺失文件单独调用官方 Hugging Face Hub 下载函数。先使用现有镜像 (`https://hf-mirror.com`)，失败后尝试 `https://huggingface.co`。每个端点最多两次尝试，`HF_HUB_DOWNLOAD_TIMEOUT` 默认 180 秒、元数据超时默认 30 秒。网络都不可用时保留文件及错误证据，不重复整个 snapshot。
+- 上游 RoboReel 的作者权重、模型结构、训练参数和评测代码**都没有改变**；区别仅是下载传输策略从并发整个快照改为按清单逐文件获取。
+- `tests/test_b06_download_pinned_policy.py` 已在本地纯 CPU 环境 **9/9 通过**，覆盖已完成的权重、镜像故障转官方、固定 SHA、错误 JSON、错误文件大小、全部端点失败和路径约束；用户服务器真实下载仍待验证。
+
+**继续前台执行**（无需重装、不要删除 `.cache`）：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_download_pinned_policy.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+若输出 `B06_POLICY_DOWNLOAD_COMPLETE`，说明政策权重已经逐项完成大小和 JSON 校验；之后将继续官方 IDM 下载、提取 TRAIN 技能、再进行 bounded DEV 的真实 PhysX。只有观察到 `ROBOREEL_B06_UNISKILL_TRIAL`，才算进入了物理评测。不得把下载成功标成 baseline 复现成功。
