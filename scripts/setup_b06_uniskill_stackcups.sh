@@ -171,7 +171,7 @@ if [[ ! -f "$BASE/b06_env_install_complete.v1" ]]; then
 "$CONDA_ENV/bin/python" -m pip install \
   "numpy==2.4.2" "scipy==1.17.0" "h5py==3.15.1" \
   "opencv-python-headless==4.13.0.92" "pillow==12.1.0" \
-  "einops==0.8.2" "decord==0.6.0" "packaging>=24.0"
+  "einops==0.8.2" "packaging>=24.0"
 "$CONDA_ENV/bin/python" -m pip install \
   "hydra-core>=1.3" "omegaconf==2.3.0" "easydict==1.13" \
   "cloudpickle==3.1.2" "tensorboard==2.20.0" "tensorboardX==2.6" \
@@ -179,8 +179,12 @@ if [[ ! -f "$BASE/b06_env_install_complete.v1" ]]; then
   "tqdm==4.67.3" "psutil==7.2.2" "termcolor==3.3.0" \
   "tianshou==0.4.10" "bddl==3.6.0" "gym==0.25.2" "PyOpenGL==3.1.10"
 "$CONDA_ENV/bin/python" -m pip install --no-deps -e "$UPSTREAM/src/external_models/UniSkill-Policy"
-"$CONDA_ENV/bin/python" -m pip check
-"$CONDA_ENV/bin/python" -c 'import torch, transformers, diffusers, gymnasium, mani_skill, sapien, numpy, imageio; print("B06_ENV_IMPORT_OK")'
+# UniSkill-Policy's pinned pyproject metadata was authored for a different
+# environment than the pinned RoboReel B06 runner. Validate only the three
+# acknowledged legacy version declarations, fail closed on any other issue.
+# decord is unused by the official video extractor (imageio-ffmpeg) and runner.
+"$CONDA_ENV/bin/python" -m scripts.b06_dependency_gate
+"$CONDA_ENV/bin/python" -c 'import torch, torchvision, transformers, diffusers, gymnasium, mani_skill, sapien, numpy, imageio.v2; print("B06_ENV_IMPORT_OK")'
 touch "$BASE/b06_env_install_complete.v1"
 fi
 
