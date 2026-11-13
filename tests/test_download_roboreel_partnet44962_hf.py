@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -14,6 +15,7 @@ from unittest.mock import patch
 from scripts.download_roboreel_partnet44962_hf import (
     REPO_ID, ARCHIVE, MODEL_ID, OFFICIAL, MIRROR, safe_archive_entries,
     extract_single_model, authorized_hf_single, _dataset_zip_info,
+    configure_project_transfer_storage,
 )
 from scripts.prepare_roboreel_drawer_partnet import locations, inspect
 
@@ -52,6 +54,17 @@ class TestAuthorizedHfPartnet(unittest.TestCase):
     def fake_download(self,**kwargs):
         self.params.append(('download',kwargs))
         return str(self.zp)
+
+    def test_bulky_hf_caches_and_temp_only_on_project_disk(self):
+        with patch.dict(os.environ, {'HF_HOME': '/home/keep-existing-hf-login',
+                                     'HF_XET_CACHE': '/elsewhere/old-cache',
+                                     'TMPDIR': '/tmp'}):
+            paths=configure_project_transfer_storage(self.project)
+            self.assertEqual(os.environ['HF_HOME'], '/home/keep-existing-hf-login')
+            for key in ('HF_XET_CACHE','HF_HUB_CACHE','HF_ASSETS_CACHE','TMPDIR'):
+                self.assertTrue(paths[key].startswith(str(self.loc['home'])))
+                self.assertEqual(paths[key], os.environ[key])
+                self.assertTrue(Path(paths[key]).is_dir())
 
     def test_authorized_model_install_only_one_archive(self):
         ret=authorized_hf_single(self.project,token='hf_TEST_SECRET',
