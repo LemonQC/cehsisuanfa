@@ -290,3 +290,23 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 预期出现 `B06_POLICY_OPTIONAL_FILE_SKIPPED file=nd/uniskill_policy/config.json`、`B06_POLICY_FILE_REUSED file=nd/uniskill_policy/ckpt.pth`，之后继续 B06 的固定版本 IDM 下载；如果 IDM 本体 80.3 MB 仍因服务器网络受阻，记录新的 `download_pinned_author_idm` 回执并单独处理。迄今不能宣称 B06 已成功复现。
+
+## 15. B06 真机回执：Policy 配置导入缺少 `six`（2026-11-13）
+
+- 用户前台日志 `Loading weights: 100% (287/287)` 后，在 `scripts/roboreel_uniskill_video_dev.py:331` 构造 `UniSkillRunner` 期间，锁定官方 `UniSkill-Policy/robomimic/config/base_config.py:7` 执行 `import six`，触发 `ModuleNotFoundError: No module named 'six'`。
+- 自动 evidence：`evidence/runs/b06_blocked_2be58529d68bf05c/evidence.json`，原 stage 被脚本宽泛记为 `real_physx_bounded_dev_and_publish` / `PARTIAL_PHYSX_POSSIBLE_DO_NOT_RERUN`。**重要澄清**：从当前 traceback 与实际项目代码核对，这次发生在创建 `UniSkillRunner` 时，而 `run_dev()` 直到 runner 构建、技能加载和场景资产校验后才执行 `out.mkdir()`、构建 `make_eval_env` 和 `env.step()`；因此该 traceback 所在执行路径没有调用真实 PhysX rollout。不能将其计入 0/4 或正式评测。
+- 这是 B06 独立 Python 环境缺失基础运行时依赖，原作者 `base_config.py` 必须使用 `six`，而旧版 UniSkill-Policy 依赖清单未保证该包安装。**不修改官方模型/训练/动作代码。**
+- `scripts/setup_b06_uniskill_stackcups.sh`：在全新环境的 pip 安装列表增加 `six==1.17.0`；对已经创建且有 `b06_env_install_complete.v1` 的项目盘旧环境，在 `export PYTHONPATH` 后、下载权重和 GPU 物理评测之前，始终执行 `import six`。仅当缺少时对 **`$CONDA_ENV/bin/python`** 执行 `pip install six==1.17.0`（只安装这一小型依赖，**不重装 PyTorch/Conda**），然后强制导入 `from robomimic.config import config_factory`；成功标记 `B06_POLICY_CONFIG_IMPORT_OK`。
+- `scripts/b06_failure_record.py` 注册新的 **pre-PhysX** stage `uniskill_policy_import_gate`，该阶段失败会发布正确的 setup blocker 而不被误标为可能已有物理轨迹。新增 `tests/test_b06_six_import_gate.py` 防止再次跳过该依赖检查。
+- 以上为新提交修改，用户服务器尚未重新运行验证。**禁止删除已有权重、HF 缓存、Conda 环境以及原实验目录。**
+
+继续**前台**运行：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_six_import_gate.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+输出 `B06_POLICY_CONFIG_IMPORT_OK six=1.17.0` 只说明配置模块导入成功，不代表 model inference 或真实物理实验已成功。只有后续 `ROBOREEL_B06_UNISKILL_TRIAL`、轨迹文件及独立 GitHub 结果证据才能构成实际 B06 DEV 结果。B07 暂不开启。
