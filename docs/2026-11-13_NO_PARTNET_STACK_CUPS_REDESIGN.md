@@ -51,3 +51,16 @@ env -u DISPLAY -u WAYLAND_DISPLAY python -u -m scripts.roboreel_video_dependency
 ## 学术检验界限
 
 StackCups 已有固定顺序和明确阶段依赖，更适合作为“观测证据与视频时序对齐”的研究对象。但两段同任务视频均可能给出同一有效策略，A/B 产生的动作差异**不等于视频有独有信息**。之后必须跟等信息视频序列对齐、规则阶段控制、视觉事件检测与恢复基线公平对比。不能基于两组 DEV 即宣称 T-RO GO。
+
+## 2026-11-13 StackCups TRAIN metadata 与测试修复回执
+
+真实服务器 `pi05` 已执行 StackCups 的只读 Hugging Face 镜像发现：
+
+- `stack_cups/0000/front.mp4`: **11,602,881 bytes**
+- `stack_cups/0001/front.mp4`: **14,569,453 bytes**
+- 两条总计 **26,172,334 bytes**，≤300 MiB。
+- 原元数据审计显示 `no_eval_data_or_robot_actions=true`、`download_executed=false`，因此视频尚未下载，StackCups SigLIP 特征尚未生成，物理实验 `NOT_RUN`。
+
+原 `test_openpi_config_failure_does_not_create_manifest` 的旧样例仍传入 `toys_in_drawer`，因此在新的柜体资产检查上提前失败，没有实际测试预期的 OpenPI 缺失场景；这是测试夹具与新分支不一致，而非 StackCups 模型错误。修复：该样例转为 `stack_cups`，创建九个明确标注为虚构的纯文件测试资源，检验缺失 OpenPI 缓存时**不得创建任何实测 manifest**；同时实际 `run_dev` 的 StackCups 分支不再导入 PartNet 资产准备模块。提交 `7614c1e`；服务器重新测试仍待验证。
+
+下一执行门槛：先通过 `test_roboreel_video_dependency_dev.py`（21 项）；再执行 `--task stack_cups --download --features --frames-per-batch 2`；随后在独立输出目录对 `--task stack_cups` 进行只读 preflight。未见 `READY_FOR_BOUNDED_DEV` 前不得启动新的机器人物理操作。
