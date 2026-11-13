@@ -33,8 +33,14 @@ on_exit() {
     # run_dev() only creates RESULT_DIR AFTER UniSkillRunner initialization.
     # With no output directory, this attempt cannot have stepped PhysX.
     # Keep this distinct from an interrupted run with partial trajectories.
-    if [[ "$STAGE" == "real_physx_bounded_dev_and_publish" && ! -e "$RESULT_DIR" ]]; then
-      STAGE="uniskill_runner_init_pre_physx"
+    if [[ "$STAGE" == "real_physx_bounded_dev_and_publish" ]]; then
+      if [[ ! -e "$RESULT_DIR" ]]; then
+        STAGE="uniskill_runner_init_pre_physx"
+      elif python -m scripts.b06_prephysx_resume_gate --project "$PROJECT" \
+           --out "$RESULT_DIR" >/dev/null 2>&1; then
+        # Two immutable metadata JSON files and zero trials: no PhysX executed.
+        STAGE="uniskill_runner_init_pre_physx"
+      fi
     fi
     # Only publish sanitized stage/status; NEVER a raw pip error, token,
     # private path, config or trace. A failed GitHub write does not suppress
@@ -74,12 +80,15 @@ if [[ -s "$RESULT_DIR/results.json" ]]; then
     --publish-existing --out "$RESULT_DIR"
   exit 0
 fi
-# A partial PhysX directory must be preserved for forensic review;
-# never blindly resume or redo the same seeds.
-if [[ -d "$RESULT_DIR" ]]; then
-  STAGE="real_physx_bounded_dev_and_publish"
-  echo "BLOCKED: partial B06 PhysX directory exists; do not rerun same seeds"
-  exit 2
+# Preserve all previous evidence. Only a directory with EXACTLY the two
+# original immutable metadata JSON files (no episode/action/partial results)
+# may be resumed; this is NOT restarting a previous physical rollout.
+RESUME_PREPHYSX=()
+if [[ -e "$RESULT_DIR" || -L "$RESULT_DIR" ]]; then
+  STAGE="verify_prephysx_resume"
+  python -m scripts.b06_prephysx_resume_gate \
+    --project "$PROJECT" --out "$RESULT_DIR"
+  RESUME_PREPHYSX=(--resume-prephysx)
 fi
 
 for demo in 0000 0001; do
@@ -312,10 +321,16 @@ if [[ -s "$RESULT_DIR/results.json" ]]; then
     --publish-existing --out "$RESULT_DIR"
   exit 0
 fi
-if [[ -d "$RESULT_DIR" ]]; then
-  echo "BLOCKED: partial B06 PhysX directory exists. Inspect and preserve; no automated rerun."
-  exit 2
+if [[ -e "$RESULT_DIR" || -L "$RESULT_DIR" ]]; then
+  STAGE="verify_prephysx_resume"
+  # Refuse to run if any prior rollout files exist or metadata changed.
+  python -m scripts.b06_prephysx_resume_gate \
+    --project "$PROJECT" --out "$RESULT_DIR"
+  [[ "${#RESUME_PREPHYSX[@]}" -eq 1 ]] || {
+    echo "BLOCKED: B06 result path unexpectedly appeared during setup"; exit 2;
+  }
 fi
 STAGE="real_physx_bounded_dev_and_publish"
 "$CONDA_ENV/bin/python" -u -m scripts.roboreel_uniskill_video_dev \
-  --run --publish --gpu 0 --episodes 2 --max-steps 800
+  --run --publish --gpu 0 --episodes 2 --max-steps 800 \
+  "${RESUME_PREPHYSX[@]}"
