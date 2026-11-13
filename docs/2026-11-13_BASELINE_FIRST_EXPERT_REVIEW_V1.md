@@ -39,7 +39,7 @@
 | **B03** | RoboReel π0.5 Uniform | 官方 5-method 代码与发布 checkpoint 已验证可用 | **PushCube ND 46/60 正式完成**；Drawer/StackCups 只有 DEV | **P0 已有结果**；无须重跑 PushCube；其他任务待选择性 heldout 扩展 |
 | **B04** | RoboReel π0.5 Keyframes | 官方 checkpoint 和训练入口有；**原作者提关键帧脚本明确要求 `OPENAI_API_KEY`**，评测还需要对应 JSON | **NOT_RUN** | **P1 审计**：先看授权预制标注是否可合法获取；不能则 `BLOCKED_API_ANNOTATIONS`。本地启发式替代只可另列 `REIMPL` |
 | **B05** | Vid2Robot | 官方 checkpoint 与原始评测代码可用 | **PushCube ND 3/60 正式完成** | **P0 已有结果**；保持冻结 |
-| **B06** | UniSkill（特指 `uniskill_policy`，不是同名 Uni-Skill 技能库） | RoboReel 有训练入口；评测需要作者的 **ISD pretrained checkpoint**；UniSkill 上游 GitHub README 仍需核实权重可否下载 | **NOT_RUN** | **P0 先测资源**：先找到可验证 ISD 权重，再提取 latent/加载官方 policy；不可用则 `BLOCKED_CHECKPOINT` |
+| **B06** | UniSkill（特指 `uniskill_policy`，不是同名 Uni-Skill 技能库） | **已找到作者 IDM 权重**：HF `HanjungKim/UniSkill/UniSkill_final_weight/idm.pth`（约 80.3 MB）；RoboReel 官方 ND policy checkpoint 有下载入口；独立 `uniskill` 环境与 DEV runner 已提交 | **READY_TO_RUN_NOT_EXECUTED** | **P0 当前首个执行项**：固定上游/HF revision → 下载 policy+IDM → 提取两个 TRAIN skill → 4 条 StackCups DEV PhysX；成功后再准备 held-out last20×3 |
 | **B07** | RoboReel VLM + π0.5 | **更正此前判断**：官方 `annotate_human_videos.py` 使用可本地推理的 **Qwen3-VL-4B-Instruct**，不是必需付费 API | **NOT_RUN** | **P1 可做**：项目盘缓存 Qwen3-VL，单卡完成视频标注/官方权重推理；检查推理峰值内存和 Qwen 许可证 |
 | **B08** | SeeDo | RoboReel 官方 `roboreel_models/README.md` 仍写“将来加入”，未在该基线库中发布其直接评测 runner | **NOT_RUN** | **P2 独立作者源审计**；若完整可运行实现不可获得，`BLOCKED_AUTHOR_RELEASE`；不伪造结果 |
 | **B09** | Point Policy / PointPolicy（3D keypoint） | **更正**：独立原作者仓库 `siddhanthaldar/Point-Policy` 已公开代码、数据；但 RoboReel 作者的 PointPolicy 统一 runner 尚未提供 | **NOT_RUN** | **P1**：先执行 Point Policy 原生入口，再用 RoboReel PD 校准关键点接入，明确 `OFFICIAL_NATIVE` 和 `PORT` 差异 |
@@ -49,7 +49,7 @@
 | **B13** | DINOv2 + temporal decoder、Persistence 等视觉诊断 | 本项目部分已有表征 pilot；**不是原论文学习机器人策略** | **PARTIAL_DIAGNOSTIC** | **P1 诊断对照**；报告光流/状态预测误差，不能挤入策略成功率表充数 |
 | **B14** | Goal-only、Goal+Waypoint、TAMP、privileged Oracle | 四类信息预算不同，不应笼统算“一种算法”；M1 的脚本只是局部物理可行性 | **PARTIAL_PHYSICAL_PROBES；非完整基线** | **P0**：拆 B14a–d 并严格分 visual planning / privileged oracle，记录真实闭环成功率 |
 
-**按原版/适配两层统计**：目前**正式运行**只有 B03、B05 同一官方 PushCube ND cell；B01/B02/B04/B06/B07/B08/B09/B10/B11/B12 尚无本项目相同任务完整评测，B13 仅诊断，B14 为局部物理验证。不要用“14/14”做结果指标。`B08` 无法取得作者必要资产时，复现的**结果就是可证伪的 BLOCKED 报告**，不能编造一个官方实现。
+**按原版/适配两层统计**：目前**正式运行**只有 B03、B05 同一官方 PushCube ND cell；B01/B02/B04/B06/B07/B08/B09/B10/B11/B12 尚无本项目相同任务完整评测。B06 已进入 `READY_TO_RUN_NOT_EXECUTED`，但服务器未执行前仍不得计为结果；B13 仅诊断，B14 为局部物理验证。不要用“14/14”做结果指标。`B08` 无法取得作者必要资产时，复现的**结果就是可证伪的 BLOCKED 报告**，不能编造一个官方实现。
 
 ### 外部公开证据及重要依赖
 
@@ -57,7 +57,7 @@
 - RoboReel benchmark、10 个任务及 ND/WD/ED/PD：<https://roboreel.github.io/>；数据 <https://huggingface.co/datasets/LogosRoboticsLab/roboreel>。
 - π0.5 Keyframe 作者 `extract_keyframes.py`：需要 `OPENAI_API_KEY`。VLM+π0.5 的 `annotate_human_videos.py`：**本地 Qwen3-VL-4B-Instruct**（路径与上游 pin 需冻结）。
 - Point Policy **独立原作者代码**：<https://github.com/siddhanthaldar/Point-Policy>；与 RoboReel 未释放的统一 runner 是两件事。
-- UniSkill 原作者源码：<https://github.com/KimHanjung/UniSkill>；特别注意预训练 ISD 权重下载状态。
+- UniSkill 原作者源码：<https://github.com/KimHanjung/UniSkill>；作者 HF 仓库已列出 `UniSkill_final_weight/idm.pth`（约 80.3 MB），本项目执行脚本会固定 HF revision 并保存权重 SHA256。
 - Im2Flow2Act：<https://github.com/real-stanford/im2Flow2Act>；作者 README 标示 **CoRL 2024**，会务／期刊汇编年份不要混写。
 - EC-Flow：<https://github.com/YixiangChen515/EC-Flow>，官方 Meta-World inference/eval 与多卡训练说明。
 - 2026 T-RO Cross-Behavior Object Flow：<https://doi.org/10.1109/TRO.2026.3701576>；作者公开手稿 <https://eprints.whiterose.ac.uk/id/eprint/242108/>。不能把本方法“object flow 从行为解耦”再写成首次提出。
@@ -89,7 +89,7 @@
 **B. 先恢复可比性最高的作者原版能力（Released weights first）**
 1. **B03/B05**：对已有成功 PushCube ND 不重跑，核查已有 60 真实 trial 哈希作为对照锚点。
 2. **B07**：单卡本地 Qwen3-VL 离线标注→官方 VLM+π0.5 checkpoint 推理；不调用云 API。
-3. **B06**：先检测 UniSkill ISD；只有拿到**真实作者预训练权重**才启动 latent 提取 / policy evaluation。
+3. **B06**：ISD 已找到，首个执行脚本已提交；直接跑官方权重与官方 latent extraction 的 StackCups bounded DEV。
 4. **B04**：先审核已有合法 keyframe annotations；无 OpenAI API、无作者标注则官方 L2 `BLOCKED`，可以另外做明确的 `OFFLINE_KEYFRAME_REIMPL`，不可同名冒充。
 5. **B09**：独立 Point Policy 原版 native smoke，再判断 PD RoboReel 标定/动作 retarget 的合理性。
 6. **B11/B12**：作者原始模型下载清单与训练/测试入口核查，优先用作者 released weights 做 native rollout，随后记录转换所需的观测/动作适配；不要先从零完整训练 8 GPU 方法。
@@ -178,3 +178,17 @@ python -u -m scripts.audit_baseline_reproduction_l0 --publish
 ```
 
 结果本地仅保存 `outputs/research_runs/baseline_readiness_l0/inventory_<hash>.json`（项目盘），远程自动保存 `tro1-experiment-evidence/evidence/baseline_l0/baseline_source_inventory_<hash>/inventory.json`；不上传任何受限原始视频、HF token、权重或大数据。后续根据真实 L0 报告逐个编写/完善 L1–L4 运行适配器，而不是先猜所有 Baseline 都能运行。
+
+## 8. 2026-11-13：B06 UniSkill 已从“权重待核实”转为首个执行项
+
+- 作者 HF 仓库当前文件列表确认 `UniSkill_final_weight/idm.pth` 存在（约 80.3 MB）；本轮只下载这个文件，不下载整个 Diffusers model 仓库。
+- RoboReel 官方 checkpoint 下载脚本可选择 `uniskill_policy` + `nd`，不需要下载全部约 50 GB checkpoint。
+- 新增并提交：
+  - `scripts/roboreel_uniskill_video_dev.py`
+  - `scripts/setup_b06_uniskill_stackcups.sh`
+  - `tests/test_roboreel_uniskill_video_dev.py`
+  - `docs/2026-11-13_B06_UNISKILL_STACKCUPS_DEV_REPRODUCTION.md`
+- 本地 CPU 单元测试 **7/7 通过**，shell `bash -n` 检查通过。自动化脚本会固定 HF revision、记录 policy/IDM SHA256、检查项目盘空间，并把脱敏结果发布到证据分支。
+- **关键状态：服务器端尚未运行。** 当前仅为可执行入口准备，不是 UniSkill 复现成功。命令：`bash scripts/setup_b06_uniskill_stackcups.sh`。
+- 本轮仅使用 StackCups TRAIN IDs 0000/0001 做 2 paired episodes / 4 DEV rollouts；不能当成 held-out 正式结果。正式结果仍需 EVAL IDs 0080–0099 × 3 pass。
+- 详见 [B06 执行单](2026-11-13_B06_UNISKILL_STACKCUPS_DEV_REPRODUCTION.md)。
