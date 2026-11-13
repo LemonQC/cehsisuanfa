@@ -369,7 +369,7 @@ def main(argv=None) -> int:
     configure_task(args.task)
     if args.out is None:
         kind='roboreel_train_stack_cups_assets' if args.task=='stack_cups' else 'roboreel_train_drawer_assets'
-        args.out=PROJECT/'outputs'/kind/'v1'
+        args.out=args.project/'outputs'/kind/'v1'
     if args.encode_one is not None:
         project = args.project.resolve()
         data = args.data_root.resolve()
