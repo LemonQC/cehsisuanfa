@@ -133,3 +133,29 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 如果重试后 Git 仍失败，本地终端会显示哪一个子模块失败；停止在此一步，不启动 B07。成功后下一步仍是 B06 自己的权重/环境/真实 4-rollout 门槛。
+
+## 9. 单独修复 Git `Needed a single revision`（已提交，服务器待验证）
+
+2026-11-13 用户实际前台日志：`UniSkill` 指定提交 `bd9843b...` 已经 `READY`；对 `UniSkill-Policy` 执行官方地址和作者地址的 `git submodule update` 都返回中文 `需要一个单独的版本`。自动证据 `b06_blocked_102d4d611a3280de` 仍记录 `author_source_submodules`，尚无 PhysX。
+
+**原因定位范围**：不一定是网络或子模块未公开；更符合已经创建子模块 Git 工作树、但 `HEAD` 无法解析到确定提交的状态。原脚本只修改了父仓库 `.git/config` 的备用 URL，不能修复子模块的遗留内部仓库或 unborn HEAD。
+
+已新增 `scripts/b06_recover_submodule_git.sh`：仅当正常 `submodule update` 失败时调用。检查目标目录确实拥有独立 Git 仓库、拒绝修改任何有未提交改动或未跟踪文件的目录、拒绝覆盖一个不同的已检出提交；对空的 unborn Git HEAD，从原作者仓库获取**与 RoboReel gitlink 完全相同**的 SHA，并用 `checkout --detach` 检出它。若 SHA-only fetch 被服务端拒绝，则只获取原作者 `main` ref 再核验 SHA。不会清理/删除目录、修改 `.gitmodules`、重新克隆整个 RoboReel、影响已有实验。
+
+子模块固定提交（已在 GitHub API 验证存在）：
+
+- `UniSkill`: `bd9843b3168f889951bc117c2fc70be59590f8f9`
+- `UniSkill-Policy`: `02ab999609b9e698a197a6786a7edebdb69faac5`
+
+新增纯离线 Git 模拟回归测试 `tests/test_b06_submodule_recovery.py`（待服务器执行）；这些测试不下载权重、不运行模拟器。新补丁在作者服务器上的完成与否必须以真实 `B06_SUBMODULE_READY` 输出为准。
+
+**前台执行，不使用 nohup/后台**：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_submodule_recovery.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+若输出 `B06_RECOVER_BLOCKED: target is not an independent Git working tree`，说明剩余目录并不是完整的独立子模块 Git 仓库；修复脚本会保留原有内容而不是冒险覆盖。须根据 Git 状态再做针对性处理。
