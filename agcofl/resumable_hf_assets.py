@@ -54,13 +54,13 @@ def _valid(item,repo,repo_type,endpoint):
         # Preserve prior official PushCube EVAL transport behavior. Narrowly
         # permit only genuine drawer-task HUMAN TRAIN front MP4s, IDs 0000-0079.
         # Callers still impose a separate two-video/300MiB aggregate budget.
-        drawer_train=re.fullmatch(
-            r"human_demos/train/no_distraction/toys_in_drawer/(\d{4})/front\.mp4",
+        train_front=re.fullmatch(
+            r"human_demos/train/no_distraction/(toys_in_drawer|stack_cups)/(\d{4})/front\.mp4",
             path)
-        allow_drawer_train=bool(drawer_train and int(drawer_train.group(1))<80)
+        allow_train=bool(train_front and int(train_front.group(2))<80)
         if not (path.startswith("human_demos/eval/no_distraction/push_cube/")
-                or allow_drawer_train):
-            raise ValueError("Only pinned PushCube EVAL videos or drawer TRAIN front videos are allowed")
+                or allow_train):
+            raise ValueError("Only official PushCube EVAL or authorized drawer/stack-cups TRAIN front video paths allowed")
     return n,path
 
 
