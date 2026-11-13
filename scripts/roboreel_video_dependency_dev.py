@@ -357,15 +357,17 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     first,other=require_plan(plan,episodes,steps)
     out=out.resolve()
     require_preflight_only_directory(out)
-    # Pre-check the exact PartNet drawer model and configure MS_ASSET_DIR
-    # BEFORE importing ManiSkill or reserving an immutable rollout manifest.
-    # v3 failed during the official cabinet scene construction, 0 env actions.
-    from scripts.prepare_roboreel_drawer_partnet import configure_for_robot_dev
-    scene_asset=configure_for_robot_dev(Path(plan['project']),plan['task'])
+    # The active StackCups track uses only the author's bundled meshes.
+    # Do not import, initialize or inspect PartNet-Mobility for this task.
     if plan['task']=='stack_cups':
         scene_asset=verify_no_partnet_stack_assets(Path(plan['project']))
         if scene_asset['status']!='READY_REPO_STACK_CUPS':
             raise RuntimeError('REPO_STACK_CUPS_SCENE_ASSETS_MISSING')
+    else:
+        # Legacy drawer branch remains read-only/optional; it requires legal
+        # PartNet access and is NOT part of the no-PartNet StackCups protocol.
+        from scripts.prepare_roboreel_drawer_partnet import configure_for_robot_dev
+        scene_asset=configure_for_robot_dev(Path(plan['project']),plan['task'])
     # Validate all official checkpoint config paths before any physics actions.
     original_cfg,openpi_home=prepare_official_runtime_config(plan)
     # Preserve the first blocked/ready records, append the new verified state.
