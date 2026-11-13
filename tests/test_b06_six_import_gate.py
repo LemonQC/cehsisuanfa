@@ -24,7 +24,9 @@ class B06SixImportGateTests(unittest.TestCase):
         mark = sh.index('STAGE="uniskill_policy_import_gate"')
         self.assertLess(sh.index('export PYTHONPATH='), mark)
         self.assertLess(mark, sh.index('STAGE="pin_hf_revisions_and_disk_gate"'))
-        self.assertLess(mark, sh.index('STAGE="real_physx_bounded_dev_and_publish"'))
+        # This stage string also appears in the early partial-result guard;
+        # compare with the final launch assignment, not the guard.
+        self.assertLess(mark, sh.rindex('STAGE="real_physx_bounded_dev_and_publish"'))
         self.assertIn('from robomimic.config import config_factory', sh)
         self.assertIn('B06_POLICY_CONFIG_IMPORT_OK', sh)
         # The import is always checked even if environment marker is present.
@@ -34,7 +36,7 @@ class B06SixImportGateTests(unittest.TestCase):
         failure = FAILURE.read_text()
         ast.parse(failure)
         self.assertIn("'uniskill_policy_import_gate'", failure)
-        self.assertNotIn("real_physx_bounded_dev_and_publish' else 'PARTIAL", failure)
+        self.assertIn("if stage == 'real_physx_bounded_dev_and_publish'", failure)
 
 
 if __name__ == "__main__":
