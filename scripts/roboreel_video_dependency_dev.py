@@ -23,7 +23,8 @@ import time
 
 PINNED_UPSTREAM = '79a0fb0099e73c5560114753a8706276f93aefc2'
 DEFAULT_TASK = 'toys_in_drawer'
-ALLOWED_TASKS = {'toys_in_drawer': 'ObjectInDrawer-v1', 'push_cube': 'PushCube-v2'}
+ALLOWED_TASKS = {'toys_in_drawer': 'ObjectInDrawer-v1', 'push_cube': 'PushCube-v2',
+                 'stack_cups': 'StackCups-v1'}
 DEFAULT_CANDIDATES = ('outputs/v140_pi05_uniform/config_seed_offset_0.json',
                       'outputs/v140_pi05_uniform/seed_offset_0/config.json')
 TRAIN_IDS = range(0, 80)
@@ -114,6 +115,29 @@ def video_inventory(data:Path,task:str,cameras:list[str]):
     return items
 
 
+
+def verify_no_partnet_stack_assets(project:Path) -> dict:
+    """Use original RoboReel meshes; no PartNet-Mobility dependency."""
+    root=project.resolve()/'third_party/roboreel_models/roboreel_env/assets/scenes/stack_cups'
+    cups=('dark_blue_cup','red_cup','light_blue_cup')
+    names=('visual.glb','collision_vhacd.obj','orientation_result.json')
+    missing=[]
+    verified=[]
+    for cup in cups:
+        for name in names:
+            file=root/cup/name
+            if not file.is_file() or file.stat().st_size<=128:
+                missing.append(str(file))
+            else:
+                verified.append({'path':str(file),'bytes':file.stat().st_size,
+                                 'sha256':digest(file)})
+    if missing:
+        return {'task':'stack_cups','status':'MISSING_PINNED_STACK_CUPS_ASSETS',
+                'partnet_mobility_required':False,'missing':missing}
+    return {'task':'stack_cups','status':'READY_REPO_STACK_CUPS',
+            'partnet_mobility_required':False,'files':verified}
+
+
 def preflight(project:Path, config:Path|None, task:str, data_override:Path|None=None) -> dict:
     project=project.resolve()
     cfg_path=select_config(project,config)
@@ -158,6 +182,12 @@ def preflight(project:Path, config:Path|None, task:str, data_override:Path|None=
                       demonstration_config=tc.get('demonstration_config'))
         if task not in tasks:
             result.update(reason='CHECKPOINT_NOT_TRAINED_FOR_TASK');return result
+        if task=='stack_cups':
+            scene=verify_no_partnet_stack_assets(project)
+            result['stack_cups_scene']=scene
+            if scene['status']!='READY_REPO_STACK_CUPS':
+                result.update(reason=scene['status'])
+                return result
         if str(tc.get('demonstration_config','none')).lower() in ('none',''):
             result.update(reason='CHECKPOINT_NOT_VIDEO_CONDITIONED');return result
         if not (checkpoint/'params').exists():
@@ -332,6 +362,10 @@ def run_dev(plan:dict,out:Path, episodes:int,steps:int,save_video:bool=True):
     # v3 failed during the official cabinet scene construction, 0 env actions.
     from scripts.prepare_roboreel_drawer_partnet import configure_for_robot_dev
     scene_asset=configure_for_robot_dev(Path(plan['project']),plan['task'])
+    if plan['task']=='stack_cups':
+        scene_asset=verify_no_partnet_stack_assets(Path(plan['project']))
+        if scene_asset['status']!='READY_REPO_STACK_CUPS':
+            raise RuntimeError('REPO_STACK_CUPS_SCENE_ASSETS_MISSING')
     # Validate all official checkpoint config paths before any physics actions.
     original_cfg,openpi_home=prepare_official_runtime_config(plan)
     # Preserve the first blocked/ready records, append the new verified state.
