@@ -127,6 +127,39 @@ class B06DownloaderTests(unittest.TestCase):
         self.assertEqual({x['filename'] for x in accepted},
                          {PREFIX + 'ckpt.pth', PREFIX + 'config.json'})
 
+    def test_missing_unused_hf_config_is_offline_when_real_checkpoint_complete(self):
+        # Reproduces the user's exact failure: all policy weights were
+        # downloaded, but the optional HF config.json HEAD returns 503.
+        # UniSkill official runner uses checked-in source config, not this file.
+        p = self.dest / PREFIX / 'ckpt.pth'
+        p.parent.mkdir(parents=True)
+        p.write_bytes(self.weight)
+        self.lock_path.write_text(json.dumps(mk_lock([
+            entry('ckpt.pth', self.weight), entry('config.json', self.config),
+        ])))
+        result = run(lock=self.lock_path, dest=self.dest,
+                     preferred='https://hf-mirror.com',
+                     downloader=Mock(side_effect=AssertionError('no network expected')),
+                     sleep=lambda _: None)
+        self.assertEqual(result[PREFIX + 'ckpt.pth'], 'reused')
+        self.assertEqual(result[PREFIX + 'config.json'], 'optional_absent')
+        self.assertFalse((self.dest / PREFIX / 'config.json').exists())
+
+    def test_missing_real_checkpoint_never_skipped_with_optional_config(self):
+        self.lock_path.write_text(json.dumps(mk_lock([
+            entry('ckpt.pth', self.weight), entry('config.json', self.config),
+        ])))
+        calls = []
+        def download(**kw):
+            calls.append(kw['filename'])
+            return self.download(**kw)
+        result = run(lock=self.lock_path, dest=self.dest,
+                     preferred='https://hf-mirror.com',
+                     downloader=download, sleep=lambda _: None)
+        self.assertEqual(result[PREFIX + 'ckpt.pth'], 'downloaded')
+        self.assertEqual(result[PREFIX + 'config.json'], 'optional_absent')
+        self.assertEqual(calls, [PREFIX + 'ckpt.pth'])
+
     def test_missing_actual_policy_checkpoint_is_blocked(self):
         with self.assertRaisesRegex(ValueError, 'B06_POLICY_CHECKPOINT_NOT_IN_LOCK'):
             check_manifest(mk_lock([entry('config.json', self.config)]))
