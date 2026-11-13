@@ -1,0 +1,34 @@
+{
+  "any_pair_success_difference": null,
+  "diagnosis": {
+    "pairs": [
+      {
+        "episode": 0,
+        "first20_mean_8d_l2": 0.001442696,
+        "first_action_8d_l2": 0.000774449,
+        "full_mean_8d_l2": 1.340732694
+      },
+      {
+        "episode": 1,
+        "first20_mean_8d_l2": 0.001331879,
+        "first_action_8d_l2": 0.001250848,
+        "full_mean_8d_l2": 0.270444125
+      }
+    ],
+    "successes": 2
+  },
+  "g0_audit": null,
+  "paired_episodes_reported": null,
+  "pairs": [],
+  "paper_ready": false,
+  "physical_rollouts_reported": null,
+  "pipeline": null,
+  "schema": "TRO1_RESEARCH_EVIDENCE_V1",
+  "source_file_hashes": {
+    "diagnosis_sha256": "825231202d9c1ed36ea414aa4c236a654da67042b04b2dc4987742406209b5c1"
+  },
+  "source_relative": "outputs/roboreel_video_dependency_diagnosis/drawer_hf_v1",
+  "status": "READ_ONLY_DIAGNOSIS_NOT_NEW_ROLLOUT",
+  "task": "toys_in_drawer",
+  "trials": []
+}
