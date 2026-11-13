@@ -44,7 +44,13 @@ fi
 echo "B06_RECOVER_FETCH pinned_sha=$SHA"
 # GitHub permits direct object-by-SHA fetch for the referenced original-author
 # commit. No change to .gitmodules, remotes, or root repo index.
-git -C "$TARGET" fetch --no-tags "$AUTHOR_URL" "$SHA"
+if ! git -C "$TARGET" fetch --no-tags "$AUTHOR_URL" "$SHA"; then
+  # Some remotes disallow fetching unadvertised objects by SHA; fetch the
+  # author's named main branch without changing the checked-out working tree.
+  echo "B06_RECOVER_FETCH_RETRY published-main-ref"
+  git -C "$TARGET" fetch --no-tags "$AUTHOR_URL" \
+    '+refs/heads/main:refs/remotes/b06-author/main'
+fi
 if ! git -C "$TARGET" cat-file -e "$SHA^{commit}" 2>/dev/null; then
   echo "B06_RECOVER_BLOCKED: referenced commit not available after fetch" >&2
   exit 2
