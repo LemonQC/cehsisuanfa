@@ -38,6 +38,9 @@ def classify_pip_check(text: str, exit_code: int) -> tuple[list[str], list[str]]
         match=REGEX.fullmatch(line)
         if match and tuple(match.groups()) in EXPECTED:
             tolerated.append(line)
+        elif line == "decord 0.6.0 is not supported on this platform":
+            # Optional and not imported by the pinned RoboReel B06 path.
+            tolerated.append(line)
         else:
             blocked.append(line)
     if exit_code != 0 and not tolerated and not blocked:
