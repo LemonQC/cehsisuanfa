@@ -1,0 +1,59 @@
+{
+  "any_pair_success_difference": null,
+  "diagnosis": null,
+  "g0_audit": null,
+  "horizon_audit": {
+    "default_registered_limit": 400,
+    "experimental_limit": 800,
+    "not_official_heldout_eval": true,
+    "success_by_400": 0,
+    "success_by_800": 2,
+    "trials": [
+      {
+        "episode": 0,
+        "first_success_step": null,
+        "source_train_demo_id": 0,
+        "steps": 800,
+        "success_by_400": false,
+        "success_by_800": false
+      },
+      {
+        "episode": 0,
+        "first_success_step": null,
+        "source_train_demo_id": 1,
+        "steps": 800,
+        "success_by_400": false,
+        "success_by_800": false
+      },
+      {
+        "episode": 1,
+        "first_success_step": 634,
+        "source_train_demo_id": 0,
+        "steps": 634,
+        "success_by_400": false,
+        "success_by_800": true
+      },
+      {
+        "episode": 1,
+        "first_success_step": 650,
+        "source_train_demo_id": 1,
+        "steps": 650,
+        "success_by_400": false,
+        "success_by_800": true
+      }
+    ]
+  },
+  "paired_episodes_reported": null,
+  "pairs": [],
+  "paper_ready": false,
+  "physical_rollouts_reported": null,
+  "pipeline": null,
+  "schema": "TRO1_RESEARCH_EVIDENCE_V1",
+  "source_file_hashes": {
+    "horizon_sha256": "8023419a196b34488e21a5261cc613eaa39855f4a266850e42888645e9d44a43"
+  },
+  "source_relative": "outputs/roboreel_video_dependency_diagnosis/drawer_horizon_v1",
+  "status": "READ_ONLY_DRAWER_HORIZON_AUDIT",
+  "task": "toys_in_drawer",
+  "trials": []
+}
