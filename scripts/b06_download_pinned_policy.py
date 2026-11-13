@@ -55,8 +55,14 @@ def check_manifest(obj: object) -> tuple[str, list[dict]]:
         if name in seen:
             raise ValueError("DUPLICATE_B06_POLICY_FILE")
         seen.add(name)
-    if PREFIX + "ckpt.pth" not in seen or PREFIX + "train_config.json" not in seen:
-        raise ValueError("B06_REQUIRED_FILES_NOT_IN_LOCK")
+    # RoboReel's official UniSkillRunner explicitly says UniSkill has NO
+    # sibling train_config.json: unlike pi0.5 it loads the policy architecture
+    # from src/external_models/UniSkill-Policy/configs/uniskill_policy.json,
+    # and shape/normalization metadata from ckpt.pth itself.
+    # Requiring a non-existent train_config.json blocked a complete download.
+    if PREFIX + "ckpt.pth" not in seen:
+        raise ValueError("B06_POLICY_CHECKPOINT_NOT_IN_LOCK: " +
+                         ",".join(sorted(seen)))
     # Small control/config files first; the 740MB+ weight last.
     return revision, sorted(records, key=lambda x: (x["bytes"], x["filename"]))
 
