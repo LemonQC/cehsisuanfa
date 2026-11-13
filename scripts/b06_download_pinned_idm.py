@@ -78,7 +78,10 @@ def run(*, lock: Path, dest: Path, preferred: str | None,
         shutil.copyfileobj(src, dst, 1024 * 1024)
     if not is_complete(partial, size):
         raise RuntimeError("B06_IDM_ATOMIC_COPY_INCOMPLETE")
-    os.replace(partial, target)
+    # Publish without overwrite: os.link fails with FileExistsError if a
+    # separate process created idm.pth while we were copying.
+    os.link(partial, target)
+    partial.unlink()
     if not is_complete(target, size):
         raise RuntimeError("B06_IDM_FINAL_VERIFICATION_FAILED")
     print("B06_IDM_DOWNLOAD_COMPLETE bytes=" + str(size) +
