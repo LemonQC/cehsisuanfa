@@ -23,9 +23,9 @@ EXPECTED = {
     ("transformers", "4.36.2"),
 }
 REGEX = re.compile(
-    r"^uniskill-policy 0\\.1\\.0 has requirement "
+    r"^uniskill-policy 0\.1\.0 has requirement "
     r"(torch|torchvision|transformers)==([0-9.]+), "
-    r"but you have [^\\s]+\\.$"
+    r"but you have [^\s]+\.$"
 )
 
 def classify_pip_check(text: str, exit_code: int) -> tuple[list[str], list[str]]:
@@ -62,7 +62,7 @@ def gate() -> int:
             return 2
     proc=subprocess.run([sys.executable,"-m","pip","check"],
                         text=True,capture_output=True,check=False)
-    allow,blocked=classify_pip_check(proc.stdout+"\\n"+proc.stderr,proc.returncode)
+    allow,blocked=classify_pip_check(proc.stdout+"\n"+proc.stderr,proc.returncode)
     for item in allow:
         print("B06_UPSTREAM_METADATA_CONFLICT_ACKNOWLEDGED "+item,flush=True)
     for item in blocked:
