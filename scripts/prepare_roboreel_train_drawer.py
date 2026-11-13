@@ -26,6 +26,26 @@ MAX_FILES = 2
 MAX_BYTES = 300 * 1024 * 1024  # hard budget for *both* human videos
 
 
+TRAIN_TASKS = ('toys_in_drawer', 'stack_cups')
+
+
+def configure_task(task: str) -> None:
+    """Only published human TRAIN videos for these two fixed tasks."""
+    global TASK, REMOTE
+    if task not in TRAIN_TASKS:
+        raise ValueError('TRAIN_TASK_NOT_ALLOWED: '+str(task))
+    TASK=task
+    REMOTE=re.compile(
+        rf'^human_demos/train/no_distraction/{re.escape(task)}/(\d{{4}})/front\.mp4$')
+
+
+def event(label: str) -> str:
+    prefix='DRAWER' if TASK=='toys_in_drawer' else 'STACK_CUPS'
+    return 'ROBOREEL_TRAIN_'+prefix+'_'+label
+
+
+
+
 def media_rel(demo_id: int) -> str:
     if type(demo_id) is not int or demo_id not in range(80):
         raise ValueError('Only genuine RoboReel TRAIN IDs 0000..0079 allowed')
@@ -62,7 +82,7 @@ def select_two(rows: list[dict], budget: int = MAX_BYTES) -> dict:
         raise RuntimeError('NEED_TWO_OFFICIAL_TRAIN_FRONT_VIDEOS_IN_METADATA')
     if total > budget:
         raise RuntimeError(f'REMOTE_TWO_VIDEO_SIZE_EXCEEDS_BUDGET: {total} bytes > {budget}')
-    return {'type': 'ROBOREEL_TRAIN_DRAWER_TWO_VIDEO_SELECTION', 'dataset': DATASET,
+    return {'type': event('TWO_VIDEO_SELECTION'), 'dataset': DATASET,
             'task': TASK, 'file_count': 2, 'video_files': choices,
             'total_download_bytes': total, 'budget_bytes': budget,
             'no_eval_data_or_robot_actions': True, 'download_executed': False}
@@ -183,7 +203,7 @@ def download_two(selection: dict, data: Path, endpoint: str) -> list[dict]:
         if not video_decodes(dst):
             raise RuntimeError('DOWNLOADED_MP4_FAILED_DECODING: ' + str(dst))
         info.append(record)
-        print('ROBOREEL_TRAIN_DRAWER_VIDEO_OK', json.dumps({'id': row['id'],
+        print(event('VIDEO_OK'), json.dumps({'id': row['id'],
             'bytes': row['bytes'], 'sha256': record['sha256'],
             'transport': record['transport']}), flush=True)
     return info
@@ -194,7 +214,7 @@ def encode_one(project: Path, data: Path, demo_id: int, home: Path, frames_per_b
     media = data / media_rel(demo_id)
     target = data / feature_rel(demo_id)
     if target.is_file() and target.stat().st_size > 512:
-        print('ROBOREEL_TRAIN_DRAWER_FEATURE_EXISTING', str(target), flush=True)
+        print(event('FEATURE_EXISTING'), str(target), flush=True)
         return
     if target.exists():
         raise RuntimeError('ZERO_OR_PARTIAL_FEATURE_PRESERVE_FOR_AUDIT: ' + str(target))
@@ -230,14 +250,14 @@ def encode_one(project: Path, data: Path, demo_id: int, home: Path, frames_per_b
     target.parent.mkdir(parents=True, exist_ok=True)
     def log_progress(done, total):
         if done == total or done == frames_per_batch or done % 32 == 0:
-            print('ROBOREEL_TRAIN_DRAWER_SIGLIP_FRAMES', json.dumps({
+            print(event('SIGLIP_FRAMES'), json.dumps({
                 'id': demo_id, 'done': done, 'total': total,
                 'frames_per_batch': frames_per_batch}), flush=True)
     status = encode_camera_batched(encoder, target.parent, rgb, 'front',
                                    batch_frames=frames_per_batch, progress=log_progress)
     if not target.is_file() or target.stat().st_size <= 512:
         raise RuntimeError('OFFICIAL_ENCODER_FAILED: '+str(status))
-    print('ROBOREEL_TRAIN_DRAWER_SIGLIP_READY', json.dumps({
+    print(event('SIGLIP_READY'), json.dumps({
         'id': demo_id, 'feature': str(target), 'bytes': target.stat().st_size,
         'sha256': file_sha256(target)}), flush=True)
 
@@ -264,7 +284,7 @@ def run(args) -> int:
         raise ValueError('Only approved official/mirror Hugging Face endpoints')
     if args.max_mb <= 0 or args.max_mb > 300:
         raise ValueError('Hard limit is 300 MB for exactly 2 TRAIN videos')
-    print('ROBOREEL_TRAIN_DRAWER_LOCAL', json.dumps({
+    print(event('LOCAL'), json.dumps({
         'existing': existing_local(data)[:10], 'siglip_cache_home':
         str(cache_home(project)) if args.features else 'NOT_CHECKED',
         'new_physx_actions': 0, 'new_policy_training': 0}), flush=True)
@@ -275,13 +295,13 @@ def run(args) -> int:
             rows, endpoint = list_remote(args.endpoint)
             selection = select_two(rows, budget=int(args.max_mb*1024*1024))
         except Exception as exc:
-            print('ROBOREEL_TRAIN_DRAWER_METADATA_BLOCKED', json.dumps({
+            print(event('METADATA_BLOCKED'), json.dumps({
                 'type': type(exc).__name__, 'error': str(exc)[:600],
                 'endpoint': args.endpoint}), flush=True)
             return 2
         selection['endpoint'] = endpoint
         selection['data_root'] = str(data)
-        print('ROBOREEL_TRAIN_DRAWER_PLAN', json.dumps(selection, ensure_ascii=False), flush=True)
+        print(event('PLAN'), json.dumps(selection, ensure_ascii=False), flush=True)
         if args.discover and not args.download:
             return 0
         save_once(output / 'selection.json', selection)
@@ -298,7 +318,7 @@ def run(args) -> int:
         assert_video_sources(selection, data)
         home = cache_home(project)
         if home is None:
-            print('ROBOREEL_TRAIN_DRAWER_SIGLIP_BLOCKED', json.dumps({
+            print(event('SIGLIP_BLOCKED'), json.dumps({
                 'reason': 'NO_VERIFIED_LOCAL_OPENPI_SIGLIP_CACHE',
                 'suggested_audit': 'python -m scripts.check_pi05_siglip_cache',
                 'no_base_weight_download_attempted': True}), flush=True)
@@ -308,7 +328,7 @@ def run(args) -> int:
             target = data / feature_rel(demo_id)
             if target.is_file() and target.stat().st_size > 512:
                 continue
-            print('ROBOREEL_TRAIN_DRAWER_SIGLIP_ISOLATED_START', demo_id, flush=True)
+            print(event('SIGLIP_ISOLATED_START'), demo_id, flush=True)
             child_env = os.environ.copy()
             child_env['OPENPI_DATA_HOME'] = str(home)
             child_env['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
@@ -316,12 +336,12 @@ def run(args) -> int:
                 'scripts.prepare_roboreel_train_drawer', '--encode-one', str(demo_id),
                 '--project', str(project), '--data-root', str(data),
                 '--out', str(output), '--endpoint', args.endpoint,
-                '--frames-per-batch', str(args.frames_per_batch)], cwd=project,
+                '--task', TASK, '--frames-per-batch', str(args.frames_per_batch)], cwd=project,
                 env=child_env, check=False)
             if result.returncode != 0:
                 raise RuntimeError('OFFICIAL_SIGLIP_WORKER_FAILED id='+str(demo_id)+
                                    ' exit='+str(result.returncode))
-        print('ROBOREEL_TRAIN_DRAWER_ASSETS_READY', json.dumps({
+        print(event('ASSETS_READY'), json.dumps({
             'ids': [r['id'] for r in selection['video_files']],
             'feature_files': [str(data / feature_rel(r['id']))
                               for r in selection['video_files']],
@@ -332,10 +352,11 @@ def run(args) -> int:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--project', type=Path, default=PROJECT)
+    p.add_argument('--task', choices=TRAIN_TASKS, default='toys_in_drawer')
     p.add_argument('--data-root', type=Path,
                    default=PROJECT / 'outputs/v120_baselines/official_eval_data')
-    p.add_argument('--out', type=Path,
-                   default=PROJECT / 'outputs/roboreel_train_drawer_assets/v1')
+    p.add_argument('--out', type=Path, default=None,
+                   help='Task-scoped immutable asset manifest directory')
     p.add_argument('--endpoint', default=os.environ.get('HF_ENDPOINT', 'https://hf-mirror.com'))
     p.add_argument('--max-mb', type=int, default=300)
     p.add_argument('--frames-per-batch', type=int, default=2,
@@ -345,6 +366,10 @@ def main(argv=None) -> int:
     p.add_argument('--features', action='store_true', help='Extract real official SigLIP features, isolated per video')
     p.add_argument('--encode-one', type=int, help=argparse.SUPPRESS)
     args = p.parse_args(argv)
+    configure_task(args.task)
+    if args.out is None:
+        kind='roboreel_train_stack_cups_assets' if args.task=='stack_cups' else 'roboreel_train_drawer_assets'
+        args.out=PROJECT/'outputs'/kind/'v1'
     if args.encode_one is not None:
         project = args.project.resolve()
         data = args.data_root.resolve()
