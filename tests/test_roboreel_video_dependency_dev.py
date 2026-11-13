@@ -219,13 +219,21 @@ class VideoSensitivityDevTests(unittest.TestCase):
                 prepare_official_runtime_config({'project':str(self.project)})
 
     def test_openpi_config_failure_does_not_create_manifest(self):
+        # Regression for our active no-PartNet StackCups path: valid packaged
+        # scene files must pass the scene check before testing OpenPI cache.
         import sys,types
         from scripts.roboreel_video_dependency_dev import run_dev
+        scene=self.project/'third_party/roboreel_models/roboreel_env/assets/scenes/stack_cups'
+        for cup in ('dark_blue_cup','red_cup','light_blue_cup'):
+            for asset in ('visual.glb','collision_vhacd.obj','orientation_result.json'):
+                path=scene/cup/asset
+                path.parent.mkdir(parents=True,exist_ok=True)
+                path.write_bytes(b'synthetic fixture; not a real mesh'*10)
         stub=types.ModuleType('scripts.prepare_roboreel_train_drawer')
         stub.cache_home=lambda project: None
         out=self.project/'out/preflight_only'
         plan={'project':str(self.project),'status':'READY_FOR_BOUNDED_DEV',
-            'usable_train_demo_ids':[0,1],'task':'toys_in_drawer'}
+            'usable_train_demo_ids':[0,1],'task':'stack_cups'}
         with patch.dict(sys.modules,{'scripts.prepare_roboreel_train_drawer':stub}):
             with self.assertRaisesRegex(RuntimeError,'VERIFIED_OPENPI_DATA_HOME_UNAVAILABLE_NO_GCS'):
                 run_dev(plan,out,1,100)
