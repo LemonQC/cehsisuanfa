@@ -1,0 +1,101 @@
+{
+  "episodes": 2,
+  "formal_evaluation": false,
+  "heldout_eval_videos_used": 0,
+  "idm_checkpoint_sha256": "50db59970ea8c523165da669967f94d03a13618d193c1d70c0d6415cc630f8ba",
+  "new_physx_actions": 3200,
+  "new_training_runs": 0,
+  "official_upstream_revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+  "pairs": [
+    {
+      "episode": 0,
+      "mean_action_l2_first_common_steps": 0.04923475533723831,
+      "same_reset_seed": true,
+      "same_torch_rng_seed": true,
+      "source_ids": [
+        0,
+        1
+      ],
+      "success_disagree": false,
+      "successes": [
+        false,
+        false
+      ]
+    },
+    {
+      "episode": 1,
+      "mean_action_l2_first_common_steps": 0.07775086909532547,
+      "same_reset_seed": true,
+      "same_torch_rng_seed": true,
+      "source_ids": [
+        1,
+        0
+      ],
+      "success_disagree": false,
+      "successes": [
+        false,
+        false
+      ]
+    }
+  ],
+  "policy_checkpoint_sha256": "3676dfee957732770e6ddf271a11ed5f1258ecd4f36859c73438b93043be9311",
+  "rollouts": 4,
+  "schema": "TRO1_B06_UNISKILL_STACKCUPS_DEV_V1",
+  "skill_sha256": {
+    "0": "4ee18aad8ff195c05308af9cccb34f85503e770f787b52ef3c75175ff1a61f98",
+    "1": "9248982b59d229eb1e37bed57c67098ab38ec231feb58f1a2bbc13e64573e54c"
+  },
+  "source_video_sha256": {
+    "0": "f2026b304692957c30edcd091d505fb51a4da48757d6f180943355bebe373932",
+    "1": "71525450532d17fa7dba82f959a8806348cdde4e945f237ba279fcc19f50f4ec"
+  },
+  "status": "DEV_COMPLETE_NOT_FORMAL",
+  "successes": 0,
+  "task": "stack_cups",
+  "trials": [
+    {
+      "actions_sha256": "1ece2e488d75c2aab6d14118009cc75e73978425a16ff1d218bcb57f701a3c38",
+      "episode": 0,
+      "error_class": null,
+      "reset_seed": 310000,
+      "source_train_demo_id": 0,
+      "steps": 800,
+      "success": false,
+      "torch_rng_seed": 560000,
+      "video_sha256": "862e09ef88527fd4f5b5c0dd9a49faeb462e68cc9ee1d534aaca279508b7d18c"
+    },
+    {
+      "actions_sha256": "76bfc9723e7ff42bbd88bd42a1ecad29fa79ef1ac7605d2d2e94723ca8cc3f58",
+      "episode": 0,
+      "error_class": null,
+      "reset_seed": 310000,
+      "source_train_demo_id": 1,
+      "steps": 800,
+      "success": false,
+      "torch_rng_seed": 560000,
+      "video_sha256": "502052e04f6c90f8a00b6e06d56bec6f1bb1392b7eaa6a90b622fed8f38005d4"
+    },
+    {
+      "actions_sha256": "b8bdbbde03b6ff2ca864e9e5f6708f322ce291ae85aac25507c0e3b031fc460a",
+      "episode": 1,
+      "error_class": null,
+      "reset_seed": 310001,
+      "source_train_demo_id": 1,
+      "steps": 800,
+      "success": false,
+      "torch_rng_seed": 560001,
+      "video_sha256": "843ea83e579dd5036a4c23fceb311ec7415f7b68f17d772dcfb42e0153c5c6a2"
+    },
+    {
+      "actions_sha256": "fea160fd8f77205f22ef9e873ab3fce900ef439e445e68b868169843f408ce5f",
+      "episode": 1,
+      "error_class": null,
+      "reset_seed": 310001,
+      "source_train_demo_id": 0,
+      "steps": 800,
+      "success": false,
+      "torch_rng_seed": 560001,
+      "video_sha256": "c3c8946c1872e64956f8b4e2eb61030ca46766318ffa426b450aab36da8cc007"
+    }
+  ]
+}
