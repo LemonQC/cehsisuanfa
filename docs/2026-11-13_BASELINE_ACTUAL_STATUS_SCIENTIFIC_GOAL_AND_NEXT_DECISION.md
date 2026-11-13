@@ -79,3 +79,17 @@
 **具体停止门槛**：找不到真实合法的视频/同目标源目标结果、或者等信息 TAMP 已完全解决可执行任务 -> 停止，不投入新的模型开发；有科学有效的反事实和可学习强对照差距 -> 才展开正式 B01/B02/B06/B11/B12 等 baseline 和我们的方法。
 
 **禁令**：不得重复已完成的 PushCube 60 次和 Drawer DEV 4 次；不得声称 400-step 0/4 是正式官方评价；不得把源 Video 0000/0001 当作相反目标；不得把 scripted M1 策略当成 learned algorithm baseline；不得说所有 14 个算法都已跑完。
+
+## 2026-11-13 追加更正：B06 UniSkill 作者 IDM 已找到，执行入口已就绪（非结果）
+
+此前正文将 B06 标为需进一步确认 ISD 权重。现已通过作者 Hugging Face 仓库文件清单确认 `UniSkill_final_weight/idm.pth` 可获取（约 80.3 MB）；RoboReel 官方仓库提供 `uniskill_policy` ND checkpoint 下载入口。原状态表的“NOT_RUN”仍成立，因为**服务器端尚未下载/提取/运行**，但阻塞原因已经消除。
+
+已新增 B06 自动化入口：
+- `scripts/setup_b06_uniskill_stackcups.sh`：单独创建 `uniskill` Python 3.12 环境；所有 HF cache/checkpoints/IDM 写入 `outputs/v120_baselines/`；先核对磁盘空间；只下载 B06 ND policy 和 IDM；锁定 HF revisions 并保存 release manifest。
+- `scripts/roboreel_uniskill_video_dev.py`：官方 UniSkillRunner，使用 StackCups TRAIN IDs 0000/0001，2 paired episodes / 4 DEV PhysX rollout；同 pair 相同环境 state 和 Torch RNG；保存视频/action trace/hash，并发布脱敏结果。
+- `tests/test_roboreel_uniskill_video_dev.py`：纯 CPU **7/7 passed**；setup shell `bash -n` passed。
+- 执行说明：`docs/2026-11-13_B06_UNISKILL_STACKCUPS_DEV_REPRODUCTION.md`。
+
+运行命令：`bash scripts/setup_b06_uniskill_stackcups.sh`。成功输出 `ROBOREEL_B06_UNISKILL_PUBLISHED` 后，再由助手读取 `tro1-experiment-evidence/evidence/runs/` 中的实际回执。
+
+本轮只属 TRAIN-video bounded DEV，不能作为正式 benchmark 成绩；正式 UniSkill 对比仍需 EVAL IDs 0080–0099 × 3 pass。没有服务器端回执前，B06 不计为已复现。
