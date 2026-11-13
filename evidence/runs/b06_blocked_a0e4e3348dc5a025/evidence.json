@@ -1,0 +1,10 @@
+{
+  "baseline": "B06",
+  "exit_code": 1,
+  "gpu_server_rollouts_verified_by_this_report": false,
+  "manual_rerun_of_physx_forbidden_if_partial_results_exist": true,
+  "no_secrets_or_raw_exception_text_in_report": true,
+  "schema": "TRO1_B06_UNISKILL_BLOCKER_V1",
+  "stage": "install_uniskill_deps",
+  "status": "SETUP_BLOCKED_NO_PHYSX_STARTED_IN_THIS_ATTEMPT"
+}
