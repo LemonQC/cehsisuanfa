@@ -279,7 +279,12 @@ PY
 
 POLICY="$CKPT/nd/uniskill_policy/ckpt.pth"
 [[ -s "$POLICY" ]] || { echo "BLOCKED: official UniSkill policy checkpoint missing: $POLICY"; exit 2; }
-[[ -s "$CKPT/nd/uniskill_policy/train_config.json" ]] || { echo "BLOCKED: official UniSkill policy train_config.json missing"; exit 2; }
+# RoboReel official UniSkillRunner does not use a sibling train_config.json.
+# The actor network config is in the pinned UniSkill-Policy source checkout;
+# shape metadata and action stats are loaded directly from ckpt.pth.
+[[ -s "$UPSTREAM/src/external_models/UniSkill-Policy/configs/uniskill_policy.json" ]] || {
+  echo "BLOCKED: pinned UniSkill-Policy configs/uniskill_policy.json missing"; exit 2;
+}
 
 # Verify the official runner, assets, CUDA runtime and released checkpoints.
 STAGE="preflight_before_skill_extraction"
