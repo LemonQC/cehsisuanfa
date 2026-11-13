@@ -192,3 +192,13 @@ python -u -m scripts.audit_baseline_reproduction_l0 --publish
 - **关键状态：服务器端尚未运行。** 当前仅为可执行入口准备，不是 UniSkill 复现成功。命令：`bash scripts/setup_b06_uniskill_stackcups.sh`。
 - 本轮仅使用 StackCups TRAIN IDs 0000/0001 做 2 paired episodes / 4 DEV rollouts；不能当成 held-out 正式结果。正式结果仍需 EVAL IDs 0080–0099 × 3 pass。
 - 详见 [B06 执行单](2026-11-13_B06_UNISKILL_STACKCUPS_DEV_REPRODUCTION.md)。
+
+### 2026-11-13 B06 独立交付与连接中断保护（不代表 GPU 实验完成）
+
+- B06 现已单独完成全部代码修补并提交：`setup_b06_uniskill_stackcups.sh`、`roboreel_uniskill_video_dev.py`、`b06_failure_record.py` 及对应测试。
+- 已修复默认 Conda 环境可能写到项目盘外的问题；改为项目内 prefix，且 pip/conda/HF/torch/cache/临时文件均由项目盘承载。
+- 通过仅包含两个 TRAIN 视频软链接的受控数据根目录调用官方 UniSkill extractor，避免误处理全部 TRAIN 数据。
+- 锁定 HF repo revisions，保留完整实验结果自动补传功能和失败状态自动脱敏发布。已有部分物理结果时禁止自动重跑。
+- 本地 12/12 CPU 单元测试、Shell 语法以及 Python 编译通过。**尚无用户 GPU 上的 B06 真实 rollout 完成回执**。
+- 仅在 B06 获得正式执行回执或可核查阻塞报告后，启动下一个算法，不同时大改 B07/B09/B11。
+- [B06 具体执行文档](2026-11-13_B06_UNISKILL_STACKCUPS_DEV_REPRODUCTION.md)。
