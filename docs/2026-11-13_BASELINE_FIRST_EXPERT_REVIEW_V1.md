@@ -164,3 +164,17 @@
 **第一个交付节点：`BASELINE_SOURCE_AUDIT_COMPLETE`**——完整的 14 项源码/数据/权重/环境明细及作者原任务运行入口，阻塞必须有外部可核查证据。**第二节点：`NATIVE_SMOKE_AVAILABLE`**——能获得官方资源的所有方法都完成原任务真推理/物理 smoke，失败留下错误类别；B01/02 完成真实 TRAIN 数据及训练入口。**第三节点：`ROBOREEL_PORT_SMOKE_AVAILABLE`**——相容方法在至少一个相同机器人环境及任务下 2 次真 PhysX。**第四节点：`FAIR_EVAL_MATRIX_READY`**——在可比输入模态与 locked heldout 中形成可核查的定量结果。节点二／三／四**尚未完成**，不能随意自动标记 GO。
 
 本专家评议文档不要求专家现在批准某个网络结构。**先确认对照实验能比较什么；算法创新要由真实失败模式倒推出，而不是从最新模块名拼出来。**
+
+## 8. 已实现的第一步：全 14 项本地 L0 检查与 GitHub 自动归档
+
+新增 `scripts/audit_baseline_reproduction_l0.py` 与 `tests/test_audit_baseline_reproduction_l0.py`。先用**纯 CPU、本地只读源码/现有证据**确认 14 个登记项是否具备预期入口、已归档的 B03/B05 官方 60 次结果是否存在；将每项的缺口作为可复核的结构化 JSON 上传到独立 `tro1-experiment-evidence` 分支。该检查绝不声称完成 L1–L5，且预期当前只有部分入口在本地，不代表外部开源代码不存在。**模拟项目上的 9/9 离线单元测试已通过；用户服务器的实际 L0 检查尚未执行。**
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+conda activate pi05
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_audit_baseline_reproduction_l0.py' -v
+python -u -m scripts.audit_baseline_reproduction_l0 --publish
+```
+
+结果本地仅保存 `outputs/research_runs/baseline_readiness_l0/inventory_<hash>.json`（项目盘），远程自动保存 `tro1-experiment-evidence/evidence/baseline_l0/baseline_source_inventory_<hash>/inventory.json`；不上传任何受限原始视频、HF token、权重或大数据。后续根据真实 L0 报告逐个编写/完善 L1–L4 运行适配器，而不是先猜所有 Baseline 都能运行。
