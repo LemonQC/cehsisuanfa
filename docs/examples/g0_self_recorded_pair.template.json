@@ -1,0 +1,27 @@
+{
+  "target_task": "video_goal_push",
+  "clips": [
+    {
+      "path": "outputs/g0_human_goal_pairs/raw/left.mp4",
+      "goal_robot_x": "-x",
+      "sha256": "FILL_USING_sha256sum",
+      "source_type": "self_recorded",
+      "rights": "FILL_AFTER_OBTAINING_HUMAN_CONSENT",
+      "human_hand_demonstration": false,
+      "initial_scene_equivalence_attested": false,
+      "camera_to_robot_x_mapping_documented": false,
+      "visible_target_region": ""
+    },
+    {
+      "path": "outputs/g0_human_goal_pairs/raw/right.mp4",
+      "goal_robot_x": "+x",
+      "sha256": "FILL_USING_sha256sum",
+      "source_type": "self_recorded",
+      "rights": "FILL_AFTER_OBTAINING_HUMAN_CONSENT",
+      "human_hand_demonstration": false,
+      "initial_scene_equivalence_attested": false,
+      "camera_to_robot_x_mapping_documented": false,
+      "visible_target_region": ""
+    }
+  ]
+}
