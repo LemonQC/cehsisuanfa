@@ -116,6 +116,21 @@ class B06DownloaderTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_manifest(m)
 
+    def test_official_uniskill_has_no_sibling_train_config(self):
+        # The pinned RoboReel UniSkillRunner explicitly documents that
+        # its policy checkpoint has no train_config.json sibling.
+        # Checkpoint shape/normalization metadata is embedded in ckpt.pth.
+        files = [entry('ckpt.pth', self.weight),
+                 entry('config.json', self.config)]
+        revision, accepted = check_manifest(mk_lock(files))
+        self.assertEqual(revision, REV)
+        self.assertEqual({x['filename'] for x in accepted},
+                         {PREFIX + 'ckpt.pth', PREFIX + 'config.json'})
+
+    def test_missing_actual_policy_checkpoint_is_blocked(self):
+        with self.assertRaisesRegex(ValueError, 'B06_POLICY_CHECKPOINT_NOT_IN_LOCK'):
+            check_manifest(mk_lock([entry('config.json', self.config)]))
+
     def test_endpoints_allowlist(self):
         self.assertEqual(endpoints('https://hf-mirror.com'),
                          ('https://hf-mirror.com', 'https://huggingface.co'))
