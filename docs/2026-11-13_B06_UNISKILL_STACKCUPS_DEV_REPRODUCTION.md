@@ -175,3 +175,25 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 若再次卡住，保留 Git 输出及真实目录内容；不得执行 `git reset --hard`、`git clean -fd` 或清除 `.git/modules`。本轮仍只复现 **B06**。
+
+## 11. B06 实际安装冲突修复（2026-11-13）
+
+用户服务器安装阶段准确回执：`uniskill-policy 0.1.0` 在原作者 Python package metadata 中声明 torch==2.0.1、torchvision==0.15.2、transformers==4.36.2，现有独立 B06 环境是 RoboReel 官方 `ENVIRONMENTS.md` 使用的 torch 2.10.0、torchvision 0.25.0、transformers 5.3.0；还报告 `decord 0.6.0 is not supported on this platform`。`pip check` 以 exit=1 终止在 `install_uniskill_deps`。本次仍未开展 PhysX。
+
+**修复不是降级 torch**：这会与 RoboReel 官方现有 B06 复现环境及 Python 3.12 冲突。保留独立 PyTorch 2.10 环境，调整以下仅 B06 代码：
+
+- `setup_b06_uniskill_stackcups.sh` 不再要求 `decord==0.6.0`；UniSkill 官方 human-video extractor 使用 `imageio.v2` / ffmpeg，UniSkillRunner 与其 wrapper 均未 import decord。
+- `roboreel_uniskill_video_dev.py` 不再把 decord 作为 preflight 必选 runtime package。
+- 新增 `scripts/b06_dependency_gate.py`：严格校验 torch/torchvision/transformers 的 RoboReel 目标版本；记录但不阻断 **uniskill-policy 0.1.0 自身的旧元数据声明**及上述精确 decord 非必需警告；与 B06 无关的其他依赖冲突仍阻断；保留 `torch,torchvision,transformers,diffusers,mani_skill,sapien,imageio` 的真实 import smoke。
+- 新增 `tests/test_b06_dependency_gate.py`，覆盖服务器四条实际警告、旧 package 可选字段、其他包不兼容、空错误、健康 pip check。此测试脚本已提交，**服务器尚未执行**。
+
+**执行方式（全前台，不删环境、不降级版本）**：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_dependency_gate.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+若仍有新的 pip-check 错误，将以明确的包名/版本打印 `B06_DEPENDENCY_BLOCKED`；请保留原始输出再定点修复，不跳过环境/模型初始化 smoke。只有实际 `ROBOREEL_B06_UNISKILL_TRIAL` 才能算执行了 PhysX。
