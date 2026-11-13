@@ -271,3 +271,22 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 **观察门槛**：`B06_POLICY_DOWNLOAD_COMPLETE` → `B06_IDM_DOWNLOAD_COMPLETE` / `B06_IDM_REUSED` → `ROBOREEL_B06_UNISKILL_PREFLIGHT` → 仅在全部检查通过时 `ROBOREEL_B06_UNISKILL_TRIAL`。若任何阶段失败，记录原样日志，不冒充正式 Baseline。
+
+## 14. 2026-11-13：HF Policy 辅助 `config.json` 的 HEAD 连接超时（新一轮真实阻塞）
+
+用户前台日志显示：在锁定 `LogosRoboticsLab/roboreel_models` commit `ef21150c02b2685347fe3e7c8ba5a2e313ff1b7e` 下，下载器尝试 `nd/uniskill_policy/config.json`；镜像站失败后转到 `https://huggingface.co`，但官方站的 HEAD 连接仍遭 `Connection refused` / timeout。此次没有新的真实 PhysX 评测结果。可以使用 Ctrl+C 终止无限网络重试；不要删除 project disk 的 740 MB Policy、HF cache、Conda 环境。
+
+**根本性修复**：经审查锁定的官方 `src/evaluation/uniskill_runner.py` 和 `src/wrappers/uniskill.py`，UniSkill 推理直接使用 Policy `ckpt.pth` 中的 shape/normalization 信息，加上锁定源码的 `configs/uniskill.json`、`src/external_models/UniSkill-Policy/configs/uniskill_policy.json`。仓库中辅助 `nd/uniskill_policy/config.json` **没有被这条官方推理链读取**。因此将**仅这个路径**标记为 `OPTIONAL_UNUSED_FILES`：若它缺失，不再为它发起 HEAD/GET；原 HF lock 保持不变，打印 `B06_POLICY_OPTIONAL_FILE_SKIPPED`。已存在的辅助文件仍按原严格校验；真实 `ckpt.pth` 必须存在并且大小准确，缺少时仍按固定版本下载和验证。
+
+新增离线回归测试：已存在完整 `ckpt.pth` + 锁文件列出辅助 `config.json`，但辅助 JSON 实体不存在时，不允许发起**任何网络请求**，返回 `optional_absent`；另一个测试验证真实 `ckpt.pth` 缺失时必须下载，不能错将模型权重标为可选。不能将 `optional_absent` 算入已下载文件数。
+
+**执行方式：始终前台。** 若当前网络重试尚未结束，先按 `Ctrl+C`，再执行：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_download_pinned_policy.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+预期出现 `B06_POLICY_OPTIONAL_FILE_SKIPPED file=nd/uniskill_policy/config.json`、`B06_POLICY_FILE_REUSED file=nd/uniskill_policy/ckpt.pth`，之后继续 B06 的固定版本 IDM 下载；如果 IDM 本体 80.3 MB 仍因服务器网络受阻，记录新的 `download_pinned_author_idm` 回执并单独处理。迄今不能宣称 B06 已成功复现。
