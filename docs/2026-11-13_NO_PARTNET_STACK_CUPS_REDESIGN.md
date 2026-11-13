@@ -64,3 +64,16 @@ StackCups 已有固定顺序和明确阶段依赖，更适合作为“观测证�
 原 `test_openpi_config_failure_does_not_create_manifest` 的旧样例仍传入 `toys_in_drawer`，因此在新的柜体资产检查上提前失败，没有实际测试预期的 OpenPI 缺失场景；这是测试夹具与新分支不一致，而非 StackCups 模型错误。修复：该样例转为 `stack_cups`，创建九个明确标注为虚构的纯文件测试资源，检验缺失 OpenPI 缓存时**不得创建任何实测 manifest**；同时实际 `run_dev` 的 StackCups 分支不再导入 PartNet 资产准备模块。提交 `7614c1e`；服务器重新测试仍待验证。
 
 下一执行门槛：先通过 `test_roboreel_video_dependency_dev.py`（21 项）；再执行 `--task stack_cups --download --features --frames-per-batch 2`；随后在独立输出目录对 `--task stack_cups` 进行只读 preflight。未见 `READY_FOR_BOUNDED_DEV` 前不得启动新的机器人物理操作。
+
+## 2026-11-13 StackCups 实际资产 READY（服务器回执）
+
+用户在 `pi05` / RTX 4090 服务器完成两份**官方真实 HUMAN TRAIN** StackCups 视频的传输以及 JAX microbatch=2 的 SigLIP 特征提取，随后运行了只读 `scripts.roboreel_video_dependency_dev --task stack_cups`，真实返回 `READY_FOR_BOUNDED_DEV`。这只是资产检查，**不是物理实验成功**。
+
+| TRAIN ID | 视频字节数 | 视频 SHA256 | 帧数 | front.npy 字节数 | 特征 SHA256 |
+|---|---:|---|---:|---:|---|
+| `0000` | 11,602,881 | `f2026b304692957c30edcd091d505fb51a4da48757d6f180943355bebe373932` | 496 | 298,666,324 | `210633dfa53741dabe72d7bc0d831a9f4240ee114fa78903c8f3338a853b4d84` |
+| `0001` | 14,569,453 | `71525450532d17fa7dba82f959a8806348cdde4e945f237ba279fcc19f50f4ec` | 611 | 367,913,344 | `ed5d0a550fd2a4c1ad8adba4cceedfecf0cd5938ae200107770c7fa460d02cfd` |
+
+已验证的 `StackCups-v1` checkpoint: `outputs/v120_baselines/released_checkpoints/nd/vid_cond_pi05_uniform/ckpt`。两个 TRAIN 记录均处于 `outputs/v120_baselines/official_eval_data` 下各自的 `stack_cups` 路径。官方三杯场景随仓库提供，不需要 PartNet-Mobility。旧 `toys_in_drawer` 证据冻结保留。
+
+**下一步唯一授权的 DEV 实验**：如果 `test_roboreel_video_dependency_dev.py` 的 21 项测试在服务器上全部通过，在已有纯预检查目录 `outputs/roboreel_video_dependency_dev/stack_v1` 中启动 `--task stack_cups --run --episodes 2 --max-steps 800`。固定 seeds 310000/310001，TRAIN 0000/0001 两条件，共 4 条真实轨迹。失败也必须保存 manifest/部分结果，禁止在同一目录覆盖重跑。当前状态：`REAL_ROLLOUTS_NOT_RUN`，`PAPER_GO_NOT_ESTABLISHED`。
