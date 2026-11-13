@@ -1,0 +1,107 @@
+{
+  "any_pair_success_difference": false,
+  "diagnosis": null,
+  "g0_audit": null,
+  "paired_episodes_reported": 2,
+  "pairs": [
+    {
+      "episode": 0,
+      "mean_action_l2_first_common_steps": 1.340732694,
+      "same_reset_seed": true,
+      "same_rng_seed": true,
+      "source_ids": [
+        0,
+        1
+      ],
+      "success_disagree": false,
+      "successes": [
+        false,
+        false
+      ]
+    },
+    {
+      "episode": 1,
+      "mean_action_l2_first_common_steps": 0.270444125,
+      "same_reset_seed": true,
+      "same_rng_seed": true,
+      "source_ids": [
+        1,
+        0
+      ],
+      "success_disagree": false,
+      "successes": [
+        true,
+        true
+      ]
+    }
+  ],
+  "paper_ready": false,
+  "physical_rollouts_reported": 4,
+  "pipeline": null,
+  "schema": "TRO1_RESEARCH_EVIDENCE_V1",
+  "source_file_hashes": {
+    "partial_sha256": "b46be365228a122b2d2be7d7025eab72139ac6a27584ad71d56bab094ee80ea3",
+    "results_sha256": "07b0708a0952a70a89d13031ac4bf994df07eab28a1723b63c98b591959e9e40"
+  },
+  "source_relative": "outputs/roboreel_video_dependency_dev/drawer_hf_v1",
+  "status": "DEV_COMPLETE_NOT_FORMAL",
+  "task": "toys_in_drawer",
+  "trials": [
+    {
+      "condition_order": 0,
+      "episode": 0,
+      "error_type": "NONE",
+      "last_success": false,
+      "policy_rng_seed": 560000,
+      "reset_seed": 310000,
+      "source_train_demo_id": 0,
+      "steps": 800,
+      "success": false,
+      "terminated_events": 0,
+      "truncated_events": 1,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 1,
+      "episode": 0,
+      "error_type": "NONE",
+      "last_success": false,
+      "policy_rng_seed": 560000,
+      "reset_seed": 310000,
+      "source_train_demo_id": 1,
+      "steps": 800,
+      "success": false,
+      "terminated_events": 0,
+      "truncated_events": 1,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 0,
+      "episode": 1,
+      "error_type": "NONE",
+      "last_success": true,
+      "policy_rng_seed": 560001,
+      "reset_seed": 310001,
+      "source_train_demo_id": 1,
+      "steps": 650,
+      "success": true,
+      "terminated_events": 1,
+      "truncated_events": 0,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 1,
+      "episode": 1,
+      "error_type": "NONE",
+      "last_success": true,
+      "policy_rng_seed": 560001,
+      "reset_seed": 310001,
+      "source_train_demo_id": 0,
+      "steps": 634,
+      "success": true,
+      "terminated_events": 1,
+      "truncated_events": 0,
+      "video_error_type": "NONE"
+    }
+  ]
+}
