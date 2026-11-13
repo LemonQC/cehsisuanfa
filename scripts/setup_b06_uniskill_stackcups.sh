@@ -94,11 +94,50 @@ for demo in 0000 0001; do
   fi
 done
 
-# Initialize only the two upstream submodules required by UniSkill.
+# Initialize ONLY two pinned RoboReel submodules. The forked RoboReel remotes
+# and original author's remotes both expose the same exact Git commit objects.
+# Do not change .gitmodules, do not reset HEAD, do not remove a partial clone.
 STAGE="author_source_submodules"
-git -C "$UPSTREAM" submodule update --init src/external_models/UniSkill src/external_models/UniSkill-Policy
-[[ -s "$UPSTREAM/src/external_models/UniSkill/extract_skill.py" ]] || { echo "BLOCKED: UniSkill IDM source submodule missing"; exit 2; }
-[[ -s "$UPSTREAM/src/external_models/UniSkill-Policy/robomimic/scripts/train.py" ]] || { echo "BLOCKED: UniSkill-Policy source submodule missing"; exit 2; }
+b06_ensure_submodule() {
+  local module_name="$1" rel_path="$2" pinned_sha="$3" author_url="$4" marker="$5"
+  local target="$UPSTREAM/$rel_path"
+  local current=""
+  if [[ -d "$target" ]]; then
+    current="$(git -C "$target" rev-parse HEAD 2>/dev/null || true)"
+  fi
+  if [[ "$current" == "$pinned_sha" && -s "$target/$marker" ]]; then
+    printf 'B06_SUBMODULE_READY existing name=%s sha=%s\n' "$module_name" "$current"
+    return 0
+  fi
+
+  printf 'B06_SUBMODULE_FETCH official name=%s\n' "$module_name"
+  if ! git -C "$UPSTREAM" submodule update --init -- "$rel_path"; then
+    printf 'B06_SUBMODULE_RETRY author_mirror name=%s\n' "$module_name"
+    # Local .git/config override only. The tracked gitlink SHA remains frozen.
+    git -C "$UPSTREAM" config "submodule.$module_name.url" "$author_url"
+    if ! git -C "$UPSTREAM" submodule update --init -- "$rel_path"; then
+      echo "B06_SUBMODULE_BLOCKED: official and original-author URLs both failed: $module_name" >&2
+      return 1
+    fi
+  fi
+  current="$(git -C "$target" rev-parse HEAD 2>/dev/null || true)"
+  if [[ "$current" != "$pinned_sha" || ! -s "$target/$marker" ]]; then
+    echo "B06_SUBMODULE_BLOCKED: incorrect commit or missing entrypoint: $module_name" >&2
+    return 1
+  fi
+  printf 'B06_SUBMODULE_READY downloaded name=%s sha=%s\n' "$module_name" "$current"
+}
+
+b06_ensure_submodule "models/UniSkill" \
+  "src/external_models/UniSkill" \
+  "bd9843b3168f889951bc117c2fc70be59590f8f9" \
+  "https://github.com/KimHanjung/UniSkill.git" \
+  "extract_skill.py"
+b06_ensure_submodule "models/UniSkill-Policy" \
+  "src/external_models/UniSkill-Policy" \
+  "02ab999609b9e698a197a6786a7edebdb69faac5" \
+  "https://github.com/kang-jaehyun/UniSkill-Policy.git" \
+  "robomimic/scripts/train.py"
 
 STAGE="project_local_conda_env"
 # Prevent a large CUDA environment from being constructed on a nearly-full disk.
