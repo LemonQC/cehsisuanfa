@@ -36,7 +36,11 @@ class B06SixImportGateTests(unittest.TestCase):
         failure = FAILURE.read_text()
         ast.parse(failure)
         self.assertIn("'uniskill_policy_import_gate'", failure)
+        self.assertIn("'uniskill_runner_init_pre_physx'", failure)
         self.assertIn("if stage == 'real_physx_bounded_dev_and_publish'", failure)
+        setup = SETUP.read_text()
+        self.assertIn('if [[ "$STAGE" == "real_physx_bounded_dev_and_publish" && ! -e "$RESULT_DIR" ]]', setup)
+        self.assertIn('STAGE="uniskill_runner_init_pre_physx"', setup)
 
 
 if __name__ == "__main__":
