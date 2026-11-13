@@ -310,3 +310,29 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 输出 `B06_POLICY_CONFIG_IMPORT_OK six=1.17.0` 只说明配置模块导入成功，不代表 model inference 或真实物理实验已成功。只有后续 `ROBOREEL_B06_UNISKILL_TRIAL`、轨迹文件及独立 GitHub 结果证据才能构成实际 B06 DEV 结果。B07 暂不开启。
+
+## 16. 2026-11-13：真实 B06 Policy 加载成功，StackCups Gymnasium 注册缺失；严格零 PhysX 续跑
+
+服务器最新前台日志：UniSkill 设置 obs keys `joint_states/gripper_states/ee_pos/ee_ori`、双 RGB `agentview_rgb/eye_in_hand_rgb`；显示 `number of parameters: 7.006618e+07`。随后 `scripts/roboreel_uniskill_video_dev.py:381` 创建第一个 `make_eval_env('stack_cups', ...)` 时抛出 `gymnasium.error.NameNotFound: Environment StackCups doesn't exist`。失败栈位于 `gym.make()` 的 spec 查找阶段，尚未创建第一条环境，也未执行 `env.step()`。**这不是 0/4 成功率，也不代表 UniSkill 的物理效果。**
+
+**已核实的官方原因：** RoboReel 锁定源码 `scripts/evaluation.py` 在调用 runner 前明确 `import mani_skill.envs` 和 `import envs`，这是使自定义 Gymnasium 环境注册的必要副作用。我们的独立 DEV runner 此前遗漏这两行；官方 RoboReel 环境子模块 `src/envs/stack_cups.py` 上 `@register_env('StackCups-v1', max_episode_steps=200, override=True)` 实际存在。修复是在 runner 中按作者入口一致地导入这两个模块，并调用 `gym.spec('StackCups-v1')` 做注册核查，输出 `B06_ENV_REGISTERED id=StackCups-v1`；不修改官方环境源码。
+
+**本次特殊安全边界：** B06 的 `run_dev()` 在构造 UniSkillRunner 和静态技能后创建 `out/manifest.json` 与 `out/preflight.json`，然后才调用第一次 `make_eval_env()`；故本次实际失败留下一个**元数据-only 的输出目录**，但没有 rollout 文件。原来脚本一律阻止目录存在后的重试，是避免重复物理轨迹的合理防护。此次新增 `scripts/b06_prephysx_resume_gate.py` 严格验证现有目录：
+
+- 只能是项目内原始输出目录 `outputs/research_runs/b06_uniskill_stackcups_dev_v1/`；只能有 `manifest.json` 和 `preflight.json` 两个普通文件，不能有软链接、未知文件、任何 `episode_*`、`per_trial.partial.json` 或轨迹；
+- 两份 JSON 必须符合 B06 schema、`READY_FOR_DEV` / `RUNNING_BOUNDED_DEV_NOT_FORMAL`、`stack_cups`、2 episode、最多 800 steps、真人 TRAIN IDs `[0,1]`、零动作初始记录，并核对官方上游 revision、Policy/IDM SHA256、两条原始视频及技能特征 SHA256；
+- 运行 runner 前与即将创建实验环境前都检验旧状态；runner 如果现有目录安全，则复用**原始不可变元数据文件**，不覆盖、不删除、不重命名。若任何已执行轨迹或未知文件出现，**直接停止，必须人工审查，不能重复执行同一 seeds**；
+- 主脚本自动设置 `--resume-prephysx`，仅当严格门槛通过时允许继续。失败报告区分 `verify_prephysx_resume` 与 `real_physx_bounded_dev_and_publish` 阶段；已有旧版 `b06_blocked_2be58529d68bf05c` 报告不会被篡改。
+
+**测试**：独立标准库模拟的零 PhysX 恢复门槛 **8/8 passed**（包括未知文件、轨迹目录、hash 变更、symlink 拒绝），另增加环境注册逻辑静态回归测试；后者与真实 GPU 环境需在服务器上运行确认。尚未实际完成 B06 四条 PhysX DEV rollout。
+
+现在依旧**前台**运行，无需清理旧输出目录：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_registration_and_resume.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+预期出现 `B06_PREPHYSX_RESUME_VERIFIED ... prior_actions=0` 和 `B06_ENV_REGISTERED id=StackCups-v1`。只有后续真实 `ROBOREEL_B06_UNISKILL_TRIAL`、逐条轨迹与 `ROBOREEL_B06_UNISKILL_RESULT` 才构成 DEV 结果，不应把前台无报错或模型参数量误认作评测成功。
