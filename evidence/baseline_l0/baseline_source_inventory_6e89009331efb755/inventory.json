@@ -1,0 +1,303 @@
+{
+  "existing_official_repro_method_ids": [
+    "B03",
+    "B05"
+  ],
+  "gated_datasets_checkpoint_downloads": 0,
+  "methods": [
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B01",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": false,
+          "relative_path": "scripts/prepare_b01_robot_train.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "RobotOnlyTransformerBC",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "ACQUIRE_OR_BUILD_EXACT_ENTRYPOINT",
+      "reproduction_kind": "REIMPL",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B02",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": false,
+          "relative_path": "scripts/train_robot_only_diffusion_policy.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "RobotOnlyDiffusionPolicy",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "ACQUIRE_OR_BUILD_EXACT_ENTRYPOINT",
+      "reproduction_kind": "REIMPL",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B03",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/train_vid_cond_pi05.py"
+        },
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/evaluation.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": {
+        "artifact": "research_reports/2026-11-11_m0_pi05_uniform/verified_summary.json",
+        "condition": "nd",
+        "successes": 46,
+        "task": "push_cube",
+        "trials": 60
+      },
+      "name": "RoboReelVideoPi05Uniform",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B04",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/extract_keyframes.py"
+        },
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/evaluation.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "RoboReelVideoPi05Keyframes",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B05",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/train_vid2robot.py"
+        },
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/evaluation.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": {
+        "artifact": "research_reports/2026-11-09_v130/official_aggregated_summary.json",
+        "condition": "nd",
+        "successes": 3,
+        "task": "push_cube",
+        "trials": 60
+      },
+      "name": "RoboReelVid2Robot",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B06",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/train_uniskill_policy.py"
+        },
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/evaluation.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "RoboReelUniSkillPolicy",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B07",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/annotate_human_videos.py"
+        },
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "third_party/roboreel_models/scripts/train_vlm_pi05.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "RoboReelVlmPi05LocalQwen",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B08",
+      "local_entrypoints": [],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "SeeDo",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "AUTHOR_RELEASE_OR_ALTERNATIVE_CODE_AUDIT",
+      "reproduction_kind": "AUTHOR_NOT_IN_ROBOREEL_RELEASE",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B09",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": false,
+          "relative_path": "third_party/Point-Policy/point_policy"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "PointPolicy",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "ACQUIRE_OR_BUILD_EXACT_ENTRYPOINT",
+      "reproduction_kind": "INDEPENDENT_AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B10",
+      "local_entrypoints": [],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "CrossBehaviorObjectFlow2026",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "AUTHOR_RELEASE_OR_ALTERNATIVE_CODE_AUDIT",
+      "reproduction_kind": "AUTHOR_SOURCE_UNVERIFIED",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B11",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": false,
+          "relative_path": "third_party/im2Flow2Act/scripts"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "Im2Flow2Act",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "ACQUIRE_OR_BUILD_EXACT_ENTRYPOINT",
+      "reproduction_kind": "INDEPENDENT_AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": false,
+      "id": "B12",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": false,
+          "relative_path": "third_party/EC-Flow/inference.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "ECFlow",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "ACQUIRE_OR_BUILD_EXACT_ENTRYPOINT",
+      "reproduction_kind": "INDEPENDENT_AUTHOR",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B13",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "agcofl/vit_flow_pilot.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "DINOv2TemporalPilot",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "DIAGNOSTIC_NOT_FULL_POLICY",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    },
+    {
+      "all_expected_local_entrypoints_present": true,
+      "id": "B14",
+      "local_entrypoints": [
+        {
+          "exists_in_local_checkout": true,
+          "relative_path": "agcofl/m1_original_scene_cartesian_pusher_v6.py"
+        }
+      ],
+      "locked_existing_official_pushcube_nd_evidence": null,
+      "name": "GoalWaypointTAMPOracle",
+      "native_forward_executed_by_this_audit": false,
+      "new_physx_rollouts": 0,
+      "new_training_runs": 0,
+      "next_gate": "VERIFY_VERSION_AND_DEPENDENCIES",
+      "reproduction_kind": "HETEROGENEOUS_CONTROLS",
+      "source_revision_verified": false,
+      "weights_sha_verified_in_this_audit": false
+    }
+  ],
+  "methods_count": 14,
+  "physx_steps": 0,
+  "schema": "TRO1_BASELINE_LOCAL_READINESS_L0_V1",
+  "scope": "LOCAL_ENTRYPOINT_PRESENCE_ONLY_NOT_NATIVE_REPRODUCTION",
+  "source_revisions_not_verified": true,
+  "training_or_eval_was_not_executed": true
+}
