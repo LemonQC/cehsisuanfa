@@ -117,3 +117,19 @@ ROBOREEL_B06_UNISKILL_PUBLISHED ...
 新增：`scripts/b06_failure_record.py` 和 `tests/test_b06_safe_restart.py`。**本地合并测试 12/12 passed，`bash -n`、`py_compile` passed**（测试环境不具备用户 GPU/数据，不代表成功复现）。
 
 执行顺序严格按 Baseline 串行：**B06 DEV → B06 held-out 正式评测（成功后）→ B07 或 B04 → B09/B11/B12 → B01/B02**；每个算法必须留下作者版/适配版分类、真实可运行状态、可复核证据与停止原因后才前进。
+
+## 8. 真实服务器最新阻塞及单点修复（2026-11-13）
+
+- 证据：`tro1-experiment-evidence/evidence/runs/b06_blocked_102d4d611a3280de/evidence.json`；`stage=author_source_submodules`，`exit_code=1`，本次尚未进入任何 PhysX。不是算法成功率数据。
+- 已验证 RoboReel 官方两个 Git submodule 引用的确切 gitlink 提交：UniSkill `bd9843b3168f889951bc117c2fc70be59590f8f9`、UniSkill-Policy `02ab999609b9e698a197a6786a7edebdb69faac5`；这两个提交在原作者 GitHub 仓库可读取。
+- 改进 `scripts/setup_b06_uniskill_stackcups.sh`：对每一子模块首先识别已正确安装的相同 SHA（无需重复下载）；否则尝试 RoboReel 官方 fork；官方 fork 下载失败时再尝试原作者 `KimHanjung/UniSkill` 和 `kang-jaehyun/UniSkill-Policy`。备用链接只写入本地 Git config，不修改受版本控制的 `.gitmodules` 或 root commit。
+- 下载后强制校验固定 SHA 与官方入口文件，错误或不一致立即停止，不启动模型/物理评测。该修复为**待服务器验证**，不能声称真实阻塞已解除。
+- 继续采用前台执行；**不使用 nohup、tmux、& 等后台运行**：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+如果重试后 Git 仍失败，本地终端会显示哪一个子模块失败；停止在此一步，不启动 B07。成功后下一步仍是 B06 自己的权重/环境/真实 4-rollout 门槛。
