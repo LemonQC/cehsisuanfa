@@ -248,34 +248,11 @@ STAGE="download_pinned_official_uniskill_policy"
   --lock "$LOCK_FILE" --dest "$CKPT" --preferred-endpoint "$HF_ENDPOINT"
 
 STAGE="download_pinned_author_idm"
-# Official UniSkill author-released IDM checkpoint (80.3 MB file); download only
-# idm.pth, not the full 3.52 GB Diffusers model repository.
-"$CONDA_ENV/bin/python" - <<'PY'
-import os, shutil
-from pathlib import Path
-from huggingface_hub import hf_hub_download
-folder = Path(os.environ["ROBOREEL_DATA"]).parent / "uniskill_assets"
-folder.mkdir(parents=True, exist_ok=True)
-target = Path(os.environ["UNISKILL_ISD"])
-source = Path(hf_hub_download(repo_id="HanjungKim/UniSkill",
-    filename="UniSkill_final_weight/idm.pth", revision=os.environ["IDM_REV"],
-    local_dir=str(folder)))
-if source.resolve() != target.resolve():
-    if target.exists():
-        import hashlib
-        def digest(path):
-            h=hashlib.sha256()
-            with open(path,'rb') as f:
-                for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
-            return h.hexdigest()
-        if digest(target)!=digest(source):
-            raise SystemExit("BLOCKED: IDM target has different content; refusing overwrite")
-    else:
-        shutil.copy2(source, target)
-if not target.is_file() or target.stat().st_size < 10 * 1024 * 1024:
-    raise SystemExit("BLOCKED: downloaded IDM checkpoint failed size verification")
-print({"idm_checkpoint": str(target), "bytes": target.stat().st_size}, flush=True)
-PY
+# Fetch only the author-released, lock-pinned ~80 MB IDM. The transport
+# wrapper reuses local verified bytes, retries mirror failures via official HF,
+# and protects existing checkpoint/cache files.
+"$CONDA_ENV/bin/python" -u -m scripts.b06_download_pinned_idm \
+  --lock "$LOCK_FILE" --dest "$ISD_DIR" --preferred-endpoint "$HF_ENDPOINT"
 
 POLICY="$CKPT/nd/uniskill_policy/ckpt.pth"
 [[ -s "$POLICY" ]] || { echo "BLOCKED: official UniSkill policy checkpoint missing: $POLICY"; exit 2; }
