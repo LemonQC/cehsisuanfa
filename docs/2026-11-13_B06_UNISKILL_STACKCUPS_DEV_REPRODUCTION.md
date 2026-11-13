@@ -101,3 +101,19 @@ ROBOREEL_B06_UNISKILL_PUBLISHED ...
 - `tests/test_roboreel_uniskill_video_dev.py`
 
 本地纯 CPU 单元测试：**7/7 通过**；shell 脚本 `bash -n` 语法检查通过。它们尚不代表用户服务器已完成权重下载、特征提取或 PhysX rollout。
+
+## 7. B06 v2 安全复现修补（2026-11-13）
+
+**下方修补后的单命令将取代旧脚本的安装逻辑；尚未在用户服务器执行。**
+
+1. **项目盘唯一落盘**：以前按名字 `conda create -n uniskill` 默认可能将大型 CUDA 环境安装在其他磁盘；现在使用 `conda create -p outputs/v120_baselines/conda_envs/uniskill`，并同时限定 `CONDA_PKGS_DIRS`、`PIP_CACHE_DIR`、`TMPDIR`、`XDG_CACHE_HOME`、`TORCH_HOME`、`HF_HOME` 为项目盘目录，不改变已有 `pi05`。
+2. **只提取两条真人视频**：官方 extractor 会遍历给定数据根目录下的全部视频；以前直接把 `official_eval_data` 作为根目录，会额外处理数十个训练样本。现在建立 `outputs/v120_baselines/b06_train_subset/` 两条只读软链接（ID 0000/0001）再调用官方 extractor，源文件不复制、不修改、不触及 EVAL。
+3. **权重版本固定**：第一次从 Hugging Face 官方元数据冻结 RoboReel policy / UniSkill IDM 的 repo commit SHA 到 `outputs/v120_baselines/b06_upstream_hf_lock_v1.json`，下载明确指定 revisions，二次执行不会默默换权重；同时检查下载缺口和项目盘剩余空间。
+4. **中断保护**：任何 setup 失败都会生成脱敏 `outputs/research_runs/b06_blocked/b06_blocked_<hash>.json`，尽力自动发布到 `tro1-experiment-evidence/evidence/runs/b06_blocked_<hash>/evidence.json`；若网络中断，至少保留本地文件，不包含 HF 令牌、原始视频、路径、traceback。
+5. **防止重跑**：有完整 `outputs/research_runs/b06_uniskill_stackcups_dev_v1/results.json` 时，重新执行同一脚本只做真实性验证并**补传现有结果**，不会重新下载模型或执行新的 PhysX；若仅有部分物理结果但没有完整 `results.json`，直接阻断，先人工审查，不得自动重跑覆盖。
+6. **离线补传命令**：如果完整物理结果已保存但只是 GitHub 上传失败，在项目根目录运行 `python -m scripts.roboreel_uniskill_video_dev --publish-existing`，不需要 GPU 或再装模型；它会核对每条轨迹与视频 SHA256 后才发送脱敏 JSON。
+7. **失败补传命令**：如果网络恢复但 `B06_BLOCKED_LOCAL_ONLY_PUBLISH_FAILED`，可针对对应 `stage`/`exit_code` 重跑 `python -m scripts.b06_failure_record --stage <stage> --exit-code <code> --publish`。不会重复物理实验。
+
+新增：`scripts/b06_failure_record.py` 和 `tests/test_b06_safe_restart.py`。**本地合并测试 12/12 passed，`bash -n`、`py_compile` passed**（测试环境不具备用户 GPU/数据，不代表成功复现）。
+
+执行顺序严格按 Baseline 串行：**B06 DEV → B06 held-out 正式评测（成功后）→ B07 或 B04 → B09/B11/B12 → B01/B02**；每个算法必须留下作者版/适配版分类、真实可运行状态、可复核证据与停止原因后才前进。
