@@ -24,6 +24,11 @@ REPO = "LogosRoboticsLab/roboreel_models"
 PREFIX = "nd/uniskill_policy/"
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 KNOWN_ENDPOINTS = ("https://hf-mirror.com", "https://huggingface.co")
+# Pinned official UniSkillRunner uses upstream configs/uniskill.json and the
+# UniSkill-Policy source configs/uniskill_policy.json. It does NOT open this
+# auxiliary Hugging Face config.json. Retain it in the immutable HF lock and
+# download it if available, but never block B06 on its absent copy / HEAD 503.
+OPTIONAL_UNUSED_FILES = frozenset({PREFIX + "config.json"})
 
 
 def check_manifest(obj: object) -> tuple[str, list[dict]]:
@@ -158,11 +163,24 @@ def run(*, lock: Path, dest: Path, preferred: str | None, downloader=None, sleep
         downloader = hf_hub_download
     results = {}
     for record in records:
-        results[record["filename"]] = fetch_one(
+        filename = record["filename"]
+        target = dest / filename
+        if filename in OPTIONAL_UNUSED_FILES and not target.exists() and not target.is_symlink():
+            # Do not trigger a network HEAD for this *unused* auxiliary file.
+            # No change to the upstream revision/lock and no new placeholder
+            # file. Missing real ckpt.pth is still downloaded and validated.
+            results[filename] = "optional_absent"
+            print("B06_POLICY_OPTIONAL_FILE_SKIPPED file=" + filename +
+                  " reason=unused_by_pinned_uniskill_runner", flush=True)
+            continue
+        results[filename] = fetch_one(
             root=dest, record=record, revision=revision,
             download=downloader, sources=sources, sleep=sleep,
         )
-    print("B06_POLICY_DOWNLOAD_COMPLETE verified=" + str(len(results)) +
+    verified = sum(v != "optional_absent" for v in results.values())
+    skipped = sum(v == "optional_absent" for v in results.values())
+    print("B06_POLICY_DOWNLOAD_COMPLETE verified=" + str(verified) +
+          " optional_skipped=" + str(skipped) +
           " reused=" + str(sum(v == "reused" for v in results.values())) +
           " revision=" + revision, flush=True)
     return results
