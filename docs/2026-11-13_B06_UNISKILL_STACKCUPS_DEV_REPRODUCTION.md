@@ -220,3 +220,31 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 若输出 `B06_POLICY_DOWNLOAD_COMPLETE`，说明政策权重已经逐项完成大小和 JSON 校验；之后将继续官方 IDM 下载、提取 TRAIN 技能、再进行 bounded DEV 的真实 PhysX。只有观察到 `ROBOREEL_B06_UNISKILL_TRIAL`，才算进入了物理评测。不得把下载成功标成 baseline 复现成功。
+
+## 13. B06 又一次真实阻塞：错误要求 UniSkill Policy train_config.json（2026-11-13）
+
+本次前台日志：`Ran 9 tests ... OK`；两个固定的 UniSkill 子模块均 READY；HF lock revisions 为 Policy `ef21150c02b2685347fe3e7c8ba5a2e313ff1b7e`、IDM `b8d6cbad5f0d9634c8da889d9b9e4e6fcffd59d9`；`missing_download_bytes=80348072`、项目盘剩余约 3 TB；但下载器校验抛出 `B06_REQUIRED_FILES_NOT_IN_LOCK`，产生 `b06_blocked_73934173abc2ebfc`。本轮没有进入 PhysX。
+
+**根因已定位为我们此前复现脚本的错误假设，非模型下载再次失败。** RoboReel 上游 `src/evaluation/uniskill_runner.py` 顶部明确声明：UniSkill 不是按 LfO 视频模型训练脚本训练的，**不存在随 Policy checkpoint 附带的 `train_config.json`**；官方 eval config `configs/eval/nd/uniskill_policy.json` 直接指向 `nd/uniskill_policy/ckpt.pth`，而策略架构来自锁定源码的 `src/external_models/UniSkill-Policy/configs/uniskill_policy.json`；checkpoint 本身含 `shape_metadata` 和动作归一化信息。
+
+因此统一修复三处：
+
+1. `scripts/b06_download_pinned_policy.py` 只要求官方确切的 `nd/uniskill_policy/ckpt.pth`，不再要求不存在的 `train_config.json`；其他 lock revision、目录越界、大小/JSON 校验不变。
+2. `scripts/setup_b06_uniskill_stackcups.sh` 不再在下载后硬性检查 Policy 同级的 `train_config.json`，改为检查锁定 UniSkill-Policy 源码下的 `configs/uniskill_policy.json`。
+3. `scripts/roboreel_uniskill_video_dev.py` 移除不正确的 preflight training-config gate，增加真实策略架构配置必选检查。
+
+回归测试：`tests/test_b06_download_pinned_policy.py` 新增没有 `train_config.json` 的真实目录结构测试、缺少真正 checkpoint 的失败测试；`tests/test_b06_no_train_config_preflight.py` 新增无独立 train_config、但真实必需文件齐全时允许进入特征提取的模拟校验。**这些新增测试在用户服务器尚未执行，不能视为 GPU 复现。**
+
+`missing_download_bytes=80348072` 强烈提示已有 Policy 文件均按原始 lock 大小存在，可能只缺 IDM；但在逐文件核查、加载模型成功之前，**不得将 Policy 标记为已验证完成**。
+
+前台执行，不清空权重/缓存、不重装环境：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_download_pinned_policy.py' -v
+python -m unittest discover -s tests -p 'test_b06_no_train_config_preflight.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+期望先看到 `B06_POLICY_FILE_REUSED ...` 和 `B06_POLICY_DOWNLOAD_COMPLETE ...`，随后下载缺少的 IDM，再做模型真实导入/特征提取和 PhysX。若官方文件列表不包含 `ckpt.pth`，脚本会输出精确文件名列表并立即停止；不能凭空改名。
