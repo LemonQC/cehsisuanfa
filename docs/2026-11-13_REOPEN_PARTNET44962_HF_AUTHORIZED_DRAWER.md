@@ -88,3 +88,47 @@ python -u -m scripts.prepare_roboreel_drawer_partnet --hf-download
 ```
 
 Exporting `HF_HOME` intentionally moves the account login location for **this terminal shell**: any earlier `~/.cache/huggingface` login will not be seen, so authenticate with the approved account again under this directory. Do not upload `outputs/` or tokens to GitHub; project `.gitignore` already excludes `outputs/`. If a previous login was completed under `$HOME`, the older token is not automatically moved or deleted. The code does not promise a successful on-server gated download until the operator checks `ROBOREEL_PARTNET_44962_READY`.
+
+## 2026-11-13 actual authorized 44962 download: confirmed success; scene NOT YET confirmed
+
+The operator's RTX 4090 server returned an actual **ROBOREEL_PARTNET_44962_READY** after the approved Hugging Face single-model archive download. Record literal provenance:
+
+- Source: `sapien-sim/PartNetMobility`, **official** endpoint `https://huggingface.co` (mirror was not the successful endpoint), repository revision `ee0aa3ef1df16181d76d83f7415aa8c94ed1da8f`.
+- `44962.zip`: **3,434,354 bytes**, SHA256 `dea587493869b04cd571be151da2236c06f560ef4fda2edc73bb41c4f794a578`.
+- Project-local unpacked model: **351 files**, **6,210,855 bytes**, 124 referenced URDF meshes.
+- Source original `mobility.urdf` SHA256 `ae1b59e3ef10cc47cc3a63043074a75a9af72d58abebb49e218e60592e86fd76`.
+- RoboReel pinned metadata installed; status **`READY_FOR_SCENE_INIT`**.
+- `new_physx_actions=0`, `new_training_runs=0` in this actual download evidence. **Scene initialization and real drawer policy rollouts are still NOT verified.**
+
+Immediately resume exact original drawer smoke, then only if its exit status signals success execute frozen human-video paired pilot. The following chained commands ensure a failed smoke or blocked preflight does **not** start physics trial. Use a new output `drawer_hf_v1`, preserving failed `v2/v3`.
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+conda activate pi05
+# No download / no SigLIP / no policy training.
+
+env -u DISPLAY -u WAYLAND_DISPLAY \\
+  python -u -m scripts.check_roboreel_drawer_scene && \\
+python - <<'PY'
+from pathlib import Path
+from scripts.roboreel_video_dependency_dev import preflight, require_plan
+plan=preflight(Path.cwd(),None,'toys_in_drawer',None)
+print('DRAWER_HF_POST_ASSET_GATE', {k:plan.get(k) for k in
+  ('task','status','reason','train_demos_usable','usable_train_demo_ids')},flush=True)
+require_plan(plan,2,800)
+PY
+```
+
+If the preceding command completes successfully, execute exactly:
+
+```bash
+python -u -m scripts.roboreel_video_dependency_dev \\
+  --task toys_in_drawer --out outputs/roboreel_video_dependency_dev/drawer_hf_v1
+
+env -u DISPLAY -u WAYLAND_DISPLAY \\
+  python -u -m scripts.roboreel_video_dependency_dev \\
+  --task toys_in_drawer --run --episodes 2 --max-steps 800 \\
+  --out outputs/roboreel_video_dependency_dev/drawer_hf_v1
+```
+
+**STOP** on any exception or manifest/partial result; never rerun `--run` into the same output. An asset check does not establish drawer scene compatibility or model task completion.
