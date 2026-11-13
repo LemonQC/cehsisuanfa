@@ -51,7 +51,7 @@ REQUIRED_FILES = (
 )
 REQUIRED_PACKAGES = (
     "torch", "torchvision", "transformers", "diffusers", "accelerate",
-    "mani_skill", "sapien", "gymnasium", "imageio", "decord", "numpy",
+    "mani_skill", "sapien", "gymnasium", "imageio", "numpy",
 )
 
 
