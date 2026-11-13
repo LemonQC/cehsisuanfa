@@ -37,3 +37,29 @@ cat outputs/roboreel_video_dependency_diagnosis/stack_v1/SUMMARY.md
 ```
 
 The user should send the printed `ROBOREEL_STACK_READONLY_DIAGNOSIS` line and attach `rollout_montage.jpg` to enable a grounded visual classification of reaching/grasping/first stack/second stack stages. Do not invent a failure stage from `success=false` alone. If the montage reveals no meaningful long-horizon stage transition or first-action differences are negligible, stop and report `NO-GO`; do not spend further GPU trials without a new falsifiable hypothesis and a same-information baseline.
+
+## 2026-11-13 用户服务器离线诊断回执与阶段研究判定
+
+服务器实际执行 `python -m unittest discover -s tests -p test_diagnose_stack_video_dev.py -v`：**8/8 passed**。
+随后使用已冻结四条机器人轨迹和视频（无新 PhysX）执行 read-only 诊断，原终端结果：
+
+```
+ROBOREEL_STACK_READONLY_DIAGNOSIS {
+ "status":"READ_ONLY_DIAGNOSIS_NOT_NEW_ROLLOUT",
+ "successes":0,
+ "first_8d_l2":[0.0013496483038846687,0.0016286211015779217],
+ "first20_mean_8d_l2":[0.001622933194751093,0.0016648817314526964],
+ "full_mean_8d_l2":[0.7579299807548523,1.2224546670913696]
+}
+```
+
+| Episode | 起始动作 8D L2 | 前 20 步均值 L2 | 全程 800 步均值 L2 | 任务成功 |
+|---|---:|---:|---:|---:|
+| 0 | 0.00134965 | 0.00162293 | 0.75792998 | 0/2 |
+| 1 | 0.00162862 | 0.00166488 | 1.22245467 | 0/2 |
+
+**限制：** 8D L2 未按关节、夹爪或动作尺度归一化，故“不大于某阈值”或“显著性”不能直接判断。起始 1/20 步输入响应差异较全程数值小约数百倍。随后轨迹差异可能来自闭环环境状态分叉、视频条件累积效应或其他因素；没有对照不能区分，不得宣称“视频不存在贡献”，也不得宣称“视频独立提供有用决策”。任务无一成功，无法从成功率支持新阶段同步思路。
+
+**研究停止门槛（当前状态：PROVISIONAL NO-GO）：** 不追加随机种子、不训练新算法、不改任务。仅待研究者上传已生成的 `outputs/roboreel_video_dependency_diagnosis/stack_v1/rollout_montage.jpg`，目视确认有无第一阶段抓取、对象搬运、第一次堆叠等实际进度；这张图片未上传，所以当前尚未作任何阶段分类。若四条均在基础抓取前失败，明确终止 StackCups 阶段同步方法线；若有真实后阶段失效，也必须先提出可证伪机制与同信息强基线，而非直接以 T-RO GO 决策继续训练。
+
+归档证明仅来自用户回传的运行日志及本仓库现有代码；模型未访问其服务器上的原始 `.npy` 或 `.mp4`，不能臆造图片内容。原 `stack_v1` 与 `diagnosis/stack_v1` 均只读保存。
