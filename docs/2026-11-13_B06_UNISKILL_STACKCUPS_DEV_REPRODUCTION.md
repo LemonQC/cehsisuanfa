@@ -248,3 +248,26 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 期望先看到 `B06_POLICY_FILE_REUSED ...` 和 `B06_POLICY_DOWNLOAD_COMPLETE ...`，随后下载缺少的 IDM，再做模型真实导入/特征提取和 PhysX。若官方文件列表不包含 `ckpt.pth`，脚本会输出精确文件名列表并立即停止；不能凭空改名。
+
+### B06 下载链补强：剩余 IDM 80.3 MB 同样具备断点续传与官方站回退
+
+在上述 `train_config.json` 假门槛消除后，当前锁文件显示缺口 `80,348,072` 字节，数量级正好与 UniSkill IDM 权重一致。为避免下一阶段继续受同一镜像站 503 影响，增加了 `scripts/b06_download_pinned_idm.py`：
+
+- **没有重建 Conda 环境**；仅使用当前 B06 `uniskill` 环境和 `b06_upstream_hf_lock_v1.json` 的 `HanjungKim/UniSkill` commit SHA、文件名 `UniSkill_final_weight/idm.pth`、精确字节数。
+- 若项目盘上的 `uniskill_assets/idm.pth` 已按锁定大小存在，则打印 `B06_IDM_REUSED` 并跳过联网；否则复用原有 HF 本地缓存尝试镜像下载，失败后按文件尝试 `huggingface.co`。
+- 下载成功后先验证完整文件，复制到相同项目盘的最终路径，通过不覆盖的硬链接方式发布，最终计算 SHA256。已存在的错误大小文件或未完成复制目录将直接阻断，**不删除任何缓存/权重**。
+- 改为仅在真实策略架构配置 `src/external_models/UniSkill-Policy/configs/uniskill_policy.json` 存在时通过策略配置检查；不再要求官方没有发布的独立 `train_config.json`。
+- 新增离线测试 `tests/test_b06_download_pinned_idm.py`，覆盖精确 commit、文件重用、503 后端点切换、文件保留和无覆盖策略。新增测试需由服务器执行确认；目前未取得真实 B06 模型/PhysX 结果。
+
+完整前台执行：
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_download_pinned_policy.py' -v
+python -m unittest discover -s tests -p 'test_b06_download_pinned_idm.py' -v
+python -m unittest discover -s tests -p 'test_b06_no_train_config_preflight.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+**观察门槛**：`B06_POLICY_DOWNLOAD_COMPLETE` → `B06_IDM_DOWNLOAD_COMPLETE` / `B06_IDM_REUSED` → `ROBOREEL_B06_UNISKILL_PREFLIGHT` → 仅在全部检查通过时 `ROBOREEL_B06_UNISKILL_TRIAL`。若任何阶段失败，记录原样日志，不冒充正式 Baseline。
