@@ -9,6 +9,9 @@ not the standard ManiSkill partnet_mobility/dataset location.
 By default this performs read-only inspection, with zero network or physics.
 --import-dir accepts previously authorized files; --download explicitly uses
 SAPIEN's registered-user mechanism and suppresses any token-bearing URL.
+--hf-download uses the operator's approved Hugging Face account from local
+'hf auth login', tries hf-mirror.com then huggingface.co, fetches ONLY
+sapien-sim/PartNetMobility/44962.zip; never asks for SAPIEN token.
 """
 from __future__ import annotations
 
@@ -237,18 +240,29 @@ def main(argv=None) -> int:
     actions=p.add_mutually_exclusive_group()
     actions.add_argument('--import-dir',type=Path,default=None,
                          help='Existing legitimately acquired 44962 model dir or parent')
-    actions.add_argument('--download',action='store_true',help='Explicit SAPIEN authenticated download')
+    actions.add_argument('--download',action='store_true',help='Explicit SAPIEN registered-token download (legacy)')
+    actions.add_argument('--hf-download',action='store_true',
+                         help='Only official gated HF sapien-sim/PartNetMobility 44962.zip, using local hf auth login')
+    p.add_argument('--hf-official-only',action='store_true',
+                   help='With --hf-download, skip mirror and use huggingface.co')
     args=p.parse_args(argv)
     project=args.project.resolve()
     pre=inspect(project)
     print('ROBOREEL_PARTNET_44962_PREFLIGHT',json.dumps(pre,ensure_ascii=False),flush=True)
     if pre['status']=='READY_FOR_SCENE_INIT':
         return 0
-    if not args.import_dir and not args.download:
+    if not args.import_dir and not args.download and not args.hf_download:
         return 2
+    if args.hf_official_only and not args.hf_download:
+        p.error('--hf-official-only requires --hf-download')
     try:
         if args.import_dir:
             post=install_from_authorized_source(project,args.import_dir)
+        elif args.hf_download:
+            from scripts.download_roboreel_partnet44962_hf import (
+                authorized_hf_single, OFFICIAL, ALLOWED_ENDPOINTS)
+            post=authorized_hf_single(project,
+                endpoints=(OFFICIAL,) if args.hf_official_only else ALLOWED_ENDPOINTS)
         else:
             token=os.environ.get('SAPIEN_ACCESS_TOKEN','')
             if not token and sys.stdin.isatty():
