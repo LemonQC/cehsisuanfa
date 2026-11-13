@@ -30,6 +30,12 @@ on_exit() {
   local rc="$1"
   trap - EXIT
   if (( rc != 0 )); then
+    # run_dev() only creates RESULT_DIR AFTER UniSkillRunner initialization.
+    # With no output directory, this attempt cannot have stepped PhysX.
+    # Keep this distinct from an interrupted run with partial trajectories.
+    if [[ "$STAGE" == "real_physx_bounded_dev_and_publish" && ! -e "$RESULT_DIR" ]]; then
+      STAGE="uniskill_runner_init_pre_physx"
+    fi
     # Only publish sanitized stage/status; NEVER a raw pip error, token,
     # private path, config or trace. A failed GitHub write does not suppress
     # locally retained immutable evidence.
