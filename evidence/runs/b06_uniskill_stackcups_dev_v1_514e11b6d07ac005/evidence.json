@@ -1,0 +1,94 @@
+{
+  "any_pair_success_difference": false,
+  "diagnosis": null,
+  "g0_audit": null,
+  "horizon_audit": null,
+  "paired_episodes_reported": 2,
+  "pairs": [
+    {
+      "episode": 0,
+      "mean_action_l2_first_common_steps": 0.049234755,
+      "same_reset_seed": true,
+      "source_ids": [
+        0,
+        1
+      ],
+      "success_disagree": false,
+      "successes": [
+        false,
+        false
+      ]
+    },
+    {
+      "episode": 1,
+      "mean_action_l2_first_common_steps": 0.077750869,
+      "same_reset_seed": true,
+      "source_ids": [
+        1,
+        0
+      ],
+      "success_disagree": false,
+      "successes": [
+        false,
+        false
+      ]
+    }
+  ],
+  "paper_ready": false,
+  "physical_rollouts_reported": 4,
+  "pipeline": null,
+  "schema": "TRO1_RESEARCH_EVIDENCE_V1",
+  "source_file_hashes": {
+    "partial_sha256": "1deb5bdbeb711d016df20417421cb6a5e6d01aa61d8061d2e0b0e46f6b2c4517",
+    "results_sha256": "0b451cc12e664b80606c7a542dc386948afc965159713aa1b049cbc72ea403a6"
+  },
+  "source_relative": "outputs/research_runs/b06_uniskill_stackcups_dev_v1",
+  "status": "DEV_COMPLETE_NOT_FORMAL",
+  "task": "stack_cups",
+  "trials": [
+    {
+      "condition_order": 0,
+      "episode": 0,
+      "error_type": "NONE",
+      "last_success": false,
+      "reset_seed": 310000,
+      "source_train_demo_id": 0,
+      "steps": 800,
+      "success": false,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 1,
+      "episode": 0,
+      "error_type": "NONE",
+      "last_success": false,
+      "reset_seed": 310000,
+      "source_train_demo_id": 1,
+      "steps": 800,
+      "success": false,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 0,
+      "episode": 1,
+      "error_type": "NONE",
+      "last_success": false,
+      "reset_seed": 310001,
+      "source_train_demo_id": 1,
+      "steps": 800,
+      "success": false,
+      "video_error_type": "NONE"
+    },
+    {
+      "condition_order": 1,
+      "episode": 1,
+      "error_type": "NONE",
+      "last_success": false,
+      "reset_seed": 310001,
+      "source_train_demo_id": 0,
+      "steps": 800,
+      "success": false,
+      "video_error_type": "NONE"
+    }
+  ]
+}
