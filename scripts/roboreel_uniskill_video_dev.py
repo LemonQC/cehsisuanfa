@@ -292,7 +292,7 @@ def _save_trial_video(path: Path, frames: list) -> str | None:
 def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
             idm_checkpoint: Path, skill_dir: Path, config_path: Path,
             out: Path, episodes: int, max_steps: int, save_video: bool,
-            publish: bool) -> dict:
+            publish: bool, resume_prephysx: bool = False) -> dict:
     if plan["status"] != "READY_FOR_DEV":
         raise RuntimeError("B06_DEV_BLOCKED: " + plan["status"])
     if not 1 <= episodes <= 2:
@@ -301,7 +301,12 @@ def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
         raise ValueError("Bounded B06 DEV permits 1..800 steps per rollout")
     out = out.expanduser().resolve()
     if out.exists():
-        raise FileExistsError("B06_OUTPUT_ALREADY_EXISTS_NO_OVERWRITE: " + str(out))
+        if not resume_prephysx:
+            raise FileExistsError("B06_OUTPUT_ALREADY_EXISTS_NO_OVERWRITE: " + str(out))
+        from scripts.b06_prephysx_resume_gate import check_unstarted_run
+        check_unstarted_run(out, project, plan=plan)
+    elif resume_prephysx:
+        raise FileNotFoundError("B06_RESUME_OUTPUT_DIRECTORY_MISSING")
 
     project = project.resolve()
     upstream = project / UPSTREAM_REL
@@ -322,6 +327,15 @@ def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
               upstream / "roboreel_env/src"):
         if str(p) not in sys.path:
             sys.path.insert(0, str(p))
+
+    # Match RoboReel's OFFICIAL scripts/evaluation.py entrypoint exactly:
+    # both modules register custom ManiSkill/Gymnasium tasks on import.
+    # A bare gym.make("StackCups-v1") fails with NameNotFound otherwise.
+    import mani_skill.envs  # noqa: F401 - built-in registration side effects
+    import envs  # noqa: F401 - RoboReel StackCups-v1 registration side effects
+    import gymnasium as gym
+    gym.spec(TASKS[plan["task"]])
+    print("B06_ENV_REGISTERED id=" + TASKS[plan["task"]], flush=True)
 
     import torch
     torch.set_num_threads(4)
@@ -350,8 +364,14 @@ def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
             if not safe_regular(scene_root / cup / asset, 129):
                 raise RuntimeError("PINNED_ROBOREEL_STACK_CUPS_SCENE_ASSET_MISSING")
 
-    out.mkdir(parents=True, exist_ok=False)
-    save_json_once(out / "preflight.json", plan)
+    # A prior attempt may have constructed only preflight+manifest, then
+    # failed on missing env registration BEFORE creating any environment.
+    # Verify again immediately before continuing, and NEVER overwrite them.
+    if resume_prephysx:
+        check_unstarted_run(out, project, plan=plan)
+    else:
+        out.mkdir(parents=True, exist_ok=False)
+        save_json_once(out / "preflight.json", plan)
     manifest = {
         "schema": "TRO1_B06_UNISKILL_STACKCUPS_DEV_V1",
         "status": "RUNNING_BOUNDED_DEV_NOT_FORMAL",
@@ -372,7 +392,8 @@ def run_dev(plan: dict, project: Path, data_dir: Path, policy_checkpoint: Path,
         "no_partnet_dependency": True,
         "output_dir": str(out),
     }
-    save_json_once(out / "manifest.json", manifest)
+    if not resume_prephysx:
+        save_json_once(out / "manifest.json", manifest)
 
     trials = []
     for episode in range(episodes):
@@ -598,6 +619,8 @@ def main(argv=None) -> int:
     p.add_argument("--gpu", default="0")
     p.add_argument("--preflight", action="store_true", help="Read-only local/runtime check; no PhysX")
     p.add_argument("--run", action="store_true", help="Explicitly run 2..4 genuine PhysX DEV rollouts")
+    p.add_argument("--resume-prephysx", action="store_true",
+                   help="Resume only an audited manifest+preflight directory with ZERO rollout files")
     p.add_argument("--publish", action="store_true", help="Publish sanitized result to evidence branch")
     p.add_argument("--publish-existing", action="store_true", help="Re-publish an existing, verified complete DEV result with NO PhysX")
     p.add_argument("--no-video", action="store_true")
@@ -606,6 +629,8 @@ def main(argv=None) -> int:
         p.error("choose --preflight, --run or --publish-existing")
     if args.publish and not args.run:
         p.error("--publish requires --run")
+    if args.resume_prephysx and not args.run:
+        p.error("--resume-prephysx requires --run")
     if args.publish_existing:
         if args.run or args.preflight:
             p.error("--publish-existing cannot be combined with --run/--preflight")
@@ -620,7 +645,8 @@ def main(argv=None) -> int:
         return 0 if plan["status"] != "BLOCKED_BASE_ASSETS_OR_RUNTIME" else 2
     run_dev(plan, args.project, args.data_dir, args.policy_checkpoint,
             args.idm_checkpoint, args.skill_dir, args.config, args.out,
-            args.episodes, args.max_steps, not args.no_video, args.publish)
+            args.episodes, args.max_steps, not args.no_video, args.publish,
+            resume_prephysx=args.resume_prephysx)
     return 0
 
 
