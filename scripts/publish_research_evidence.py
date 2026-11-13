@@ -31,7 +31,7 @@ ALLOWED_ROOTS = (
     Path('outputs/research_runs'),
 )
 MAX_JSON_BYTES = 2 * 1024 * 1024
-MAX_PREVIEW_BYTES = 1_300_000
+MAX_PREVIEW_BYTES = 850_000  # GitHub Contents GET embeds base64 for files <= 1 MiB
 SAFE_KEY_FIELDS = ('episode', 'source_train_demo_id', 'success', 'steps',
                    'last_success', 'terminated_events', 'truncated_events',
                    'reset_seed', 'policy_rng_seed', 'condition_order')
