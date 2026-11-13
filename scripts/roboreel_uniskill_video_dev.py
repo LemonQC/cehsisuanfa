@@ -39,6 +39,7 @@ REQUIRED_FILES = (
     "src/wrappers/uniskill.py",
     "src/external_models/UniSkill/extract_skill.py",
     "src/external_models/UniSkill-Policy/robomimic/scripts/train.py",
+    "src/external_models/UniSkill-Policy/configs/uniskill_policy.json",
     "roboreel_env/assets/scenes/stack_cups/dark_blue_cup/visual.glb",
     "roboreel_env/assets/scenes/stack_cups/dark_blue_cup/collision_vhacd.obj",
     "roboreel_env/assets/scenes/stack_cups/dark_blue_cup/orientation_result.json",
@@ -148,20 +149,9 @@ def preflight(project: Path, data_dir: Path, policy_checkpoint: Path,
             meta = {"present": False}
         skill_rows.append({"id": demo_id, **meta})
 
-    train_cfg_path = policy_checkpoint.parent / "train_config.json"
-    train_cfg_ok = False
-    train_cfg_tasks = []
-    if safe_regular(train_cfg_path, 2):
-        try:
-            cfg = json.loads(train_cfg_path.read_text(encoding="utf-8"))
-            paths = [str(x.get("path", "")) for x in (cfg.get("train", {}).get("data", []) or [])]
-            train_cfg_tasks = sorted({name for name in ("stack_cups", "push_cube", "pick_cube",
-                                                         "bowl_in_plate", "close_drawer", "empty_basket",
-                                                         "open_lid", "press_toaster", "toys_in_basket",
-                                                         "toys_in_drawer") if any(name in p for p in paths)})
-            train_cfg_ok = task in train_cfg_tasks
-        except Exception:
-            pass
+    # Official RoboReel UniSkillRunner has NO sibling train_config.json.
+    # The released ckpt includes shape/normalization metadata, while the
+    # upstream UniSkill-Policy config is pinned in REQUIRED_FILES above.
 
     versions = _package_versions()
     python_ok = sys.version_info[:2] == (3, 12)
@@ -185,9 +175,9 @@ def preflight(project: Path, data_dir: Path, policy_checkpoint: Path,
         "policy_checkpoint_present": safe_regular(policy_checkpoint, 1024 * 1024),
         "policy_checkpoint_bytes": policy_checkpoint.stat().st_size if safe_regular(policy_checkpoint, 1024 * 1024) else 0,
         "policy_checkpoint_sha256": sha256(policy_checkpoint) if safe_regular(policy_checkpoint, 1024 * 1024) else None,
-        "policy_train_config_present": safe_regular(train_cfg_path, 2),
-        "policy_train_config_contains_task": train_cfg_ok,
-        "policy_train_config_tasks": train_cfg_tasks,
+        "policy_train_config_required": False,
+        "policy_architecture_config_present": safe_regular(
+            upstream / "src/external_models/UniSkill-Policy/configs/uniskill_policy.json", 129),
         "idm_checkpoint_present": safe_regular(idm_checkpoint, 10 * 1024 * 1024),
         "idm_checkpoint_bytes": idm_checkpoint.stat().st_size if safe_regular(idm_checkpoint, 10 * 1024 * 1024) else 0,
         "idm_checkpoint_sha256": sha256(idm_checkpoint) if safe_regular(idm_checkpoint, 10 * 1024 * 1024) else None,
@@ -203,7 +193,7 @@ def preflight(project: Path, data_dir: Path, policy_checkpoint: Path,
     base_ready = all((
         base_checks["upstream_repo_present"], base_checks["upstream_revision_pinned"],
         required_code_ok, base_checks["policy_checkpoint_present"],
-        base_checks["policy_train_config_contains_task"], base_checks["idm_checkpoint_present"],
+        base_checks["policy_architecture_config_present"], base_checks["idm_checkpoint_present"],
         base_checks["uniskill_config_present"], all(x["present"] for x in video_rows),
         python_ok, packages_ok, cuda["available"],
     ))
