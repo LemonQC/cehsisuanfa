@@ -7,6 +7,8 @@ whole snapshot. The exact RoboReel ASSET_DIR layout is installed atomically.
 
 Priority: hf-mirror.com -> huggingface.co; if gated auth is unsupported at the
 mirror, retry on the official service with the SAME existing credentials.
+The download ZIP, HF cache, Xet cache, and temporary workspaces live within
+project outputs/. HF_HOME is respected, not overwritten, to preserve login.
 No passwords/tokens are printed, transmitted to GitHub, or passed in URLs.
 """
 from __future__ import annotations
@@ -148,6 +150,28 @@ def _dataset_zip_info(api, token: str) -> dict:
     return {'revision':sha,'archive':ARCHIVE,'declared_bytes':size}
 
 
+def configure_project_transfer_storage(project: Path) -> dict[str, str]:
+    """Keep bulky HF/Xet caches and temporary download data on project disk.
+
+    Do not override HF_HOME or HF_TOKEN_PATH: those identify the operator's
+    already authenticated account. An operator may independently set HF_HOME
+    to a protected location inside outputs/ *before* running `hf auth login`.
+    The explicit `cache_dir` download arg remains project-local too.
+    """
+    loc=locations(project.expanduser().resolve())
+    root=loc['home']
+    layout={
+        'HF_HUB_CACHE':root/'hf_cache',
+        'HF_XET_CACHE':root/'hf_xet_cache',
+        'HF_ASSETS_CACHE':root/'hf_assets_cache',
+        'TMPDIR':root/'tmp',
+    }
+    for key,folder in layout.items():
+        folder.mkdir(parents=True,exist_ok=True)
+        os.environ[key]=str(folder)
+    return {key:str(folder) for key,folder in layout.items()}
+
+
 def authorized_hf_single(project: Path, *, endpoints=ALLOWED_ENDPOINTS,
                          api_cls: Callable|None=None,
                          file_downloader: Callable|None=None,
@@ -158,6 +182,9 @@ def authorized_hf_single(project: Path, *, endpoints=ALLOWED_ENDPOINTS,
     saved login. ``token`` may be injected only in CPU tests.
     """
     project=project.expanduser().resolve()
+    # Configure BEFORE any huggingface_hub import; HF reads cache environment
+    # at module import time. Xet otherwise defaults to ~/.cache/huggingface.
+    configure_project_transfer_storage(project)
     loc=locations(project)
     if loc['model'].exists():
         if not validate_model(loc['model'])['valid']:
