@@ -47,6 +47,10 @@ ACTUAL_UPSTREAM="$(git -C "$UPSTREAM" rev-parse HEAD)"
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 export HF_HOME="$HF_CACHE"
 export HF_HUB_CACHE="$HF_CACHE/hub"
+# Increase HTTP read/metadata timeouts for slow or flaky HF mirror transfers.
+# The pinned B06 downloader retries single files, not the entire snapshot.
+export HF_HUB_DOWNLOAD_TIMEOUT="${HF_HUB_DOWNLOAD_TIMEOUT:-180}"
+export HF_HUB_ETAG_TIMEOUT="${HF_HUB_ETAG_TIMEOUT:-30}"
 export ROBOREEL_DATA="$DATA"
 export ROBOREEL_CKPT="$CKPT"
 export UNISKILL_ISD="$ISD"
@@ -235,11 +239,13 @@ ROBO_REV="$("$CONDA_ENV/bin/python" -c "import json;print(json.load(open('$LOCK_
 IDM_REV="$("$CONDA_ENV/bin/python" -c "import json;print(json.load(open('$LOCK_FILE'))['idm_revision'])")"
 export IDM_REV
 
-# Official downloader, locked to a specific revision; ONLY B06 ND.
+# Same official RoboReel pinned checkpoint, but download its listed files one
+# by one. snapshot_download parallel workers previously failed on mirror 503
+# fetching config.json after transferring ~740 MB. Reuse verified files and
+# HF resumable .cache; fall back to huggingface.co only on per-file failure.
 STAGE="download_pinned_official_uniskill_policy"
-"$CONDA_ENV/bin/python" "$UPSTREAM/scripts/download_checkpoints.py" \
-  --method uniskill_policy --condition nd --dest "$CKPT" \
-  --revision "$ROBO_REV" --workers 4
+"$CONDA_ENV/bin/python" -u -m scripts.b06_download_pinned_policy \
+  --lock "$LOCK_FILE" --dest "$CKPT" --preferred-endpoint "$HF_ENDPOINT"
 
 STAGE="download_pinned_author_idm"
 # Official UniSkill author-released IDM checkpoint (80.3 MB file); download only
