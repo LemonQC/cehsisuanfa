@@ -98,7 +98,7 @@ def endpoints(preferred: str | None) -> tuple[str, ...]:
 def fetch_one(
     *, root: Path, record: dict, revision: str, download,
     sources: tuple[str, ...], attempts_per_source: int = 2,
-    sleep=lambda _: None,
+    sleep=lambda _: None, repo_id: str = REPO,
 ) -> str:
     name = record["filename"]
     expected_size = record["bytes"]
@@ -119,7 +119,7 @@ def fetch_one(
                 # local_dir retains the completed target and its HF .cache
                 # transfer bookkeeping; incomplete files are not removed.
                 download(
-                    repo_id=REPO,
+                    repo_id=repo_id,
                     filename=name,
                     repo_type="model",
                     revision=revision,
