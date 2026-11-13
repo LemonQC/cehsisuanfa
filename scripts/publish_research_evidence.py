@@ -112,8 +112,15 @@ def read_result(source: Path, relative_source: str, status_file: Path | None) ->
     partial = bounded_json(partial_path)
     if result is not None and not isinstance(result, dict):
         raise ValueError('RESULTS_MUST_BE_JSON_OBJECT')
-    if partial is not None and not isinstance(partial, list):
-        raise ValueError('PARTIAL_TRIALS_MUST_BE_JSON_ARRAY')
+    # Legacy audits used a bare list; B06's append-only writer saves
+    # {"trials": [...]} so it can atomically record progress. Accept both,
+    # but never silently treat an unknown schema as an empty experiment.
+    if isinstance(partial, dict):
+        if set(partial) != {'trials'} or not isinstance(partial['trials'], list):
+            raise ValueError('PARTIAL_TRIALS_INVALID_OBJECT')
+        partial = partial['trials']
+    elif partial is not None and not isinstance(partial, list):
+        raise ValueError('PARTIAL_TRIALS_MUST_BE_ARRAY_OR_TRIALS_OBJECT')
     origin = result or {}
     diagnosis = bounded_json(source / 'diagnosis.json')
     if diagnosis is not None and not isinstance(diagnosis, dict):
