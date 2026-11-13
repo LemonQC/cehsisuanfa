@@ -112,11 +112,14 @@ b06_ensure_submodule() {
 
   printf 'B06_SUBMODULE_FETCH official name=%s\n' "$module_name"
   if ! git -C "$UPSTREAM" submodule update --init -- "$rel_path"; then
-    printf 'B06_SUBMODULE_RETRY author_mirror name=%s\n' "$module_name"
-    # Local .git/config override only. The tracked gitlink SHA remains frozen.
-    git -C "$UPSTREAM" config "submodule.$module_name.url" "$author_url"
-    if ! git -C "$UPSTREAM" submodule update --init -- "$rel_path"; then
-      echo "B06_SUBMODULE_BLOCKED: official and original-author URLs both failed: $module_name" >&2
+    printf 'B06_SUBMODULE_RETRY original_author name=%s\n' "$module_name"
+    # The official submodule may have an unborn HEAD after an interrupted
+    # clone. Changing submodule.<name>.url alone does NOT repair its cached
+    # .git/modules/<path> remote or resolve that unborn checkout.
+    # First attempt a pinned direct fetch in that very same submodule.
+    if ! bash "$PROJECT/scripts/b06_recover_submodule_git.sh" \
+       "$target" "$pinned_sha" "$author_url" "$marker"; then
+      echo "B06_SUBMODULE_BLOCKED: exact-revision safe recovery failed: $module_name" >&2
       return 1
     fi
   fi
