@@ -181,7 +181,8 @@ if [[ ! -f "$BASE/b06_env_install_complete.v1" ]]; then
   "cloudpickle==3.1.2" "tensorboard==2.20.0" "tensorboardX==2.6" \
   "imageio==2.37.2" "imageio-ffmpeg>=0.5" "wandb==0.25.0" \
   "tqdm==4.67.3" "psutil==7.2.2" "termcolor==3.3.0" \
-  "tianshou==0.4.10" "bddl==3.6.0" "gym==0.25.2" "PyOpenGL==3.1.10"
+  "tianshou==0.4.10" "bddl==3.6.0" "gym==0.25.2" "PyOpenGL==3.1.10" \
+  "six==1.17.0"
 "$CONDA_ENV/bin/python" -m pip install --no-deps -e "$UPSTREAM/src/external_models/UniSkill-Policy"
 # UniSkill-Policy's pinned pyproject metadata was authored for a different
 # environment than the pinned RoboReel B06 runner. Validate only the three
@@ -193,6 +194,24 @@ touch "$BASE/b06_env_install_complete.v1"
 fi
 
 export PYTHONPATH="$PROJECT:$UPSTREAM:$UPSTREAM/src:$UPSTREAM/src/external_models:$UPSTREAM/src/external_models/UniSkill:$UPSTREAM/src/external_models/UniSkill-Policy:$UPSTREAM/roboreel_env/src"
+
+# The original UniSkill-Policy source imports six in
+# robomimic/config/base_config.py but its package metadata omits it.
+# The main environment-install marker may already exist, so ALWAYS check
+# the exact project-local Python rather than trusting a completed pip step.
+# No conda recreation, no torch changes, no GPU/PhysX side effects.
+STAGE="uniskill_policy_import_gate"
+if ! "$CONDA_ENV/bin/python" -c 'import six' >/dev/null 2>&1; then
+  echo "B06_SIX_MISSING: installing only six==1.17.0 in existing UniSkill prefix"
+  "$CONDA_ENV/bin/python" -m pip install --disable-pip-version-check "six==1.17.0"
+fi
+# Fail BEFORE network/model/real PhysX if basic official policy config cannot
+# be imported. Submodule PATH above must resolve to pinned original checkout.
+"$CONDA_ENV/bin/python" - <<'PY_B06_IMPORT'
+import six
+from robomimic.config import config_factory
+print("B06_POLICY_CONFIG_IMPORT_OK six=" + six.__version__, flush=True)
+PY_B06_IMPORT
 
 # Resolve and freeze both HF source revisions, then check free project space.
 # Never silently refresh weights from a moving main branch on a retry.
