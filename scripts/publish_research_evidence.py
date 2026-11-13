@@ -118,10 +118,18 @@ def read_result(source: Path, relative_source: str, status_file: Path | None) ->
     diagnosis = bounded_json(source / 'diagnosis.json')
     if diagnosis is not None and not isinstance(diagnosis, dict):
         raise ValueError('DIAGNOSIS_MUST_BE_OBJECT')
+    horizon = bounded_json(source / 'horizon_audit.json')
+    if horizon is not None and (not isinstance(horizon, dict) or
+            horizon.get('status') != 'READ_ONLY_DRAWER_HORIZON_AUDIT' or
+            horizon.get('task') != 'toys_in_drawer' or
+            horizon.get('default_registered_limit') != 400 or
+            horizon.get('experimental_limit') != 800 or
+            horizon.get('rollout_count') != 4):
+        raise ValueError('INVALID_FROZEN_DRAWER_HORIZON_AUDIT')
     trials = origin.get('trials') if isinstance(origin.get('trials'), list) else partial
     trials = trials if isinstance(trials, list) else []
     pairs = origin.get('pairs') if isinstance(origin.get('pairs'), list) else []
-    task = str(origin.get('task', diagnosis.get('task', 'UNKNOWN') if isinstance(diagnosis, dict) else 'UNKNOWN'))
+    task = str(origin.get('task', (diagnosis or horizon or {}).get('task','UNKNOWN')))
     if task not in ('toys_in_drawer', 'stack_cups', 'push_cube'):
         task = 'UNKNOWN'
     pipeline = None
@@ -155,7 +163,8 @@ def read_result(source: Path, relative_source: str, status_file: Path | None) ->
                   'human_goal_pair_status':gs if gs in ('G0_BLOCKED','G0_CANDIDATE_REQUIRES_MANUAL_VISUAL_REVIEW') else 'UNKNOWN'}
     sources = {}
     for item, path in (('results', result_path), ('partial', partial_path),
-                       ('diagnosis', source / 'diagnosis.json')):
+                       ('diagnosis', source / 'diagnosis.json'),
+                       ('horizon', source / 'horizon_audit.json')):
         if path.is_file():
             sources[item + '_sha256'] = sha256(path.read_bytes())
     diag_compact = None
@@ -173,8 +182,44 @@ def read_result(source: Path, relative_source: str, status_file: Path | None) ->
                 'first_action_8d_l2':scalar((prefix.get('1') or {}).get('first_8d_action_l2')),
                 'first20_mean_8d_l2':scalar((prefix.get('20') or {}).get('mean_8d_action_l2')),
                 'full_mean_8d_l2':scalar(pair.get('mean_8d_action_l2_original'))})
-    if g0 and not result and not diagnosis:
+    if g0 and not result and not diagnosis and not horizon:
         status = 'G0_NOT_PASSED' if g0['decision']=='G0_NOT_PASSED' else 'G0_REVIEW_REQUIRED'
+    horizon_compact = None
+    if horizon is not None:
+        source_trials = horizon.get('trials')
+        if not isinstance(source_trials, list) or len(source_trials) != 4:
+            raise ValueError('HORIZON_TRIALS_NOT_FOUR')
+        filtered = []
+        seen = set()
+        for t in source_trials:
+            if not isinstance(t,dict):
+                raise ValueError('INVALID_HORIZON_TRIAL')
+            ep,src = t.get('episode'),t.get('source_train_demo_id')
+            by400,by800 = t.get('success_by_400'),t.get('success_by_800')
+            if (type(ep) is not int or ep not in (0,1) or
+                type(src) is not int or src not in (0,1) or
+                (ep,src) in seen or type(by400) is not bool or type(by800) is not bool):
+                raise ValueError('INVALID_HORIZON_PAIR_OR_BOOLEAN')
+            seen.add((ep,src))
+            steps=t.get('steps')
+            first=t.get('first_success_step')
+            if type(steps) is not int or not 1<=steps<=800 or (
+                    first is not None and (type(first) is not int or not 1<=first<=steps)):
+                raise ValueError('INVALID_HORIZON_STEPS')
+            if by400 != (first is not None and first<=400) or by800!=(first is not None):
+                raise ValueError('INCONSISTENT_HORIZON_METRICS')
+            filtered.append({'episode':ep,'source_train_demo_id':src,
+                             'steps':steps,'first_success_step':first,
+                             'success_by_400':by400,'success_by_800':by800})
+        count400=sum(t['success_by_400'] for t in filtered)
+        count800=sum(t['success_by_800'] for t in filtered)
+        if horizon.get('success_by_400')!=count400 or horizon.get('success_by_800')!=count800:
+            raise ValueError('INCONSISTENT_HORIZON_COUNTS')
+        horizon_compact={'default_registered_limit':400,'experimental_limit':800,
+                         'success_by_400':count400,'success_by_800':count800,
+                         'trials':sorted(filtered,key=lambda x:(x['episode'],x['source_train_demo_id'])),
+                         'not_official_heldout_eval':True}
+        status='READ_ONLY_DRAWER_HORIZON_AUDIT'
     out = {
         'schema': 'TRO1_RESEARCH_EVIDENCE_V1',
         'source_relative': relative_source,
@@ -186,6 +231,7 @@ def read_result(source: Path, relative_source: str, status_file: Path | None) ->
         'paper_ready': False,
         'g0_audit':g0,
         'diagnosis':diag_compact,
+        'horizon_audit':horizon_compact,
         'pipeline':pipeline,
         'source_file_hashes':sources,
         'pairs':[safe_pair(x) for x in pairs[:10]],
@@ -299,6 +345,19 @@ def render_readme(obj: dict, preview: bool) -> str:
             lines.append(f"- Episode {d['episode']}: first action L2={d['first_action_8d_l2']}, first20 mean={d['first20_mean_8d_l2']}, full mean={d['full_mean_8d_l2']}")
     if obj.get('pipeline'):
         lines += ['',f"- Pipeline termination: `{obj['pipeline']}`"]
+    if obj.get('horizon_audit'):
+        h=obj['horizon_audit']
+        lines += ['', '## Read-only 400-step vs 800-step success audit', '',
+                  f"- Recorded success within first 400 steps: **{h['success_by_400']}/4**",
+                  f"- Recorded success within first 800 steps: **{h['success_by_800']}/4**",
+                  '- Prefix audit of frozen DEV trajectories; NOT official heldout 400-step evaluation.',
+                  '',
+                  '| Episode | TRAIN source | Steps | First success step | By 400 | By 800 |',
+                  '|---:|---:|---:|---:|---|---|']
+        for trial in h['trials']:
+            lines.append(f"| {trial['episode']} | {trial['source_train_demo_id']} | "
+                         f"{trial['steps']} | {trial['first_success_step'] or '—'} | "
+                         f"{trial['success_by_400']} | {trial['success_by_800']} |")
     if preview:
         lines += ['', '## ROBOT policy rollout preview (not original human demonstrations)', '',
                   '![Robot execution contact sheet](robot_rollout_preview.jpg)']
