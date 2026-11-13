@@ -61,3 +61,25 @@ If image decoding fails, `--dry-run` will omit the preview; **do not** say video
 - B06 is a one-method-at-a-time DEV baseline. B07 and any new methods remain untouched.
 - Evaluation protocol remains unchanged; do not adjust success predicates, task tolerance, privileged inputs, or simulation to make the number look better.
 - Preserve the immutable existing 0/4 result: any later technical repair requires a **new, clearly versioned result** plus an explicit difference from the original.
+
+## 6. 2026-11-13 GitHub video audit: preview ABSENT; publisher schema mismatch found
+
+Direct GitHub evidence-branch tree inspection found exactly one file under `evidence/runs/b06_uniskill_stackcups_dev_3c629e97bd06f52d/`: `evidence.json`; no `robot_rollout_preview.jpg`, no robot MP4s. The latest evidence commit for that directory only uploaded `evidence.json`. There are preview JPGs for old drawer runs, but none for B06. **Do not infer observed robot grasp/contact/placement behavior from success metrics alone.**
+
+Root cause in the previously recommended video publisher: `scripts/publish_research_evidence.py:read_result()` expected `per_trial.partial.json` to be a bare array, whereas B06's append-only `save_progress_json()` records `{"trials": [...]} `. This triggers `PARTIAL_TRIALS_MUST_BE_JSON_ARRAY` even if the separate `results.json` is complete, so no JPEG can be built/uploaded. Fixed `read_result` to accept both the legacy array and the precise B06 `{"trials": list}` form, rejecting malformed/unrecognized objects; stable B06 read-only summaries also accept `rollouts`/`episodes` fields as well as historical `real_rollouts`/`paired_episodes`. Add offline regression tests to `tests/test_publish_research_evidence.py` with a completed 4-rollout B06 mock containing the actual progress schema.
+
+**Next action requires only existing ROBOT MP4s (no PhysX):**
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_publish_research_evidence.py' -v
+PY=outputs/v120_baselines/conda_envs/uniskill/bin/python
+$PY scripts/publish_research_evidence.py --source outputs/research_runs/b06_uniskill_stackcups_dev_v1 --dry-run
+# Confirm file_names includes robot_rollout_preview.jpg before actual upload.
+$PY scripts/publish_research_evidence.py --source outputs/research_runs/b06_uniskill_stackcups_dev_v1
+```
+
+The preview publisher reads only generated robot `episode_*/source_*/rollout.mp4`, never original TRAIN/EVAL videos; it uploads an <=850 KB labeled 4×6 JPEG contact sheet along with sanitized JSON/README. If `--dry-run` shows only `evidence.json` and `README.md`, `robot_preview()` silently failed to decode a video; preserve the failure, check video files and ffmpeg before claiming the video was reviewed. An uploaded preview will be at a **new evidence directory** printed in `TRO1_EVIDENCE_PUBLISHED`, not necessarily the earlier B06-run direct evidence directory.
+
+Current scientific decision unchanged: 0/4 recorded B06 TRAIN-pair DEV success; actual motion failure mode **undetermined until the preview JPEG is visibly inspected**; do not modify or rerun B06 on the basis of a guess.
