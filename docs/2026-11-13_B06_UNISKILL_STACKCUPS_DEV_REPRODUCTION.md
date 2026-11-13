@@ -159,3 +159,19 @@ bash scripts/setup_b06_uniskill_stackcups.sh
 ```
 
 若输出 `B06_RECOVER_BLOCKED: target is not an independent Git working tree`，说明剩余目录并不是完整的独立子模块 Git 仓库；修复脚本会保留原有内容而不是冒险覆盖。须根据 Git 状态再做针对性处理。
+
+## 10. B06 第二次真实阻塞：干净但不同的 UniSkill-Policy HEAD；离线验证后修复
+
+- 用户前台观察：新添的 Git 恢复测试 `Ran 6 tests ... FAILED (failures=2)`；`UniSkill` 已 READY，但 `UniSkill-Policy` 的 `git submodule update` 报 `需要一个单独的版本`，安全恢复报告 `submodule HEAD points to another commit`，实际运行仍是 `author_source_submodules` 阻塞，未开展 B06 PhysX。
+- 错误原因分为两部分：① 原测试 fixture `git clone --no-checkout` 后让 HEAD 指向不存在的 ref，却未清空仍含有条目的 Git index，导致模拟出来的目录被正确识别为 dirty（两项测试失败）；② 实际服务器 `UniSkill-Policy` 已有**不同提交的 HEAD**，第一版恢复器无论这个仓库是否干净都强行拒绝。
+- 已更正离线 fixture：构造 unborn HEAD 时通过 `git read-tree --empty` 模拟真正的无 checkout 状态；修复恢复器：若不同 HEAD 但 worktree/index 完全干净，则保存 `refs/b06-recovery/preexisting-<原HEAD>` 备份引用，再从原作者库获取要求的准确 gitlink SHA，完成 `checkout --detach`，严格核对脚本入口；如有未提交修改或 untracked 文件仍然立刻停止，不删除和重置任何代码。
+- 修复后已在独立本地 Git 模拟仓库（无网络、无 CUDA、无用户数据）执行 **7/7 tests PASS**；`bash -n` 通过。服务器尚未验证本次补丁。
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only origin main
+python -m unittest discover -s tests -p 'test_b06_submodule_recovery.py' -v
+bash scripts/setup_b06_uniskill_stackcups.sh
+```
+
+若再次卡住，保留 Git 输出及真实目录内容；不得执行 `git reset --hard`、`git clean -fd` 或清除 `.git/modules`。本轮仍只复现 **B06**。
