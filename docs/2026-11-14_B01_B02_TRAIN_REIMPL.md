@@ -70,3 +70,24 @@ The actual server-side read-only inventory located genuine robot TRAIN triplets 
 2. Runtime dependency and action-space behavior in user's exact physics/CUDA environment remain unverified. Do not call a checkpoint an official author reproduction.
 3. No actual 64-demo training, 2× PhysX smoke, or 20×3 formal result is claimed by the code delivery alone.
 4. PushCube fixed +X success is a **robot competency control**, not evidence of cross-behavior/video necessity. The G0 dual-opposing-goal source-video gate remains BLOCKED.
+
+
+## One-command guarded continuation (2026-11-14)
+
+After pulling the latest branch, run the corrected smoke jobs in sequence:
+
+```bash
+bash scripts/run_b01_b02_fullval_smoke_v2.sh
+```
+
+This runs the unit suite, then 100-step B01/B02 smoke training with full held-out-demo validation and fixed DDPM validation noise. It refuses to overwrite existing output paths, writes logs to `outputs/logs/b01_b02_fullval_smoke_v2/`, and verifies the summary protocol fields and checkpoints.
+
+Only if that script exits successfully, run the two-episode PhysX development evaluation:
+
+```bash
+bash scripts/run_b01_b02_physx_dev_v2.sh
+```
+
+This checks both corrected-validation summaries and the pinned RoboReel evaluation source, then runs exactly two fresh-reset DEV episodes for each model (not formal bank evaluation), with MP4s and logs under `outputs/research_runs/*_physx_dev_fullval_v2/` and `outputs/logs/b01_b02_physx_dev_v2/`.
+
+Do not run the PhysX script before corrected full-validation training completes. DEV results are engineering diagnostics only; they do not complete either baseline.
