@@ -24,6 +24,15 @@ clone_pinned() {
       echo "TRO1_SOURCE_ALREADY_PINNED $name $current"
       return 0
     fi
+    # Recover only an interrupted, still-empty initialization from this exact origin.
+    if [[ -z "$current" && -z "$dirty" && "$origin" == "$url" ]]; then
+      git -C "$dest" fetch --filter=blob:none --depth 1 origin "$revision"
+      git -C "$dest" checkout --detach FETCH_HEAD
+      current="$(git -C "$dest" rev-parse HEAD)"
+      [[ "$current" == "$revision" ]] || return 12
+      echo "TRO1_SOURCE_PINNED_AFTER_RECOVERY $name $current $dest"
+      return 0
+    fi
     echo "ERROR: refusing to alter existing source tree: $dest" >&2
     echo "  current=$current expected=$revision origin=$origin dirty=\${dirty:+yes}" >&2
     return 11
