@@ -1,0 +1,149 @@
+{
+  "schema": "TRO1_EXTERNAL_BASELINE_SOURCE_LOCK_V1",
+  "date": "2026-11-14",
+  "methods": {
+    "B11": {
+      "name": "Im2Flow2Act",
+      "repository": "https://github.com/real-stanford/im2Flow2Act",
+      "revision": "f44b368b76195c30bf38074f6419fc8b9f8feb5f",
+      "paper": "CoRL 2024",
+      "license": "MIT",
+      "entrypoints": [
+        "scripts/controll/evaluate_from_flow_generation.py",
+        "scripts/flow_generation/inference.py"
+      ],
+      "native_robot": "UR5e",
+      "native_simulator": "MuJoCo",
+      "native_action_dim": 7,
+      "required_assets": [
+        "checkpoints.zip (flow_generation + manipulation_policy)",
+        "Stable Diffusion 1.5 pretrained weights",
+        "simulation_evaluation.zip",
+        "data_local/simulation/instrinsic_5-1.pkl",
+        "data_local/simulation/pose_matrix_5-1.pkl"
+      ],
+      "gpu_requirement_note": "README states at least 24 GB for concurrent online point tracking and policy inference",
+      "project_status": {
+        "L0": "SOURCE_PINNED_PUBLIC_REVISION",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B12": {
+      "name": "EC-Flow",
+      "repository": "https://github.com/YixiangChen515/EC-Flow",
+      "revision": "7d0a6243fd8b92500b5f864d70b3b60d6b6c853a",
+      "paper": "ICCV 2025",
+      "license": "MIT",
+      "entrypoints": [
+        "experiment/eval_my_flow_policy.py",
+        "experiment/eval_policy.sh"
+      ],
+      "native_robot": "Sawyer",
+      "native_simulator": "Meta-World",
+      "required_assets": [
+        "ckpt/flow.pt",
+        "ckpt/goal_img.pt",
+        "sam_and_track/checkpoints/sam2.1_hiera_large.pt",
+        "sam_and_track/gdino_checkpoints/groundingdino_swint_ogc.pth",
+        "sam_and_track/co-tracker/checkpoints/scaled_offline.pth"
+      ],
+      "gpu_requirement_note": "README states authors trained with 8 RTX 4090 GPUs; project will first use released weights for one-task native inference",
+      "metric_caveat": "Pinned evaluation wrapper counts len(policy.images)<=500 as success; independently capture env info['success'] and exception/termination state",
+      "project_status": {
+        "L0": "SOURCE_PINNED_PUBLIC_REVISION",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B08": {
+      "name": "SeeDo",
+      "repository": "https://github.com/ai4ce/SeeDo",
+      "revision": "48ff18827c626c196648dc92333491c9e9dd8948",
+      "paper": "IROS 2025 / arXiv:2410.08792",
+      "license": "not yet verified in this audit",
+      "native_stack": "PyBullet + modified Code-as-Policies primitives",
+      "official_vlm": "OpenAI GPT-4o API hard-coded in vlm.py; requires API key",
+      "project_status": {
+        "L0": "PUBLIC_SOURCE",
+        "L1": "PERCEPTION_NOT_RUN",
+        "L2": "OFFICIAL_VLM_BLOCKED_BY_NO_API",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B09": {
+      "name": "Point Policy",
+      "repository": "https://github.com/siddhanthaldar/Point-Policy",
+      "revision": "23d82ad90bf08815afba6d3e9c14347775e73c74",
+      "paper": "arXiv:2502.20391",
+      "license": "MIT",
+      "native_stack": "Franka-Teach + calibrated camera + keypoint-conditioned policy",
+      "dataset": "https://huggingface.co/datasets/siddhanthaldar/Point-Policy",
+      "dataset_size": "~16.3 GB total across eight task pickle files",
+      "released_policy_checkpoint": "not listed in author instructions; inference requires trained bc_weight",
+      "project_status": {
+        "L0": "PUBLIC_SOURCE_AND_DATA",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B10": {
+      "name": "Cross-Behavior Learning With Object Flow Prediction",
+      "repository": null,
+      "paper": "IEEE T-RO 2026, DOI 10.1109/TRO.2026.3701576",
+      "accepted_manuscript": "https://eprints.whiterose.ac.uk/id/eprint/242108/",
+      "official_code": "NOT_VERIFIED",
+      "project_status": {
+        "L0": "PAPER_VERIFIED_OFFICIAL_CODE_UNVERIFIED",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B07": {
+      "name": "RoboReel VLM + pi0.5",
+      "repository": "https://github.com/weiweigu1998/roboreel_models",
+      "revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "annotation_entrypoint": "scripts/annotate_human_videos.py",
+      "local_vlm": "Qwen/Qwen3-VL-4B-Instruct via Transformers >=5",
+      "cloud_api_required_for_annotation": false,
+      "project_status": {
+        "L0": "OFFICIAL_SOURCE_PINNED",
+        "L1": "LOCAL_ANNOTATION_DEV_RUNNER_READY",
+        "L2": "POLICY_TRAIN_NOT_RUN",
+        "L3_ROBOREEL": "POLICY_EVAL_NOT_RUN",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B04": {
+      "name": "RoboReel pi0.5 Keyframes",
+      "repository": "https://github.com/weiweigu1998/roboreel_models",
+      "revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "policy_config": "configs/eval/nd/vid_cond_pi05_keyframes.json",
+      "annotation_entrypoint": "scripts/extract_keyframes.py",
+      "official_annotation_client": "OpenAI API via src/keyframes/vlm_client.py; default GPT-4o-mini; CLI default gpt-5.4-mini",
+      "project_status": {
+        "L0": "OFFICIAL_SOURCE_PINNED",
+        "L1": "ANNOTATION_BLOCKED_UNLESS_PREANNOTATED",
+        "L2": "POLICY_EVAL_NOT_RUN",
+        "L3_ROBOREEL": "POLICY_EVAL_NOT_RUN",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    }
+  }
+}
