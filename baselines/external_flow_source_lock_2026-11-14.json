@@ -112,6 +112,22 @@
         "L4": "NOT_RUN",
         "L5": "NOT_RUN"
       }
+    },
+    "B07": {
+      "name": "RoboReel VLM + pi0.5",
+      "repository": "https://github.com/weiweigu1998/roboreel_models",
+      "revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "annotation_entrypoint": "scripts/annotate_human_videos.py",
+      "local_vlm": "Qwen/Qwen3-VL-4B-Instruct via Transformers >=5",
+      "cloud_api_required_for_annotation": false,
+      "project_status": {
+        "L0": "OFFICIAL_SOURCE_PINNED",
+        "L1": "LOCAL_ANNOTATION_DEV_RUNNER_READY",
+        "L2": "POLICY_TRAIN_NOT_RUN",
+        "L3_ROBOREEL": "POLICY_EVAL_NOT_RUN",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
     }
   }
 }
