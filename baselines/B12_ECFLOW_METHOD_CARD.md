@@ -41,3 +41,17 @@ Native EC-Flow uses Sawyer/Meta-World, a task-specific point/flow geometry contr
 `L0_SOURCE=PINNED_AT_PUBLIC_REVISION`; `L1/L2_NATIVE=NOT_RUN`; `L3_ROBOREEL_PORT=NOT_STARTED`; `L4_FORMAL=NOT_RUN`; `L5_SCIENCE=NOT_RUN`.
 
 Next step: inspect the B12 policy-evaluation profile in the updated asset audit. Do not download `goal_img.pt` or SAM2/GroundingDINO/CoTracker weights for the policy evaluator. Only consider `flow.pt` after checking local presence, host RAM, CLIP RN50 cache and code dependencies; then run an isolated model-only GPU memory preflight before starting Meta-World.
+
+
+## 2026-11-14 single-GPU gate update
+
+The server has one RTX 4090 with 24,251 MiB free at idle, 26.9 GiB host RAM available, and ~2.76 TiB disk free. The flow checkpoint and CLIP RN50 are not yet cached. B12 is approved only for a bounded FP32 model preflight, not yet for Meta-World evaluation.
+
+The model hub lists `flow.pt` at 9.46 GB. This is the checkpoint file size, not GPU VRAM usage; upstream maps the checkpoint to CPU before loading it into the CUDA model. Require >=12 GiB available host RAM before loading and >=4 GiB free GPU memory after model load plus official-shape forward. No mixed precision, architecture changes, or multi-GPU use for the baseline gate.
+
+Use the project scripts:
+- `scripts/create_b12_preflight_env.sh`
+- `scripts/download_b12_flow_checkpoint.sh` (downloads only pinned `flow.pt`)
+- `scripts/preflight_b12_flow_model.py`
+
+Do not run upstream `install.sh` for this gate. It installs SAM2, GroundingDINO and CoTracker even though the native policy evaluation path does not load their model weights. The first preflight imports the official `model.py` only, so those unrelated packages are not required.
