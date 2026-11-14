@@ -75,3 +75,18 @@ Consequences:
 - **B12 EC-Flow: candidate only**, not yet approved. First inspect released checkpoint sizes and run a small, isolated one-task memory preflight. Proceed only if it fits the single GPU; do not reproduce the authors' 8×4090 training.
 - Apply the same single-GPU gate to every remaining baseline, not only B11/B12. Prioritize methods that can run with released weights and fit the hardware.
 
+
+
+## B12 native policy evaluation: dependency narrowing
+
+Inspection of the pinned source clarified that the official Meta-World policy evaluator and the standalone flow-visualization demo have different runtime requirements.
+
+- `experiment/eval_my_flow_policy.py` constructs `FlowPredModel`.
+- `FlowPredModel.__init__` loads the flow DiT checkpoint `ckpt/flow.pt` and CLIP RN50.
+- The policy evaluator does not instantiate `GoundedSam2`, `PointTracker`, or the goal-image DiT. Their checkpoint files are therefore not loaded by this policy-evaluation path.
+- Caveat: `inference.py` imports `sam_and_track.utils` at module import time, and that module imports SAM2, GroundingDINO and CoTracker Python packages. Those code dependencies may still be needed unless we make a minimal lazy-import-only patch; their large weight files are not needed for this evaluator.
+- The separate standalone `inference.py` visualization path does load the goal-image model and invokes SAM2/GroundingDINO/CoTracker.
+
+The Hugging Face model card lists `flow.pt` at 9.46 GB and `goal_img.pt` at 715 MB. The flow file size is a disk/host-RAM concern, not a GPU VRAM estimate. Check available system RAM before loading because the official helper first loads the checkpoint to CPU. The updated asset audit reports this execution profile and host RAM availability.
+
+**Current decision:** B12 remains a single-4090 candidate, not yet approved. First check the updated audit's `B12_native_policy_eval` profile and whether `flow.pt` / CLIP RN50 are already local. Do not download the goal-image or SAM2/GroundingDINO/CoTracker weights for the native policy evaluator. After the actual required assets and import dependencies are verified, run a model-only FP32 GPU preflight and require at least 4 GiB of VRAM headroom before starting Meta-World.
