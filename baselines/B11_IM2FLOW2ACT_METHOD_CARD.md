@@ -24,7 +24,7 @@ This is a native UR5e/MuJoCo pipeline with calibrated camera/depth, 128 tracked 
 
 ## Hardware/dependency constraints
 
-- README explicitly says at least 24 GB GPU memory is needed to run online point tracking and policy inference concurrently. One RTX 4090 has 24 GB nominal memory, so this is a hard memory-risk gate, not a guarantee of fit.
+- README explicitly says at least 24 GB GPU memory is needed to run online point tracking and policy inference concurrently. The project is restricted to one RTX 4090; nominal capacity alone is not proof of fit. **Current decision: HOLD / DO NOT RUN** unless a measured low-memory configuration demonstrates stable peak allocation below the single-GPU budget with operating headroom. No multi-GPU workaround or full training is allowed for this project.
 - The pinned `environment.yml` is a large Python 3.10 environment with a mixed CUDA package stack (CUDA 11.8/12.1 entries and FAISS CUDA 11.2 build); do not install it into `pi05`.
 - Use an isolated project-local environment only after checking free disk and current package conflicts. Preserve the author's original dependency pins; any repair must be logged as a port.
 - First run a single native evaluation episode on an existing evaluation buffer after assets pass checks. No training from scratch initially.
@@ -37,4 +37,4 @@ The native policy outputs 7-D UR5e actions and uses the authors' MuJoCo task sta
 
 `L0_SOURCE=PINNED_AT_PUBLIC_REVISION`; `L1/L2_NATIVE=NOT_RUN`; `L3_ROBOREEL_PORT=NOT_STARTED`; `L4_FORMAL=NOT_RUN`; `L5_SCIENCE=NOT_RUN`.
 
-Next step: run `scripts/audit_b11_b12_native_assets.py`; only download missing author assets after the exact missing set and disk budget are known.
+Next step: source-only inspection is allowed. Do not download large checkpoints, create the B11 environment, or launch inference until a memory feasibility test demonstrates the complete online tracking + policy path fits the single RTX 4090 with headroom. If not, mark B11 `RESOURCE_EXCLUDED_SINGLE_4090` and move on.
