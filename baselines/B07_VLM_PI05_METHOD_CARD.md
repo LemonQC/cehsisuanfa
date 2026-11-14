@@ -12,7 +12,7 @@ Status: official annotation source and local Qwen3-VL path verified; annotation-
 
 ## Bounded first run
 
-`scripts/run_b07_local_qwen_annotation_dev.sh` checks the pinned upstream revision, project-local UniSkill Python, two genuine TRAIN StackCups front videos, free disk and CUDA/Transformers versions. It annotates exactly TRAIN IDs 0000 and 0001, 16 sampled frames per video, using local Qwen3-VL-4B-Instruct and the existing project HF cache. It writes to a unique new JSON filename and refuses to overwrite it.
+`scripts/run_b07_local_qwen_annotation_dev.sh` checks the pinned upstream revision, project-local UniSkill Python, two genuine TRAIN StackCups front videos, free disk and CUDA/Transformers versions. It annotates exactly TRAIN IDs 0000 and 0001, 16 sampled frames per video, using local Qwen3-VL-4B-Instruct and the existing project HF cache. A small wrapper uses the official Decord reader when installed, or an OpenCV-backed compatibility shim on Python 3.12 if Decord is unavailable; this changes only video decoding, not sampling/prompt/model logic. It writes to a unique new JSON filename and refuses to overwrite it.
 
 This only validates the local VLM annotation component. It does not train the VLM+π0.5 policy, run PhysX, or provide a success rate. The next gate is to verify the official B07 checkpoint, its expected annotation format and feature dependencies, then run no more than two TRAIN-only DEV episodes before any held-out EVAL use.
 
