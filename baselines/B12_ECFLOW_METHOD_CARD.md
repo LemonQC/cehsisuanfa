@@ -14,14 +14,19 @@ Status at source audit: `OFFICIAL_SOURCE_PINNED`; native assets/runtime on the u
 
 The repository bundles its Meta-World code and uses Sawyer environments. Its native evaluation entrypoint is `experiment/eval_my_flow_policy.py`, launched by `experiment/eval_policy.sh`. The paper script evaluates nine Meta-World v2 goal-observable tasks with 25 episodes per task. The policy combines a DiT flow predictor, CLIP RN50 text conditioning, point sampling/segmentation and a geometry-based controller.
 
-Expected assets:
-- `ckpt/flow.pt`;
-- `ckpt/goal_img.pt`;
-- `sam_and_track/checkpoints/sam2.1_hiera_large.pt`;
-- `sam_and_track/gdino_checkpoints/groundingdino_swint_ogc.pth`;
-- `sam_and_track/co-tracker/checkpoints/scaled_offline.pth`.
+## Asset split for the actual policy-evaluation path
 
-The README says full training used 8 RTX 4090 GPUs. The first project milestone is released-checkpoint inference on one native Meta-World task, not an attempted eight-GPU training reproduction.
+A source-level trace of the pinned evaluation entrypoint narrows the assets needed for native policy evaluation:
+
+- **Required learned weights:** `ckpt/flow.pt` and the OpenAI CLIP RN50 weight cache used by `clip.load("RN50")`.
+- **Python code dependencies imported at module load:** SAM2, GroundingDINO and CoTracker packages are imported by `inference.py` through `sam_and_track.utils`; their importable code may be needed even though the evaluation path does not instantiate these models.
+- **Not loaded by `experiment/eval_my_flow_policy.py`:** `ckpt/goal_img.pt`, SAM2 checkpoint, GroundingDINO checkpoint and CoTracker checkpoint. Those are used by the separate standalone `inference.py` visualization/demo path, not by `FlowPredModel` used in the Meta-World policy evaluator.
+
+The policy evaluator constructs `FlowPredModel`; its constructor loads the `DiT-XL-NoPosEmb-Lang` flow predictor from `ckpt/flow.pt` and CLIP RN50. It does not instantiate `GoundedSam2`, `PointTracker` or the goal-image DiT. The audit now reports this distinction explicitly to avoid downloading unused large weights.
+
+The Hugging Face model card lists `flow.pt` at about 9.46 GB and `goal_img.pt` at about 715 MB. The large flow file is a disk/host-RAM loading concern, not a direct estimate of GPU VRAM; the actual GPU peak must be measured with the official model and one forward pass. The flow checkpoint is loaded to CPU first, so available system RAM must also be checked.
+
+The README says full training used 8 RTX 4090 GPUs. We will not reproduce that training recipe. The first project milestone is released-checkpoint inference on one native Meta-World task, subject to the single-4090 memory gate.
 
 ## Evaluation caveat found in source
 
@@ -35,4 +40,4 @@ Native EC-Flow uses Sawyer/Meta-World, a task-specific point/flow geometry contr
 
 `L0_SOURCE=PINNED_AT_PUBLIC_REVISION`; `L1/L2_NATIVE=NOT_RUN`; `L3_ROBOREEL_PORT=NOT_STARTED`; `L4_FORMAL=NOT_RUN`; `L5_SCIENCE=NOT_RUN`.
 
-Next step: run `scripts/audit_b11_b12_native_assets.py`; then choose the first native checkpoint smoke based on which complete asset set is already present and fits the 4090 memory budget.
+Next step: inspect the B12 policy-evaluation profile in the updated asset audit. Do not download `goal_img.pt` or SAM2/GroundingDINO/CoTracker weights for the policy evaluator. Only consider `flow.pt` after checking local presence, host RAM, CLIP RN50 cache and code dependencies; then run an isolated model-only GPU memory preflight before starting Meta-World.
