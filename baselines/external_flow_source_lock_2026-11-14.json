@@ -61,6 +61,57 @@
         "L4": "NOT_RUN",
         "L5": "NOT_RUN"
       }
+    },
+    "B08": {
+      "name": "SeeDo",
+      "repository": "https://github.com/ai4ce/SeeDo",
+      "revision": "48ff18827c626c196648dc92333491c9e9dd8948",
+      "paper": "IROS 2025 / arXiv:2410.08792",
+      "license": "not yet verified in this audit",
+      "native_stack": "PyBullet + modified Code-as-Policies primitives",
+      "official_vlm": "OpenAI GPT-4o API hard-coded in vlm.py; requires API key",
+      "project_status": {
+        "L0": "PUBLIC_SOURCE",
+        "L1": "PERCEPTION_NOT_RUN",
+        "L2": "OFFICIAL_VLM_BLOCKED_BY_NO_API",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B09": {
+      "name": "Point Policy",
+      "repository": "https://github.com/siddhanthaldar/Point-Policy",
+      "revision": "23d82ad90bf08815afba6d3e9c14347775e73c74",
+      "paper": "arXiv:2502.20391",
+      "license": "MIT",
+      "native_stack": "Franka-Teach + calibrated camera + keypoint-conditioned policy",
+      "dataset": "https://huggingface.co/datasets/siddhanthaldar/Point-Policy",
+      "dataset_size": "~16.3 GB total across eight task pickle files",
+      "released_policy_checkpoint": "not listed in author instructions; inference requires trained bc_weight",
+      "project_status": {
+        "L0": "PUBLIC_SOURCE_AND_DATA",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B10": {
+      "name": "Cross-Behavior Learning With Object Flow Prediction",
+      "repository": null,
+      "paper": "IEEE T-RO 2026, DOI 10.1109/TRO.2026.3701576",
+      "accepted_manuscript": "https://eprints.whiterose.ac.uk/id/eprint/242108/",
+      "official_code": "NOT_VERIFIED",
+      "project_status": {
+        "L0": "PAPER_VERIFIED_OFFICIAL_CODE_UNVERIFIED",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
     }
   }
 }
