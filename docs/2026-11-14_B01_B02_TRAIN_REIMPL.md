@@ -23,7 +23,7 @@ python -m unittest discover -s tests -p test_robot_only_reimpl.py -v
 
 # For a quick genuine-data engineering smoke with >=2 demos, explicitly label SMALL_DEV_DATA_ONLY:
 python -m agcofl.robot_only_reimpl prepare \
-  --data-root outputs/v110_baselines/official_dataset/robot_trajectories/no_distraction/push_cube \
+  --data-root outputs/v120_baselines/official_dataset/robot_trajectories/no_distraction/push_cube \
   --cache-root outputs/b01_b02_robot_only_cache_smoke --min-demos 64 --allow-small-dev
 
 python -m agcofl.robot_only_reimpl train --method b01 \
@@ -55,6 +55,10 @@ python -m agcofl.robot_only_reimpl eval \
 # Repeat with --pass-index 1 and 2 into distinct output directories,
 # then aggregate success k/60 and compute 95% Wilson CI.
 ```
+
+## Current local-data fact
+
+The repository's immutable `research_reports/2026-11-09_v120/robot_data_manifest.json` records that genuine official robot TRAIN triplets for PushCube IDs `0000` and `0001` were acquired under `outputs/v120_baselines/official_dataset`. The older v110 manifest records a 404 for its former dataset path. Therefore the code default and commands use the v120 path. With the two currently recorded demos, `prepare --allow-small-dev` can only create a `SMALL_DEV_DATA_ONLY` cache (one train / one validation demo); this is an engineering smoke, not a formal baseline. Do not increase the count by duplicating episodes.
 
 ## Unresolved preflight checks
 
