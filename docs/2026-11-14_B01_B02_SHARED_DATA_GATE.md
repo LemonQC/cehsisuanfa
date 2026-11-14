@@ -12,12 +12,16 @@
     conda activate pi05
     python -m unittest discover -s tests -p 'test_prepare_b01_robot_train.py' -v
     python -u scripts/prepare_b01_robot_train.py \
-      --data-root outputs/v110_baselines/official_dataset/robot_trajectories/no_distraction/push_cube \
+      --data-root outputs/v120_baselines/official_dataset/robot_trajectories/no_distraction/push_cube \
       --required-demos 64 --seed 42
 
 需要 h5py、numpy。只接受 0000–0079；不会打开 0080–0099 官方保留集。每例必须有恰好一个非 state-mode 的 H5、base_camera.mp4 与 hand_camera.mp4，H5 内至少一个 actions/action 数据集、合法 MP4 header 和非软链接的文件。记录每个文件 SHA256；固定随机种子 42，64 个有效演示分为 **51 TRAIN / 13 VAL**。
 
 报告仅保存在项目 outputs/research_runs/b01_b02_shared_robot_train/train_manifest_<hash>.json，结果只增不改，不上传任何 H5、视频或权重。真实数据不满 64 demo 时，命令返回状态码 2 和 INSUFFICIENT_AUTHENTIC_TRAIN_TRIPLETS。不要把 2 demo smoke 写为正式 Baseline。
+
+## 当前数据资产说明
+
+仓库中的 v110 数据清单记录旧路径返回 404；v120 数据清单记录官方 PushCube TRAIN ID `0000`、`0001` 两个真实机器人演示已下载。因此本轮 B01/B02 代码默认根目录已切换到 `outputs/v120_baselines/official_dataset/robot_trajectories/no_distraction/push_cube`。目前只有 2 条真实演示，只允许 `--allow-small-dev` 工程冒烟，不满足 64 条正式训练门槛。
 
 ## 后续真实缺口
 
