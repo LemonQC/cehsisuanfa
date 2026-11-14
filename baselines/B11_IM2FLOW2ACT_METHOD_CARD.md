@@ -7,7 +7,7 @@ Status at source audit: `OFFICIAL_SOURCE_PINNED`; native assets/runtime on the u
 - Repository: https://github.com/real-stanford/im2Flow2Act
 - Pinned revision: `f44b368b76195c30bf38074f6419fc8b9f8feb5f`
 - Paper: CoRL 2024, arXiv:2407.15208
-- License: inspect the checked-out `LICENSE` before redistribution; source code must remain attributed.
+- License: MIT (verified at the pinned revision); preserve the copyright and license notice.
 - Author-provided assets: `checkpoints.zip`, Stable Diffusion 1.5 pretrained weights, `simulation_evaluation.zip`, and simulated-play data. No weights/data are bundled in this project repository.
 
 ## Native reproduction path
