@@ -89,7 +89,7 @@ SPECS = {
         },
         "python_modules": [
             "torch", "torchvision", "diffusers", "clip", "mujoco",
-            "metaworld", "cv2", "imageio",
+            "metaworld", "cv2", "imageio", "sam2", "groundingdino", "cotracker",
         ],
         "notes": [
             "Native benchmark is Meta-World Sawyer, not RoboReel Panda.",
@@ -202,6 +202,56 @@ def inspect_method(method: str, repo_root: Path, explicit_root: Path | None) -> 
     }
 
 
+def host_memory_info() -> dict:
+    values = {}
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            key, raw = line.split(":", 1)
+            if key in {"MemTotal", "MemAvailable"}:
+                values[key] = int(raw.strip().split()[0]) * 1024
+    except Exception:
+        return {"available": False}
+    return {
+        "available": "MemTotal" in values and "MemAvailable" in values,
+        "total_bytes": values.get("MemTotal"),
+        "available_bytes": values.get("MemAvailable"),
+    }
+
+
+def b12_execution_profile(repo_root: Path) -> dict:
+    local = repo_root / "third_party" / "EC-Flow"
+    flow = path_state(local, "ckpt/flow.pt")
+    optional = {
+        "goal_image_checkpoint": path_state(local, "ckpt/goal_img.pt"),
+        "sam2_checkpoint": path_state(local, "sam_and_track/checkpoints/sam2.1_hiera_large.pt"),
+        "grounding_dino_checkpoint": path_state(local, "sam_and_track/gdino_checkpoints/groundingdino_swint_ogc.pth"),
+        "co_tracker_checkpoint": path_state(local, "sam_and_track/co-tracker/checkpoints/scaled_offline.pth"),
+    }
+    clip_cache = Path.home() / ".cache" / "clip" / "RN50.pt"
+    return {
+        "profile": "B12_NATIVE_METAWORLD_POLICY_EVALUATION",
+        "entrypoint": "experiment/eval_my_flow_policy.py",
+        "required_model_weights": {
+            "flow_checkpoint": flow,
+            "clip_rn50_cache": {
+                "path": str(clip_cache),
+                "exists": clip_cache.is_file(),
+                "bytes": clip_cache.stat().st_size if clip_cache.is_file() else None,
+            },
+        },
+        "not_loaded_by_policy_evaluation": optional,
+        "code_dependencies_still_imported": ["sam2", "groundingdino", "cotracker"],
+        "gpu_memory_status": "NOT_MEASURED",
+        "source_reading": [
+            "eval_my_flow_policy.py constructs FlowPredModel; FlowPredModel loads ckpt/flow.pt and CLIP RN50.",
+            "The policy evaluation path does not instantiate GoundedSam2, PointTracker, or the goal-image DiT model; their checkpoint files are not loaded by this entrypoint.",
+            "inference.py imports the SAM2/GroundingDINO/CoTracker Python modules at module import time, so code dependencies may still be required even though their weights are not loaded.",
+            "The standalone inference.py visualization main path is different and does load the goal-image model, SAM2, GroundingDINO and CoTracker.",
+            "The flow checkpoint is loaded to CPU first; host RAM availability must be checked separately from GPU VRAM.",
+        ],
+    }
+
+
 def runtime_info(root: Path) -> dict:
     usage = shutil.disk_usage(root)
     nvidia = None
@@ -218,6 +268,7 @@ def runtime_info(root: Path) -> dict:
         "repo_root": str(root),
         "disk_free_bytes": usage.free,
         "disk_total_bytes": usage.total,
+        "host_memory": host_memory_info(),
         "nvidia_smi": nvidia,
     }
 
@@ -234,6 +285,9 @@ def main() -> None:
         "schema": "TRO1_B11_B12_ASSET_AUDIT_V1",
         "read_only": True,
         "runtime": runtime_info(root),
+        "execution_profiles": {
+            "B12_native_policy_eval": b12_execution_profile(root),
+        },
         "methods": {
             "B11": inspect_method("B11", root, args.b11_root),
             "B12": inspect_method("B12", root, args.b12_root),
