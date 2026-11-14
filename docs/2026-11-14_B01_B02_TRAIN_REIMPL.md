@@ -1,0 +1,93 @@
+# TRO1 — B01/B02 RoboReel robot-only train/eval adapter (2026-11-14)
+
+## Truthful scope
+
+- **B01**: RoboReel RGB+qpos 2-frame Transformer Behavior Cloning. This is **REIMPL_ON_ROBOREEL**, not a released ACT/Transformer-BC author's implementation.
+- **B02**: same RGB+qpos and actions, compact conditional DDPM noise-prediction model. **REIMPL_ON_ROBOREEL**, not original Diffusion Policy architecture/weights.
+- Both use full TRAIN demonstrations 0000–0079 only; demo-level 80/20 split, train-only action/qpos means and stds, base_camera with pd_joint_pos 8-D actions; provenance SHA256 for actual input H5 and both MP4s; joint qpos from articulation columns 13:22; actual live state from agent/qpos.
+- Official RoboReel PushCube-v2 env is never modified. Formal results require frozen env bank, held-out scene bank entries 0–59 split in 20×3 passes, original success metric, nonprivileged agent observation. No human video is read by robot-only policy. **One 20-scene pass is not 60-rollout final evidence.**
+- An offline integration test with synthetic 2-demo H5+MP4 was run on CPU: **4/4 tests passed**; both B01 and B02 one-step training, checkpoint load, output and backprop tested. **Real user 4090 training and PhysX runs have NOT RUN; no success rate is claimed.**
+- DEV evaluation uses new reset seeds 310000+N; it **never opens official held-out bank**. Formal mode cannot use a small-dev checkpoint.
+
+## Foreground commands on user server
+
+Use an existing working PyTorch+ManiSkill Conda env; do not overwrite pi05 if dependency conflict. Verify `torch`, `h5py`, `numpy`, `Pillow`, `imageio`, `imageio-ffmpeg`, `mani_skill` are importable. Paths are under the existing project disk.
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git fetch origin
+# After merging PR #1, or checkout its branch for the additional code:
+git switch tro1-b01-b02-shared-train-data-gate-20261114
+git pull --ff-only origin tro1-b01-b02-shared-train-data-gate-20261114
+python -m unittest discover -s tests -p test_robot_only_reimpl.py -v
+
+# For a quick genuine-data engineering smoke with >=2 demos, explicitly label SMALL_DEV_DATA_ONLY:
+python -m agcofl.robot_only_reimpl prepare \
+  --data-root outputs/v120_baselines/robot_train/robot_trajectories/no_distraction/push_cube \
+  --cache-root outputs/b01_b02_robot_only_cache_smoke --min-demos 64 --allow-small-dev
+
+python -m agcofl.robot_only_reimpl train --method b01 \
+  --cache-root outputs/b01_b02_robot_only_cache_smoke \
+  --out outputs/research_runs/b01_smoke_v1 --steps 100 --batch 16 --allow-small-dev
+python -m agcofl.robot_only_reimpl train --method b02 \
+  --cache-root outputs/b01_b02_robot_only_cache_smoke \
+  --out outputs/research_runs/b02_smoke_v1 --steps 100 --batch 16 --allow-small-dev
+
+# Real physically executed non-heldout DEV scene, 2 episodes each; optional robot MP4:
+python -m agcofl.robot_only_reimpl eval \
+  --checkpoint outputs/research_runs/b01_smoke_v1/best.pt \
+  --out outputs/research_runs/b01_physx_dev_v1 --mode dev --episodes 2 --save-video
+python -m agcofl.robot_only_reimpl eval \
+  --checkpoint outputs/research_runs/b02_smoke_v1/best.pt \
+  --out outputs/research_runs/b02_physx_dev_v1 --mode dev --episodes 2 --save-video
+```
+
+If real 64+ demos are already downloaded, use a **fresh cache directory**, omit `--allow-small-dev`, train in distinct paths with more updates and monitor validation loss. The code refuses an existing cache/output to avoid overwriting experiments.
+
+Formal 20×3, **only once** pretrained checkpoints are audited, real-data quality and action compatibility are verified and DEV is meaningful (needs official held-out bank `roboreel_env/init_states/without_distraction/push_cube.pkl`):
+
+```bash
+# Demonstrates one formal pass, not the pooled 60.
+python -m agcofl.robot_only_reimpl eval \
+  --checkpoint outputs/research_runs/b01_formal_train_v1/best.pt \
+  --mode formal --episodes 20 --pass-index 0 \
+  --out outputs/research_runs/b01_official_bank_pass0_v1 --save-video
+# Repeat with --pass-index 1 and 2 into distinct output directories,
+# then aggregate success k/60 and compute 95% Wilson CI.
+```
+
+## Validation metric correction (2026-11-14)
+
+The first 100-step smoke logs used an earlier validator that evaluated only the first 16 windows of the held-out demonstration. Those recorded `best_val_loss` values are retained as historical logs but are **superseded for checkpoint selection**. The validator now evaluates every window in the held-out demo. DDPM validation uses fixed random timesteps/noise (same seed at every checkpoint), making the noise-prediction metric deterministic and comparable across training checkpoints. B01 action MSE and B02 epsilon-prediction MSE are different objectives and must never be ranked against each other.
+
+## Current local-data fact
+
+The actual server-side read-only inventory located genuine robot TRAIN triplets at `outputs/v120_baselines/robot_train/robot_trajectories/no_distraction/push_cube/{0000,0001}`. Each demo has one H5 plus `base_camera.mp4` and `hand_camera.mp4`. The immutable v120 manifest records IDs 0000 and 0001; the earlier guessed `official_dataset` directory does not exist. Therefore code defaults and commands use `outputs/v120_baselines/robot_train/...`. With the two currently recorded demos, `prepare --allow-small-dev` can only create a `SMALL_DEV_DATA_ONLY` cache (one train / one validation demo); this is an engineering smoke, not a formal baseline. Do not increase the count by duplicating episodes.
+
+## Unresolved preflight checks
+
+1. Verify actual H5 trajectory row/MP4 decode and articulation robot key match pinned official source; any mismatch is a hard error, not silently truncated.
+2. Runtime dependency and action-space behavior in user's exact physics/CUDA environment remain unverified. Do not call a checkpoint an official author reproduction.
+3. No actual 64-demo training, 2× PhysX smoke, or 20×3 formal result is claimed by the code delivery alone.
+4. PushCube fixed +X success is a **robot competency control**, not evidence of cross-behavior/video necessity. The G0 dual-opposing-goal source-video gate remains BLOCKED.
+
+
+## One-command guarded continuation (2026-11-14)
+
+After pulling the latest branch, run the corrected smoke jobs in sequence:
+
+```bash
+bash scripts/run_b01_b02_fullval_smoke_v2.sh
+```
+
+This runs the unit suite, then 100-step B01/B02 smoke training with full held-out-demo validation and fixed DDPM validation noise. It refuses to overwrite existing output paths, writes logs to `outputs/logs/b01_b02_fullval_smoke_v2/`, and verifies the summary protocol fields and checkpoints.
+
+Only if that script exits successfully, run the two-episode PhysX development evaluation:
+
+```bash
+bash scripts/run_b01_b02_physx_dev_v2.sh
+```
+
+This checks both corrected-validation summaries and the pinned RoboReel evaluation source, then runs exactly two fresh-reset DEV episodes for each model (not formal bank evaluation), with MP4s and logs under `outputs/research_runs/*_physx_dev_fullval_v2/` and `outputs/logs/b01_b02_physx_dev_v2/`.
+
+Do not run the PhysX script before corrected full-validation training completes. DEV results are engineering diagnostics only; they do not complete either baseline.
