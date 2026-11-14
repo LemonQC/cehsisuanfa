@@ -128,6 +128,22 @@
         "L4": "NOT_RUN",
         "L5": "NOT_RUN"
       }
+    },
+    "B04": {
+      "name": "RoboReel pi0.5 Keyframes",
+      "repository": "https://github.com/weiweigu1998/roboreel_models",
+      "revision": "79a0fb0099e73c5560114753a8706276f93aefc2",
+      "policy_config": "configs/eval/nd/vid_cond_pi05_keyframes.json",
+      "annotation_entrypoint": "scripts/extract_keyframes.py",
+      "official_annotation_client": "OpenAI API via src/keyframes/vlm_client.py; default GPT-4o-mini; CLI default gpt-5.4-mini",
+      "project_status": {
+        "L0": "OFFICIAL_SOURCE_PINNED",
+        "L1": "ANNOTATION_BLOCKED_UNLESS_PREANNOTATED",
+        "L2": "POLICY_EVAL_NOT_RUN",
+        "L3_ROBOREEL": "POLICY_EVAL_NOT_RUN",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
     }
   }
 }
