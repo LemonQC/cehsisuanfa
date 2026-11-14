@@ -7,7 +7,7 @@ Status at source audit: `OFFICIAL_SOURCE_PINNED`; native assets/runtime on the u
 - Repository: https://github.com/YixiangChen515/EC-Flow
 - Pinned revision: `7d0a6243fd8b92500b5f864d70b3b60d6b6c853a`
 - Paper: ICCV 2025, “EC-Flow: Enabling Versatile Robotic Manipulation from Action-Unlabeled Videos via Embodiment-Centric Flow”.
-- License: MIT at the pinned revision.
+- License: MIT at the pinned revision (verified in the source LICENSE).
 - Author-provided assets: flow predictor and goal-image predictor checkpoints from the authors' Hugging Face repository, plus SAM2.1, GroundingDINO and CoTracker checkpoints.
 
 ## Native reproduction path
@@ -25,7 +25,7 @@ The README says full training used 8 RTX 4090 GPUs. The first project milestone 
 
 ## Evaluation caveat found in source
 
-The pinned `experiment/eval_my_flow_policy.py` increments success when `len(policy.images) <= 500`. The underlying `experiment/policy.py` sets `done = info['success']` and collects frames, but the aggregate script uses episode length as its success proxy rather than explicitly accumulating `info['success']`. A faithful native reproduction must preserve and report the authors' published/script metric, while also logging the environment success signal independently. Do not silently replace the metric or claim the proxy is equivalent without checking task semantics.
+The pinned `experiment/eval_my_flow_policy.py` increments success when `len(policy.images) <= 500`. The underlying `experiment/policy.py` sets `done = info['success']` and collects frames, but the aggregate script uses episode length as its success proxy rather than explicitly accumulating `info['success']`. Because `collect_video()` can also break on an exception, a short partial episode may be counted as success by the wrapper. A faithful native reproduction must preserve and report the authors' script metric, while separately logging `info['success']`, termination/truncation and exception state. Do not silently replace the metric or claim the proxy is equivalent.
 
 ## RoboReel adaptation boundary
 
