@@ -17,6 +17,9 @@ spec.loader.exec_module(m)
 
 
 class TestRobotOnly(unittest.TestCase):
+    def test_default_root_matches_acquired_v120_robot_dataset(self):
+        self.assertEqual(m.DATA_ROOT, m.ROOT/'outputs/v120_baselines/official_dataset/robot_trajectories/no_distraction/push_cube')
+
     def test_articulation_offset_and_live_rgb(self):
         a=np.zeros((5,31),dtype=np.float32);a[:,13:22]=np.arange(9)
         s=m.pack_state(a)
