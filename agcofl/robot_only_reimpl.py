@@ -20,7 +20,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = ROOT / 'outputs/v110_baselines/official_dataset/robot_trajectories/no_distraction/push_cube'
+DATA_ROOT = ROOT / 'outputs/v120_baselines/official_dataset/robot_trajectories/no_distraction/push_cube'
 CACHE_ROOT = ROOT / 'outputs/b01_b02_robot_only_cache'
 RUN_ROOT = ROOT / 'outputs/research_runs/b01_b02_robot_only'
 ART_QPOS_OFFSET = 13
