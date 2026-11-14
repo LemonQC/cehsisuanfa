@@ -34,3 +34,33 @@ Start with B11 Im2Flow2Act and B12 EC-Flow as the next external flow baselines. 
 ## Audit script behavior
 
 `scripts/audit_b11_b12_native_assets.py` only inspects local files, git revisions, Python module availability, GPU memory via `nvidia-smi`, and free disk. It does not download, install, extract, train, or run a simulator. It refuses to overwrite an existing JSON report.
+
+
+## User server audit result (2026-11-14 17:35 +08)
+
+The read-only audit ran successfully after adding the CLI wrapper. Server facts:
+- Python 3.11.18 in the current `pi05` shell.
+- RTX 4090: 24,564 MiB total, 23,762 MiB free at audit time.
+- Project disk: 3,034,625,794,048 bytes free (~2.76 TiB).
+- Both official source repositories are absent locally (`SOURCE_NOT_PRESENT_LOCALLY`).
+- No local B11/B12 asset readiness can be inferred until the source trees are cloned.
+
+The 4090 meets the nominal 24-GB class, but B11's online tracking + policy inference still has a tight memory margin. Do not run B11 end-to-end until weights are staged and a low-memory preflight is prepared. B12 should use released checkpoints for a one-task native inference smoke; do not attempt the authors' 8-GPU training recipe.
+
+## Pinned-source clone gate
+
+Added `scripts/clone_b11_b12_pinned_sources.sh`. It clones only the two source repositories at exact audited commits into `third_party/im2Flow2Act` and `third_party/EC-Flow`. It refuses to overwrite any existing non-matching or dirty tree and is safe to rerun when both clones are already clean and pinned. It does not install packages, download checkpoints/datasets, create environments, train, or launch simulators.
+
+Run:
+
+```bash
+bash scripts/clone_b11_b12_pinned_sources.sh
+python scripts/audit_b11_b12_native_assets.py \
+  --out outputs/research_runs/b11_b12_asset_audit_after_clone_20261114.json
+```
+
+Expected source revisions:
+- B11: `f44b368b76195c30bf38074f6419fc8b9f8feb5f`
+- B12: `7d0a6243fd8b92500b5f864d70b3b60d6b6c853a`
+
+Only after this second audit should any asset download or isolated environment creation be planned.
