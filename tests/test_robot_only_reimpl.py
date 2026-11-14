@@ -80,6 +80,31 @@ class TestRobotOnly(unittest.TestCase):
             action=m.infer(dp,dp_ck,[np.zeros((48,48,3),np.uint8)],np.zeros(8,np.float32))
             self.assertEqual(action.shape,(3,8))
 
+    def test_validation_uses_all_windows_and_is_deterministic(self):
+        from torch.utils.data import DataLoader
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)/'raw';root.mkdir()
+            self._demo(root,'0000');self._demo(root,'0001')
+            cache=Path(d)/'cache'
+            m.preprocess(root,cache,side=48,min_demos=64,allow_small_dev=True)
+            val=m.RobotDataset(cache,'validation',3)
+            loader=DataLoader(val,batch_size=2,shuffle=False)
+            class CountingZero(torch.nn.Module):
+                def __init__(self):
+                    super().__init__();self.seen=0
+                def forward(self,rgb,state):
+                    self.seen+=len(rgb)
+                    return torch.zeros((len(rgb),3,m.ACTION_DIM),device=rgb.device)
+            zero=CountingZero()
+            first=m.evaluate_validation(zero,'b01',loader,'cpu',42)
+            self.assertEqual(zero.seen,len(val))
+            second=m.evaluate_validation(zero,'b01',loader,'cpu',42)
+            self.assertAlmostEqual(first,second,places=8)
+            diffusion=m.new_model('b02',3,steps=4)
+            d1=m.evaluate_validation(diffusion,'b02',loader,'cpu',42)
+            d2=m.evaluate_validation(diffusion,'b02',loader,'cpu',42)
+            self.assertAlmostEqual(d1,d2,places=7)
+
     def test_bad_frame_alignment_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d)/'raw';root.mkdir()
