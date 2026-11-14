@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENV_NAME="\${ENV_NAME:-ecflow_b12}"
+ENV_NAME="${ENV_NAME:-ecflow_b12}"
 if conda env list | awk '{print $1}' | grep -qx "$ENV_NAME"; then
   echo "ERROR: conda environment already exists: $ENV_NAME"
   echo "Refusing to modify an existing environment. Choose a new ENV_NAME."
