@@ -56,6 +56,10 @@ python -m agcofl.robot_only_reimpl eval \
 # then aggregate success k/60 and compute 95% Wilson CI.
 ```
 
+## Validation metric correction (2026-11-14)
+
+The first 100-step smoke logs used an earlier validator that evaluated only the first 16 windows of the held-out demonstration. Those recorded `best_val_loss` values are retained as historical logs but are **superseded for checkpoint selection**. The validator now evaluates every window in the held-out demo. DDPM validation uses fixed random timesteps/noise (same seed at every checkpoint), making the noise-prediction metric deterministic and comparable across training checkpoints. B01 action MSE and B02 epsilon-prediction MSE are different objectives and must never be ranked against each other.
+
 ## Current local-data fact
 
 The actual server-side read-only inventory located genuine robot TRAIN triplets at `outputs/v120_baselines/robot_train/robot_trajectories/no_distraction/push_cube/{0000,0001}`. Each demo has one H5 plus `base_camera.mp4` and `hand_camera.mp4`. The immutable v120 manifest records IDs 0000 and 0001; the earlier guessed `official_dataset` directory does not exist. Therefore code defaults and commands use `outputs/v120_baselines/robot_train/...`. With the two currently recorded demos, `prepare --allow-small-dev` can only create a `SMALL_DEV_DATA_ONLY` cache (one train / one validation demo); this is an engineering smoke, not a formal baseline. Do not increase the count by duplicating episodes.
