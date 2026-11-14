@@ -140,11 +140,16 @@ def path_state(root: Path, rel: str) -> dict:
     exists = p.exists()
     if p.is_file():
         size = p.stat().st_size
+        file_count = 1
     elif p.is_dir():
-        size = None
+        target = p.resolve()
+        files = [x for x in target.rglob("*") if x.is_file()]
+        size = sum(x.stat().st_size for x in files)
+        file_count = len(files)
     else:
         size = None
-    return {"path": rel, "exists": exists, "kind": "file" if p.is_file() else "dir" if p.is_dir() else "missing", "bytes": size}
+        file_count = 0
+    return {"path": rel, "exists": exists, "kind": "file" if p.is_file() else "dir" if p.is_dir() else "missing", "bytes": size, "file_count": file_count}
 
 
 def inspect_method(method: str, repo_root: Path, explicit_root: Path | None) -> dict:
@@ -167,7 +172,7 @@ def inspect_method(method: str, repo_root: Path, explicit_root: Path | None) -> 
         for group, paths in spec["asset_groups"].items()
     }
     group_ready = {
-        group: all(x["exists"] and (x["bytes"] is None or x["bytes"] > 0) for x in entries)
+        group: all(x["exists"] and x["file_count"] > 0 and (x["bytes"] or 0) > 0 for x in entries)
         for group, entries in assets.items()
     }
     modules = {
@@ -182,8 +187,10 @@ def inspect_method(method: str, repo_root: Path, explicit_root: Path | None) -> 
         source_status = "SOURCE_COMMIT_MISMATCH"
     elif commit is None:
         source_status = "SOURCE_PRESENT_COMMIT_UNVERIFIED"
+    elif gi["dirty"]:
+        source_status = "SOURCE_PINNED_DIRTY"
     else:
-        source_status = "SOURCE_PINNED"
+        source_status = "SOURCE_PINNED_CLEAN"
     return {
         "id": method, "name": spec["name"], "source_url": spec["repo"],
         "expected_commit": spec["expected_commit"], "local_root": str(local),
