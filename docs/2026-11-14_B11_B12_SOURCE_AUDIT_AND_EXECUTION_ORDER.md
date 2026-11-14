@@ -90,3 +90,44 @@ Inspection of the pinned source clarified that the official Meta-World policy ev
 The Hugging Face model card lists `flow.pt` at 9.46 GB and `goal_img.pt` at 715 MB. The flow file size is a disk/host-RAM concern, not a GPU VRAM estimate. Check available system RAM before loading because the official helper first loads the checkpoint to CPU. The updated asset audit reports this execution profile and host RAM availability.
 
 **Current decision:** B12 remains a single-4090 candidate, not yet approved. First check the updated audit's `B12_native_policy_eval` profile and whether `flow.pt` / CLIP RN50 are already local. Do not download the goal-image or SAM2/GroundingDINO/CoTracker weights for the native policy evaluator. After the actual required assets and import dependencies are verified, run a model-only FP32 GPU preflight and require at least 4 GiB of VRAM headroom before starting Meta-World.
+
+
+## B12 single-4090 feasibility update from server (2026-11-14 18:02 +08)
+
+User-provided live resource snapshot:
+- RTX 4090: 24,564 MiB total; 313 MiB in use at idle; approximately 24,251 MiB free.
+- Host RAM: 31 GiB total; 26.9 GiB available.
+- Project disk: approximately 2.76 TiB free.
+- Pinned EC-Flow source is present and clean.
+- `third_party/EC-Flow/ckpt/` has no flow checkpoint yet.
+- `~/.cache/clip/RN50.pt` is absent.
+- Current `pi05` Python 3.11 has torch but lacks torchvision, CLIP, MuJoCo and Meta-World.
+
+Decision: B12 is a viable candidate for a controlled single-GPU preflight, not yet approved for full evaluation. The 9.46 GB `flow.pt` file size is not GPU memory usage; the official helper first loads it to CPU. Host RAM currently has enough margin for a bounded load test, but actual model-load and forward-pass peaks must be measured. Require at least 4 GiB free VRAM after loading the FP32 model and completing one official-shape forward pass. Do not use FP16/BF16 or alter the official model architecture for this baseline gate.
+
+### Minimal isolated preflight (not the upstream full install)
+
+The upstream `install.sh` installs SAM2, GroundingDINO and CoTracker in addition to policy dependencies. The native policy evaluation path imports these packages through `inference.py`, but does not instantiate their models or load their checkpoints. For the first memory test, bypass that unrelated import path and load the exact official `model.py` DiT implementation directly.
+
+Added:
+- `scripts/create_b12_preflight_env.sh`: creates a new isolated `ecflow_b12` Python 3.10 environment with PyTorch 2.4.0 + torchvision 0.19.0 CUDA 12.4 and timm 1.0.15. It refuses to modify an existing environment.
+- `scripts/download_b12_flow_checkpoint.sh`: downloads only the pinned official `flow.pt` from HF mirror by default, verifies the EC-Flow source commit, supports safe resume, refuses overwrite, checks file size and writes SHA-256 provenance. Does not download `goal_img.pt`, SAM2, GroundingDINO or CoTracker weights.
+- `scripts/preflight_b12_flow_model.py`: loads the official DiT-XL-NoPosEmb-Lang model in FP32, loads the checkpoint using the same CPU map-location and EMA selection as upstream, then performs one forward pass with official tensor shapes (batch 1, 400 points, horizon 8, 128x128 image, 1024-D language embedding). It reports host RAM and CUDA allocated/reserved/peak/free memory. Optional CLIP test runs only if RN50 is already cached; it refuses implicit downloads.
+
+This first test is deliberately a **model-only preflight**, not the 250-step diffusion loop or Meta-World rollout. If it passes with >=4 GiB free, next add the cached CLIP RN50 path and run a complete one-step flow prediction before installing Meta-World or changing environment code. The official CLIP RN50 dependency remains a later small asset gate.
+
+### Server commands
+
+```bash
+cd /mnt/4Tdata/LemonData/cehsisuanfa
+git pull --ff-only
+
+bash scripts/create_b12_preflight_env.sh
+conda activate ecflow_b12
+
+bash scripts/download_b12_flow_checkpoint.sh
+python scripts/preflight_b12_flow_model.py \
+  --out outputs/research_runs/b12_flow_memory_preflight_20261114.json
+```
+
+Do not run the upstream `install.sh` and do not install SAM2/GroundingDINO/CoTracker for this first preflight.
