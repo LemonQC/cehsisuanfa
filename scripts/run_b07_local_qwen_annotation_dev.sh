@@ -40,7 +40,7 @@ echo "python=$("$PY" --version 2>&1)"
 nvidia-smi --query-gpu=index,name,memory.total,memory.free --format=csv,noheader || true
 
 "$PY" - <<'PY'
-import torch, transformers, decord
+import torch, transformers, cv2
 print("torch", torch.__version__)
 print("transformers", transformers.__version__)
 print("cuda_available", torch.cuda.is_available())
@@ -51,7 +51,7 @@ if int(transformers.__version__.split(".")[0]) < 5:
 print("gpu", torch.cuda.get_device_name(0))
 PY
 
-"$PY" "$UPSTREAM/scripts/annotate_human_videos.py" \
+"$PY" -m agcofl.run_b07_annotation_with_cv2 "$UPSTREAM/scripts/annotate_human_videos.py" \
   --data-root "$DATA" \
   --model "Qwen/Qwen3-VL-4B-Instruct" \
   --model-name "qwen3-vl-4b-b07-stackcups-dev-20261114" \
