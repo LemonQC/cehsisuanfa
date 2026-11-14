@@ -254,9 +254,9 @@ class DDPM(nn.Module):
         self.register_buffer('beta',beta)
         self.register_buffer('alpha',1-beta)
         self.register_buffer('abar',torch.cumprod(1-beta,0))
-    def loss(self,rgb,state,actions):
-        t=torch.randint(self.steps,(len(actions),),device=actions.device)
-        eps=torch.randn_like(actions)
+    def loss(self,rgb,state,actions,generator=None):
+        t=torch.randint(self.steps,(len(actions),),device=actions.device,generator=generator)
+        eps=torch.randn(actions.shape,device=actions.device,dtype=actions.dtype,generator=generator)
         abar=self.abar[t].reshape(-1,1,1)
         noisy=abar.sqrt()*actions+(1-abar).sqrt()*eps
         pred=self.net(noisy,t.float()/self.steps,rgb,state)
@@ -278,6 +278,29 @@ def new_model(method,horizon,steps=40):
     raise ValueError('METHOD_MUST_BE_B01_OR_B02')
 
 
+def evaluate_validation(model,method,loader,device,seed):
+    """Full validation trajectory; deterministic DDPM noise/timestep for checkpoint selection."""
+    model.eval()
+    generator=torch.Generator(device=device).manual_seed(seed+1000003)
+    weighted_loss=0.0
+    sample_count=0
+    with torch.no_grad():
+        for x,s,a in loader:
+            x,s,a=x.to(device),s.to(device),a.to(device)
+            if method=='b01':
+                loss=nn.functional.mse_loss(model(x,s),a)
+            elif method=='b02':
+                loss=model.loss(x,s,a,generator=generator)
+            else:
+                raise ValueError('METHOD_MUST_BE_B01_OR_B02')
+            n=len(a)
+            weighted_loss+=float(loss.item())*n
+            sample_count+=n
+    if sample_count==0:
+        raise ValueError('EMPTY_VALIDATION_SET')
+    return weighted_loss/sample_count
+
+
 def train(method,cache_root=CACHE_ROOT,out=RUN_ROOT,horizon=4,steps=2000,
           batch=32,seed=42,lr=2e-4,allow_small_dev=False,device='auto'):
     if not 1<=steps<=1000000 or not 1<=batch<=256 or not 1<=horizon<=32:
@@ -295,6 +318,7 @@ def train(method,cache_root=CACHE_ROOT,out=RUN_ROOT,horizon=4,steps=2000,
     ds.stats=stats
     val=RobotDataset(cache_root,'validation',horizon,stats)
     loader=DataLoader(ds,batch_size=min(batch,len(ds)),shuffle=True,num_workers=0)
+    val_loader=DataLoader(val,batch_size=min(batch,len(val)),shuffle=False,num_workers=0)
     model=new_model(method,horizon).to(actual_device)
     opt=torch.optim.AdamW(model.parameters(),lr=lr)
     it=iter(loader);history=[];best=float('inf')
@@ -309,13 +333,7 @@ def train(method,cache_root=CACHE_ROOT,out=RUN_ROOT,horizon=4,steps=2000,
         if not torch.isfinite(loss):raise RuntimeError('NONFINITE_TRAIN_LOSS')
         loss.backward();nn.utils.clip_grad_norm_(model.parameters(),1.0);opt.step()
         if step==1 or step==steps or step%max(1,steps//10)==0:
-            model.eval();vals=[]
-            with torch.no_grad():
-                for j in range(min(16,len(val))):
-                    xx,ss,aa=val[j];xx,ss,aa=xx[None].to(actual_device),ss[None].to(actual_device),aa[None].to(actual_device)
-                    v=nn.functional.mse_loss(model(xx,ss),aa) if method=='b01' else model.loss(xx,ss,aa)
-                    vals.append(float(v.item()))
-            vloss=float(np.mean(vals))
+            vloss=evaluate_validation(model,method,val_loader,actual_device,seed)
             rec={'step':step,'train_loss':float(loss.item()),'validation_loss':vloss}
             history.append(rec)
             print('TRO1_ROBOT_ONLY_TRAIN',json.dumps({'method':method,**rec}),flush=True)
@@ -329,6 +347,7 @@ def train(method,cache_root=CACHE_ROOT,out=RUN_ROOT,horizon=4,steps=2000,
     write_new_json(out/'train_summary.json',{'status':'TRAINED_NOT_PHYSX_EVALUATED',
             'model':method,'provenance':'REIMPL_ON_ROBOREEL','data_label':manifest['label'],
             'demos':len(manifest['demos']),'best_val_loss':best,'history':history,
+            'validation_windows':len(val),'validation_protocol':'FULL_VALIDATION_DEMO_WINDOWS_FIXED_DDPM_NOISE',
             'horizon':horizon,'steps':steps,'seed':seed})
     return out/'best.pt'
 
