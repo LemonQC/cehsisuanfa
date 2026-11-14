@@ -52,6 +52,15 @@ class BaselineAssetAuditTests(unittest.TestCase):
             self.assertEqual(result["source_status"], "SOURCE_PRESENT_COMMIT_UNVERIFIED")
             self.assertFalse(result["asset_groups_ready"]["camera_calibration"])
 
+    def test_b12_policy_eval_profile_distinguishes_required_and_optional_weights(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            profile = audit.b12_execution_profile(root)
+            self.assertEqual(profile["profile"], "B12_NATIVE_METAWORLD_POLICY_EVALUATION")
+            self.assertIn("flow_checkpoint", profile["required_model_weights"])
+            self.assertIn("goal_image_checkpoint", profile["not_loaded_by_policy_evaluation"])
+            self.assertEqual(profile["gpu_memory_status"], "NOT_MEASURED")
+
 
 if __name__ == "__main__":
     unittest.main()
