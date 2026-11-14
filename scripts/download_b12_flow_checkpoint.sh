@@ -5,11 +5,11 @@ cd "$ROOT"
 
 SOURCE_COMMIT="7949df58f6ef302622c9d957b38177c18372bbc8"
 REPO_COMMIT="7d0a6243fd8b92500b5f864d70b3b60d6b6c853a"
-HF_ENDPOINT="\${HF_ENDPOINT:-https://hf-mirror.com}"
-URL="\${HF_ENDPOINT%/}/YixiangChen/EC-Flow/resolve/\${SOURCE_COMMIT}/flow.pt"
+HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+URL="${HF_ENDPOINT%/}/YixiangChen/EC-Flow/resolve/${SOURCE_COMMIT}/flow.pt"
 DEST="third_party/EC-Flow/ckpt/flow.pt"
-PART="\${DEST}.partial"
-SOURCE_FILE="\${PART}.source"
+PART="${DEST}.partial"
+SOURCE_FILE="${PART}.source"
 MIN_BYTES=9000000000
 
 [[ -d third_party/EC-Flow/.git ]] || { echo "ERROR: pinned EC-Flow source clone missing"; exit 2; }
