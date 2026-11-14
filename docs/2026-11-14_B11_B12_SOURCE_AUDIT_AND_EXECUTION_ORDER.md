@@ -64,3 +64,14 @@ Expected source revisions:
 - B12: `7d0a6243fd8b92500b5f864d70b3b60d6b6c853a`
 
 Only after this second audit should any asset download or isolated environment creation be planned.
+
+
+## Project hardware hard gate (user decision, 2026-11-14)
+
+All baselines must fit on the project's single RTX 4090. Any method whose required inference/training memory exceeds this single-GPU budget is **temporarily excluded**; do not use multi-GPU workarounds, do not spend time on an infeasible port, and do not treat nominal "24 GB" marketing capacity as proof of fit. Methods close to the limit require a measured peak-memory preflight with practical headroom before full evaluation.
+
+Consequences:
+- **B11 Im2Flow2Act: HOLD / likely resource-excluded** until its simultaneous online point-tracking + policy inference path is measured and shown to fit one RTX 4090 with headroom. No environment creation, large checkpoint downloads, or inference attempt before that gate passes.
+- **B12 EC-Flow: candidate only**, not yet approved. First inspect released checkpoint sizes and run a small, isolated one-task memory preflight. Proceed only if it fits the single GPU; do not reproduce the authors' 8×4090 training.
+- Apply the same single-GPU gate to every remaining baseline, not only B11/B12. Prioritize methods that can run with released weights and fit the hardware.
+
