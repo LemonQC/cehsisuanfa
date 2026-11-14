@@ -1,0 +1,66 @@
+{
+  "schema": "TRO1_EXTERNAL_BASELINE_SOURCE_LOCK_V1",
+  "date": "2026-11-14",
+  "methods": {
+    "B11": {
+      "name": "Im2Flow2Act",
+      "repository": "https://github.com/real-stanford/im2Flow2Act",
+      "revision": "f44b368b76195c30bf38074f6419fc8b9f8feb5f",
+      "paper": "CoRL 2024",
+      "license": "MIT",
+      "entrypoints": [
+        "scripts/controll/evaluate_from_flow_generation.py",
+        "scripts/flow_generation/inference.py"
+      ],
+      "native_robot": "UR5e",
+      "native_simulator": "MuJoCo",
+      "native_action_dim": 7,
+      "required_assets": [
+        "checkpoints.zip (flow_generation + manipulation_policy)",
+        "Stable Diffusion 1.5 pretrained weights",
+        "simulation_evaluation.zip",
+        "data_local/simulation/instrinsic_5-1.pkl",
+        "data_local/simulation/pose_matrix_5-1.pkl"
+      ],
+      "gpu_requirement_note": "README states at least 24 GB for concurrent online point tracking and policy inference",
+      "project_status": {
+        "L0": "SOURCE_PINNED_PUBLIC_REVISION",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    },
+    "B12": {
+      "name": "EC-Flow",
+      "repository": "https://github.com/YixiangChen515/EC-Flow",
+      "revision": "7d0a6243fd8b92500b5f864d70b3b60d6b6c853a",
+      "paper": "ICCV 2025",
+      "license": "MIT",
+      "entrypoints": [
+        "experiment/eval_my_flow_policy.py",
+        "experiment/eval_policy.sh"
+      ],
+      "native_robot": "Sawyer",
+      "native_simulator": "Meta-World",
+      "required_assets": [
+        "ckpt/flow.pt",
+        "ckpt/goal_img.pt",
+        "sam_and_track/checkpoints/sam2.1_hiera_large.pt",
+        "sam_and_track/gdino_checkpoints/groundingdino_swint_ogc.pth",
+        "sam_and_track/co-tracker/checkpoints/scaled_offline.pth"
+      ],
+      "gpu_requirement_note": "README states authors trained with 8 RTX 4090 GPUs; project will first use released weights for one-task native inference",
+      "metric_caveat": "Pinned evaluation wrapper counts len(policy.images)<=500 as success; independently capture env info['success'] and exception/termination state",
+      "project_status": {
+        "L0": "SOURCE_PINNED_PUBLIC_REVISION",
+        "L1": "NOT_RUN",
+        "L2": "NOT_RUN",
+        "L3_ROBOREEL": "NOT_STARTED",
+        "L4": "NOT_RUN",
+        "L5": "NOT_RUN"
+      }
+    }
+  }
+}
